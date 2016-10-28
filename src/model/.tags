@@ -39,7 +39,7 @@ __init__	../model/Controller.py	/^    def __init__(self) :$/;"	m	class:Kinematic
 __init__	../model/Controller.py	/^    def __init__(self, pixels, lims, touch_th, **kargs):$/;"	m	class:SensorimotorController	access:public
 __init__	../model/Controller.py	/^    def __init__(self, pixels=[20,20], lims=[[0,1],[0,1]], $/;"	m	class:PerceptionManager	access:public
 __init__	../model/GoalMaker.py	/^    def __init__(self):$/;"	m	class:GoalTesterSim	access:public
-__init__	../model/GoalMaker.py	/^    def __init__(self, n_input_layers, n_singlemod_layers, n_hidden_layers, $/;"	m	class:GoalMaker	access:public
+__init__	../model/GoalMaker.py	/^    def __init__(self, n_input_layers, n_singlemod_layers, n_hidden_layers,$/;"	m	class:GoalMaker	access:public
 __init__	../model/GoalPredictor.py	/^    def __init__(self, n_goal_units, eta) :$/;"	m	class:GoalPredictor	access:public
 __init__	../model/GoalSelector.py	/^    def __init__(self, dt, tau, alpha, epsilon, eta, n_input,$/;"	m	class:GoalSelector	access:public
 __init__	../model/Robot.py	/^    def __init__(self) :$/;"	m	class:Robot	access:public

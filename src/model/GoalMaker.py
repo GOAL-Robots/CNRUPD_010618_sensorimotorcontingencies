@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 
 import sys
 sys.path.append("../")
@@ -23,8 +23,8 @@ def normalize(x) :
     return np.zeros(x.shape)
 
 class GoalMaker(object):
-    def __init__(self, n_input_layers, n_singlemod_layers, n_hidden_layers, 
-            n_out, n_goalrep,singlemod_lrs, hidden_lrs, output_lr, goalrep_lr, 
+    def __init__(self, n_input_layers, n_singlemod_layers, n_hidden_layers,
+            n_out, n_goalrep,singlemod_lrs, hidden_lrs, output_lr, goalrep_lr,
             goal_th=0.9, single_kohonen=False, stime=1000):
         '''
         :param n_input_layers: (list) number of units per input
@@ -138,7 +138,7 @@ class GoalMaker(object):
                 eta = goalrep_lr,
                 eta_bl = 0,
                 eta_decay = 1e20,
-                neighborhood= 2,
+                neighborhood= 0.2,
                 neighborhood_decay=1e20,
                 neighborhood_bl= 0.5,
                 stime=self.STIME,
@@ -202,7 +202,7 @@ class GoalMaker(object):
 
         # goal representation
         if self.SINGLE_KOHONEN :
-            goalrep_inp = np.hstack(self.input_layers[-1])   # last layer is touch 
+            goalrep_inp = np.hstack(self.input_layers[-1])   # last layer is touch
         else:
             goalrep_inp = np.hstack([
                 np.hstack(self.singlemod_layers),
@@ -229,15 +229,15 @@ class GoalMaker(object):
 
         # UPDATE ACTIVATIONS
 
-        # single modality (The activation is multiplied 
+        # single modality (The activation is multiplied
         # times the highest unit of the som)
-        for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS): 
+        for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS):
             self.singlemod_layers[n_singlemod] = step_fun(
                 (self.singlemod_soms[n_singlemod].out == 1) *
                 self.singlemod_soms[n_singlemod].out_raw,
                 self.GOAL_TH)
 
-        # hidden (The activation is multiplied 
+        # hidden (The activation is multiplied
         # times the highest unit of the som)
         for n_hidden in xrange(self.TOT_HIDDEN_LAYERS):
             self.hidden_layers[n_hidden] = step_fun(
@@ -245,13 +245,13 @@ class GoalMaker(object):
                 self.hidden_soms[n_hidden].out_raw,
                 self.GOAL_TH)
 
-        # output (The activation is multiplied 
+        # output (The activation is multiplied
         # times the highest unit of the som)
         self.output_layer = \
         step_fun((self.out_som.out == 1) *\
                 self.out_som.out_raw, self.GOAL_TH)
 
-        # goal rep (The activation is multiplied 
+        # goal rep (The activation is multiplied
         # times the highest unit of the som)
         self.goalrep_layer = \
                 step_fun((self.goalrep_som.out == 1) *\
