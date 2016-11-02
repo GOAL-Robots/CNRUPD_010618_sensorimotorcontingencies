@@ -47,7 +47,7 @@ class Robot(object) :
 
         self.gp = GoalPredictor.GoalPredictor(
                 n_goal_units = self.GOAL_NUMBER,
-                eta = 0.001
+                eta = 0.05
                 )
 
        
@@ -250,12 +250,11 @@ class Robot(object) :
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
+            # Train goal maker
             self.gm.step( self.gm_input )
             self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()))
 
-
-        if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
-            
+ 
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
                 self.gs.learn()
@@ -376,7 +375,7 @@ class Robot(object) :
 
                 self.intrinsic_motivation_value = self.gp.prediction_error 
                 self.gs.goal_update(self.intrinsic_motivation_value)
-
+                
                 self.gs.goal_selected = False
                 self.gs.reset(match = self.match_value)
                 self.controller.reset()

@@ -138,7 +138,7 @@ class GoalMaker(object):
                 eta = goalrep_lr,
                 eta_bl = 0,
                 eta_decay = 1e20,
-                neighborhood= 0.2,
+                neighborhood= 0.01*np.sqrt(n_output),
                 neighborhood_decay=1e20,
                 neighborhood_bl= 0.5,
                 stime=self.STIME,
