@@ -251,8 +251,7 @@ class Robot(object) :
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             self.gm.step( self.gm_input )
-
-            self.gm.learn()
+            self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()))
 
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
@@ -381,6 +380,7 @@ class Robot(object) :
                 self.gs.goal_selected = False
                 self.gs.reset(match = self.match_value)
                 self.controller.reset()
+               
                 
         else:
             

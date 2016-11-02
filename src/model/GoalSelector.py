@@ -235,7 +235,13 @@ class GoalSelector(object) :
             self.echonet.reset()
             self.echonet.reset_data()
             self.pid.reset()
-    
+   
+    def getCurrMatch(self) :
+        res = self.match_mean[self.goal_win>0]
+        if len(res) == 1:
+            return np.asscalar(res)
+        return 0
+
     def step(self, inp):
         '''
         :param im_value: current intrinsic motivational value
@@ -261,7 +267,7 @@ class GoalSelector(object) :
 
         self.inp = self.echonet.out
         self.read_out = np.dot(self.echo2out_w, self.echonet.out)
-        curr_match = np.squeeze(self.match_mean[self.goal_win>0])
+        curr_match = self.getCurrMatch()
         
         if np.all(self.goal_win==0):
             curr_match = 0.0

@@ -264,13 +264,13 @@ class GoalMaker(object):
     def store(self):
         pass
 
-    def learn(self):
+    def learn(self, eta_scale=None):
         for som in self.singlemod_soms:
-            som.learn()
+            som.learn(eta_scale=eta_scale)
         for som in self.hidden_soms:
-            som.learn()
-        self.out_som.learn()
-        self.goalrep_som.learn()
+            som.learn(eta_scale=eta_scale)
+        self.out_som.learn(eta_scale=eta_scale)
+        self.goalrep_som.learn(eta_scale=eta_scale)
 
 
 #----------------------------------------------------------------

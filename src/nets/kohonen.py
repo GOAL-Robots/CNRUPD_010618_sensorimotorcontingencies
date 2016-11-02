@@ -126,10 +126,22 @@ class Kohonen(object) :
             x = np.zeros(inp.shape)
             self.out = np.zeros(self.N_OUTPUT)
 
-    def learn(self) :
+    def updateEta(self, value = None):
+        
+        eta = None
+
+        if value is None:
+            eta = self.ETA_BL + self.ETA* np.exp(-self.t/self.ETA_DECAY)
+        else:
+            eta = self.ETA_BL +value*(self.ETA)
+
+        return eta
+
+
+    def learn(self, eta_scale=None) :
         """ Learning step """
 
-        eta = self.ETA_BL + self.ETA* np.exp(-self.t/self.ETA_DECAY)
+        eta = self.updateEta(eta_scale)
         
         # Update weights
         x = self.inp
