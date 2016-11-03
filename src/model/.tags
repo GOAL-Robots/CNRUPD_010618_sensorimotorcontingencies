@@ -95,6 +95,7 @@ fig	../nets/esn.py	/^    fig = plt.figure(figsize=(5,10))$/;"	v
 fig	../utils/kinematics.py	/^    fig = plt.figure("arm")$/;"	v	class:Arm
 g2e_spars	../model/test_main.py	/^            g2e_spars = 0.01,$/;"	v
 gauss2d_oriented	../utils/gauss_utils.py	/^def gauss2d_oriented(x,y,m1,m2,std_x, std_y, theta) :$/;"	f	access:public
+getCurrMatch	../model/GoalSelector.py	/^    def getCurrMatch(self) :$/;"	m	class:GoalSelector	access:public
 get_angle	../utils/kinematics.py	/^def get_angle(v1,v2) :$/;"	f	access:public
 get_arm_positions	../model/Robot.py	/^    def get_arm_positions(self) :$/;"	m	class:Robot	access:public
 get_dense_chain	../utils/kinematics.py	/^    def get_dense_chain(self, density) :$/;"	m	class:Polychain	access:public
@@ -148,10 +149,10 @@ inp_w	../nets/esn.py	/^    inp_w = 0.5*np.ones([N, l_target])*(np.random.rand(N,
 isPointInChain	../utils/kinematics.py	/^    def isPointInChain(self, point, epsilon = 0.1 ) :$/;"	m	class:Polychain	access:public
 l_target	../nets/esn.py	/^    l_target = len(target)$/;"	v
 larm_angles	../model/test_main.py	/^                larm_angles=np.pi*gs.out[:(gs.N_ROUT_UNITS\/2)],$/;"	v
-learn	../model/GoalMaker.py	/^    def learn(self):$/;"	m	class:GoalMaker	access:public
+learn	../model/GoalMaker.py	/^    def learn(self, eta_scale=None):$/;"	m	class:GoalMaker	access:public
 learn	../model/GoalPredictor.py	/^    def learn(self, match):$/;"	m	class:GoalPredictor	access:public
 learn	../model/GoalSelector.py	/^    def learn(self):$/;"	m	class:GoalSelector	access:public
-learn	../nets/kohonen.py	/^    def learn(self) :$/;"	m	class:Kohonen	access:public
+learn	../nets/kohonen.py	/^    def learn(self, eta_scale=None) :$/;"	m	class:Kohonen	access:public
 line	../utils/gauss_utils.py	/^            line =""$/;"	v
 line	../utils/gauss_utils.py	/^            line=line+ "{} ".format(mapND1D([x,y],[3,5]))$/;"	v
 line	../utils/gauss_utils.py	/^        line = ""$/;"	v
@@ -260,6 +261,7 @@ tl_start	../model/test_main.py	/^    tl_start = -2.8$/;"	v
 touch	../model/test_main.py	/^    touch = False$/;"	v
 trial_window	../model/test_main.py	/^    trial_window = gs.RESET_WINDOW + gs.GOAL_WINDOW$/;"	v
 ts	../model/test_main.py	/^    ts = tl_lt\/float(trial_window)$/;"	v
+updateEta	../nets/kohonen.py	/^    def updateEta(self, value = None):$/;"	m	class:Kohonen	access:public
 update_target	../model/GoalSelector.py	/^    def update_target(self):$/;"	m	class:GoalSelector	access:public
 xl	../utils/kinematics.py	/^    xl = [-8,8]    # x-axis limits$/;"	v	class:Arm
 yl	../utils/kinematics.py	/^    yl = [-8,8]    #y-axis limits$/;"	v	class:Arm

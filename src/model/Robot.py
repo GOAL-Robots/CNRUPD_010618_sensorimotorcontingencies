@@ -88,6 +88,8 @@ class Robot(object) :
 
         
         self.timestep = 0
+        self.kohonen_weights = None
+        self.echo_weights = None
 
     def init_streams(self):
 
@@ -178,14 +180,119 @@ class Robot(object) :
                 self.gm.out_som.inp2out_w.ravel(),
                 self.gm.goalrep_som.inp2out_w.ravel() 
                 ))
-        res["kohonen_weights"] = np.linalg.norm(w)
+        if self.kohonen_weights is None :
+            res["kohonen_weights"] = np.linalg.norm(w)
+        else:
+            res["kohonen_weights"] = np.linalg.norm(w-self.kohonen_weights)
+        
+        self.kohonen_weights = w.copy()
 
         # add norm of the ESN weights
         w = self.gs.echo2out_w
-        res["echo_weights"] = np.linalg.norm(w)
+        if self.echo_weights is None :
+            res["echo_weights"] = np.linalg.norm(w)
+        else:
+            res["echo_weights"] = np.linalg.norm(w-self.echo_weights)
+
+        self.echo_weights = w.copy()
+
+        
 
         return res  
 
+    def save_match_logs(self) :
+
+        if self.log_sensors is not None :
+
+            # save sensor info on file 
+
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            # add touch info
+            for touch in  self.controller.touches :
+                log_string += "{:6.4f} ".format(touch)
+            # add goal index
+            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            # save to file
+            self.log_sensors.write( log_string + "\n")
+            self.log_sensors.flush()
+    
+        if self.log_position is not None :
+            
+            # save position info on file 
+
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            # add position info
+            curr_position =  np.vstack(self.controller.curr_body_tokens).ravel() 
+            for pos in  curr_position:
+                log_string += "{:6.4f} ".format(pos)
+            # add goal index
+            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            # save to file
+            self.log_position.write( log_string + "\n")
+            self.log_position.flush()
+            
+        if self.log_predictions is not None :
+            
+            # save predictions info on file 
+
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            # add predictions info
+            curr_predictions = self.gp.w
+            for pre in  curr_predictions:
+                log_string += "{:6.4f} ".format(pre)
+            # add goal index
+            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            # save to file
+            self.log_predictions.write( log_string + "\n")
+            self.log_predictions.flush()
+                            
+        if self.log_targets is not None :
+            
+            # save targets info on file 
+
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            # add targets info
+            keys = sorted(self.gs.target_position.keys())
+            all_goals = np.NaN*np.ones( [self.gs.N_GOAL_UNITS, self.gs.N_ROUT_UNITS] )
+            
+            for key in sorted(self.gs.target_position.keys()):
+                all_goals[key,:] = self.gs.target_position[key] 
+
+            for angle in all_goals.ravel():
+                    log_string += "{:6.4f} ".format(angle)
+
+            # add goal index
+            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            # save to file
+            self.log_targets.write( log_string + "\n")
+            self.log_targets.flush()
+
+
+    def save_weight_logs(self):
+
+        if self.log_weights is not None :
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            wm = self.get_weights_metrics()
+            log_string += "{:6.4} ".format( wm["kohonen_weights"] )
+            log_string += "{:6.4} ".format( wm["echo_weights"] )
+
+            self.log_weights.write( log_string + "\n")
+            self.log_weights.flush()
 
     def step(self) :
   
@@ -272,84 +379,9 @@ class Robot(object) :
             
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                
+                # log matches
                 if self.match_value == 1:
-
-                    if self.log_sensors is not None :
-
-                        # save sensor info on file 
-
-                        # create log line
-                        log_string = ""
-                        # add timing
-                        log_string += "{:8d} ".format(self.timestep)
-                        # add touch info
-                        for touch in  self.controller.touches :
-                            log_string += "{:6.4f} ".format(touch)
-                        # add goal index
-                        log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
-                        # save to file
-                        self.log_sensors.write( log_string + "\n")
-                        self.log_sensors.flush()
-                
-                    if self.log_position is not None :
-                        
-                        # save position info on file 
-
-                        # create log line
-                        log_string = ""
-                        # add timing
-                        log_string += "{:8d} ".format(self.timestep)
-                        # add position info
-                        curr_position =  np.vstack(self.controller.curr_body_tokens).ravel() 
-                        for pos in  curr_position:
-                            log_string += "{:6.4f} ".format(pos)
-                        # add goal index
-                        log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
-                        # save to file
-                        self.log_position.write( log_string + "\n")
-                        self.log_position.flush()
-                     
-                    if self.log_predictions is not None :
-                        
-                        # save predictions info on file 
-
-                        # create log line
-                        log_string = ""
-                        # add timing
-                        log_string += "{:8d} ".format(self.timestep)
-                        # add predictions info
-                        curr_predictions = self.gp.w
-                        for pre in  curr_predictions:
-                            log_string += "{:6.4f} ".format(pre)
-                        # add goal index
-                        log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
-                        # save to file
-                        self.log_predictions.write( log_string + "\n")
-                        self.log_predictions.flush()
-                                     
-                    if self.log_targets is not None :
-                        
-                        # save targets info on file 
-
-                        # create log line
-                        log_string = ""
-                        # add timing
-                        log_string += "{:8d} ".format(self.timestep)
-                        # add targets info
-                        keys = sorted(self.gs.target_position.keys())
-                        all_goals = np.NaN*np.ones( [self.gs.N_GOAL_UNITS, self.gs.N_ROUT_UNITS] )
-                        
-                        for key in sorted(self.gs.target_position.keys()):
-                            all_goals[key,:] = self.gs.target_position[key] 
-
-                        for angle in all_goals.ravel():
-                                log_string += "{:6.4f} ".format(angle)
-
-                        # add goal index
-                        log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
-                        # save to file
-                        self.log_targets.write( log_string + "\n")
-                        self.log_targets.flush()
+                    self.save_match_logs()
 
                 # learn
 
@@ -358,18 +390,9 @@ class Robot(object) :
                 if self.match_value == 1:
                     self.gs.update_target()
               
-                # save weights metrics
-                if self.log_weights is not None :
-                    # create log line
-                    log_string = ""
-                    # add timing
-                    log_string += "{:8d} ".format(self.timestep)
-                    wm = self.get_weights_metrics()
-                    log_string += "{:6.4} ".format( wm["kohonen_weights"] )
-                    log_string += "{:6.4} ".format( wm["echo_weights"] )
+                # log weight metrics
+                self.save_weight_logs()
 
-                    self.log_weights.write( log_string + "\n")
-                    self.log_weights.flush()
 
                 # update variables
 

@@ -57,7 +57,7 @@ done
 
 CMD="python $MAIN_DIR/src/model/main.py"
 if ! [ -d $MAIN_DIR/stores  ]; then mkdir $MAIN_DIR/stores; fi
-DATADIR="$MAIN_DIR/stores/store_$(date +%H%M%S)"
+DATADIR="$MAIN_DIR/stores/store_$(date +%m%d%H%M%S)"
 mkdir $DATADIR
 
 # clean
@@ -77,7 +77,7 @@ if [ $N_BLOCKS -gt 1 ]; then
     for((n=0;n<$[N_BLOCKS-1];n++)); do
         # run n-th block
         $CMD -t $STIME -d -l 
-        CURR_TIME=$(date +%H%M%S)
+        CURR_TIME=$(date +%m%d%H%M%S)
         for f in $MAIN_DIR/log_*; do
             mv $f $DATADIR/$(basename $f)_${CURR_TIME} 
         done
