@@ -66,11 +66,11 @@ mkdir $DATADIR
 rm -fr $MAIN_DIR/log_*
 
 # run first block
-if [-z $START ]; then
+if [ -z $START ]; then
     $CMD -t $STIME -d
 else
     cp $START $MAIN_DIR/dumped_robot
-    $CMD -t $STIME -d
+    $CMD -t $STIME -d -l 
 fi
 
 CURR_TIME=$(date +%m%d%H%M%S)
