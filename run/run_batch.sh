@@ -12,6 +12,7 @@ This script runs the robot simulation in batch modeand collects data
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
+   -s --start       dumped_robot to start from
    -n --n_blocks    number of simulation blocks
    -h --help        show this help
 
@@ -20,6 +21,7 @@ EOF
 
 MAIN_DIR=..
 
+START=
 STIME=100000
 N_BLOCKS=1
 
@@ -64,7 +66,12 @@ mkdir $DATADIR
 rm -fr $MAIN_DIR/log_*
 
 # run first block
-$CMD -t $STIME -d
+if [-z $START ]; then
+    $CMD -t $STIME -d
+else
+    cp $START $MAIN_DIR/dumped_robot
+    $CMD -t $STIME -d
+fi
 
 CURR_TIME=$(date +%H%M%S)
 for f in $MAIN_DIR/log_*; do
