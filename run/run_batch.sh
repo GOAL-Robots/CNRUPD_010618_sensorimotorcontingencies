@@ -73,7 +73,7 @@ else
     $CMD -t $STIME -d
 fi
 
-CURR_TIME=$(date +%H%M%S)
+CURR_TIME=$(date +%m%d%H%M%S)
 for f in $MAIN_DIR/log_*; do
     mv $f $DATADIR/$(basename $f)_${CURR_TIME} 
 done
