@@ -17,12 +17,12 @@ class Robot(object) :
                 pixels = [20, 20],
                 lims = [[-5, 5], [-2, 4.]],
                 touch_th = 0.8, 
-                touch_sensors = 18,
+                touch_sensors = 11,
                 touch_sigma=0.25, 
                 touch_len=0.01
                 )
 
-        self.GOAL_NUMBER = 9
+        self.GOAL_NUMBER = 16
 
         self.gs = GoalSelector.GoalSelector(
                 dt = 0.001,
@@ -214,7 +214,7 @@ class Robot(object) :
             for touch in  self.controller.touches :
                 log_string += "{:6.4f} ".format(touch)
             # add goal index
-            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
             # save to file
             self.log_sensors.write( log_string + "\n")
             self.log_sensors.flush()
@@ -232,7 +232,7 @@ class Robot(object) :
             for pos in  curr_position:
                 log_string += "{:6.4f} ".format(pos)
             # add goal index
-            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
             # save to file
             self.log_position.write( log_string + "\n")
             self.log_position.flush()
@@ -250,7 +250,7 @@ class Robot(object) :
             for pre in  curr_predictions:
                 log_string += "{:6.4f} ".format(pre)
             # add goal index
-            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
             # save to file
             self.log_predictions.write( log_string + "\n")
             self.log_predictions.flush()
@@ -274,7 +274,7 @@ class Robot(object) :
                     log_string += "{:6.4f} ".format(angle)
 
             # add goal index
-            log_string += "{:6d} {:d}".format(np.argmax(self.gs.goal_win), self.timestep) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
             # save to file
             self.log_targets.write( log_string + "\n")
             self.log_targets.flush()

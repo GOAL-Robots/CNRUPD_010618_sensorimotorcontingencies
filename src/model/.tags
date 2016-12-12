@@ -219,6 +219,8 @@ rout_mean	../nets/esn.py	/^    rout_mean = np.zeros(N_OUT)$/;"	v
 rout_real	../nets/esn.py	/^    rout_real = np.zeros(N_OUT) $/;"	v
 run_colors	../nets/kohonen_colors.py	/^def run_colors() :     $/;"	f	access:public
 rwl	../model/test_main.py	/^    rwl = ts*gs.RESET_WINDOW$/;"	v
+save_match_logs	../model/Robot.py	/^    def save_match_logs(self) :$/;"	m	class:Robot	access:public
+save_weight_logs	../model/Robot.py	/^    def save_weight_logs(self):$/;"	m	class:Robot	access:public
 scaled_grid	../utils/gauss_utils.py	/^def scaled_grid(idcs, lims) :$/;"	f	access:public
 set_angles	../model/Controller.py	/^    def set_angles(self, angles_l, angles_r) :$/;"	m	class:KinematicActuator	access:public
 set_chain	../utils/kinematics.py	/^    def set_chain(self, chain) :$/;"	m	class:Polychain	access:public
