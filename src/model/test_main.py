@@ -1,5 +1,4 @@
 import sys
-sys.path.append("../")
 
 import numpy as np
 import numpy.random as rnd
@@ -9,7 +8,7 @@ import GoalSelector
 import GoalPredictor
 import GoalMaker
 import Controller
-import utils.kinematics as KM
+import kinematics as KM
 
 if __name__ == "__main__":
 

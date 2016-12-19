@@ -12,8 +12,6 @@ import gzip
 pathname = os.path.dirname(sys.argv[0])
 if pathname: os.chdir(pathname)
 
-sys.path.append("../")
-
 ################################################################
 ################################################################
 # To force stop on exceptions
@@ -25,25 +23,17 @@ def my_excepthook(type, value, tback):
 
 sys.excepthook = my_excepthook
 
-################################################################
-################################################################
-
-import numpy as np
-from Robot import Robot
-
-np.set_printoptions(edgeitems=3, linewidth=999,  precision=3,
-        suppress=True, threshold=1000)
-
-
 #################################################################
 #################################################################
 
 import progressbar
+import model
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
  
     import argparse
+    
     parser = argparse.ArgumentParser() 
     parser.add_argument('-g','--graphics',
             help="Graphics on",
@@ -56,11 +46,12 @@ if __name__ == '__main__':
             action="store_true", default=False) 
     parser.add_argument('-s','--save_dir',
             help="storage directory",
-            action="store", default="../../")      
+            action="store", default=".")      
     parser.add_argument('-t','--stime',
             help="Simulation time (only for graphics off)",
             action="store", default=2000)  
     args = parser.parse_args()
+    
     GRAPHICS = bool(args.graphics) 
     STIME = int(args.stime)  
     SDIR = args.save_dir
@@ -84,7 +75,7 @@ if __name__ == '__main__':
         with gzip.open(dumpfile, 'rb') as f:
             robot = pickle.load(f)
     else :
-        robot = Robot()
+        robot = model.Robot()
 
     robot.log_sensors = log_sensors
     robot.log_position = log_position
@@ -95,7 +86,7 @@ if __name__ == '__main__':
     print "simulating ..."
     if GRAPHICS :
 
-        import plotter 
+        from model import plotter 
         plotter.graph_main(robot)
         
     else:

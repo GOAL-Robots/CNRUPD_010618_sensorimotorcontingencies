@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 from __future__ import division
 import sys
-sys.path.append("../")
 import numpy as np
 import time
 
-from utils.gauss_utils import TwoDimensionalGaussianMaker as GM
-import utils.kinematics as KM
+from gauss_utils import TwoDimensionalGaussianMaker as GM
+import kinematics as KM
 
 #    
 #-----------------------------------------------------------------------------

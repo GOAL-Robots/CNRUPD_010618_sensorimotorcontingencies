@@ -1,13 +1,6 @@
-#!/usr/bin/env python
-
-import sys
-
-sys.path.append("../")
-
 import numpy as np
-import numpy.random as rnd
-from nets.esn import ESN
-import utils.kinematics as KM
+from model.esn import ESN
+import model.kinematics as KM 
 
 def softmax(x, t=0.1):
     '''
