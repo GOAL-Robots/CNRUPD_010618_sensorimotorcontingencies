@@ -26,7 +26,7 @@ STIME=100000
 N_BLOCKS=1
 
 # getopt
-GOTEMP="$(getopt -o "t:n:h" -l "stime:,n_blocks,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:s:h" -l "stime:,n_blocks:,start:,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -41,10 +41,13 @@ do
         -t | --stime) 
             STIME="$2"
             shift 2;;
-         -n | --n_blocks) 
+        -n | --n_blocks) 
             N_BLOCKS="$2"
             shift 2;;
-       -h | --help)
+        -s | --start) 
+            START="$2"
+            shift 2;;
+        -h | --help)
             echo "on help"
             usage; exit;
             shift;
