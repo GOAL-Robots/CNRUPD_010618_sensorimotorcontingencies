@@ -137,7 +137,8 @@ class Kohonen(object) :
             self.out_raw = y
             point = map1DND(max_index, self.N_DIM_OUT, self.BINS)
             self.out,_ = self.gmaker(point,
-                    np.ones(self.N_DIM_OUT)*(curr_neighborhood**2))
+                    np.ones(self.N_DIM_OUT)*(
+                        (curr_neighborhood if self.neighborhood > 0 else 1.0)**2))
         else:
             x = np.zeros(inp.shape)
             self.out = np.zeros(self.N_OUTPUT)
@@ -174,7 +175,8 @@ class Kohonen(object) :
         
         # Update weights
         x = self.inp
-        y = self.out
+        y = self.out if self.neighborhood > 0 \
+                else self.out*(self.out == self.out.max())
         w = self.inp2out_w 
 
         w += eta* (np.outer(y,x) -  np.outer(y, np.ones(self.N_INPUT)) *w )
@@ -189,12 +191,6 @@ class Kohonen(object) :
         out = self.out_raw*2
         datax = self.data[self.l_out_raw]
         win = self.idx
-
-        # datax[win,tt] = self.AVERAGE_DECAY*out[win]
-        # if tt >0 :
-        #     datax[:,tt] += datax[:,tt-1]
-        #     datax[win,tt] -= self.AVERAGE_DECAY*datax[win,tt-1]
-        # 
     
     def reset_data(self):
         """ Reset """

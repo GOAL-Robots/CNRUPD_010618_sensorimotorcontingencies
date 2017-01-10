@@ -2,6 +2,7 @@
 
 # -*- coding: utf-8 -*-
 import sys
+import copy 
 import numpy as np
 from model.Robot import Robot
 
