@@ -46,7 +46,7 @@ if __name__ == '__main__':
             action="store_true", default=False) 
     parser.add_argument('-s','--save_dir',
             help="storage directory",
-            action="store", default=".")      
+            action="store", default=os.getcwd())      
     parser.add_argument('-t','--stime',
             help="Simulation time (only for graphics off)",
             action="store", default=2000)  
@@ -56,7 +56,6 @@ if __name__ == '__main__':
     STIME = int(args.stime)  
     SDIR = args.save_dir
     if SDIR[-1]!='/': SDIR += '/'
-    SDIR=os.getcwd()+'/'+SDIR
      
     DUMP = int(args.dump) 
     LOAD = int(args.load) 
