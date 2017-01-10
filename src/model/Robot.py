@@ -1,77 +1,66 @@
-import sys
-sys.path.append("../")
 import numpy as np
-
-import GoalSelector
-import GoalPredictor
-import GoalMaker
-import Controller
-import utils.kinematics as KM
-
+from model import *
+from model.GoalPredictor import match
 
 class Robot(object) :
 
     def __init__(self) :
-    
-        self.controller = Controller.SensorimotorController(       
-                pixels = [20, 20],
-                lims = [[-5, 5], [-2, 4.]],
-                touch_th = 0.8, 
-                touch_sensors = 11,
-                touch_sigma=0.25, 
-                touch_len=0.01
+
+        self.GOAL_NUMBER = GOAL_NUMBER
+
+        self.controller = SensorimotorController(       
+                pixels = controller_pixels,
+                lims = controller_lims,
+                touch_th = controller_touch_th,
+                touch_sensors = controller_touch_sensors,
+                touch_sigma = controller_touch_sigma,
+                touch_len = controller_touch_len
                 )
 
-        self.GOAL_NUMBER = 16
+        self.gs = GoalSelector(
+                dt = gs_dt,
+                tau = gs_tau,
+                alpha = gs_alpha,
+                epsilon = gs_epsilon,
+                eta = gs_eta,
+                n_input = gs_n_input,
+                n_goal_units = gs_n_goal_units,
+                n_echo_units = gs_n_echo_units,
+                n_rout_units = gs_n_rout_units,
+                im_decay = gs_im_decay,
+                match_decay = gs_match_decay,
+                noise = gs_noise,
+                sm_temp = gs_sm_temp,
+                g2e_spars = gs_g2e_spars,
+                echo_ampl = gs_echo_ampl,
+                goal_window = gs_goal_window,
+                goal_learn_start = gs_goal_learn_start,
+                reset_window = gs_reset_window
+                )
 
-        self.gs = GoalSelector.GoalSelector(
-                dt = 0.001,
-                tau = 0.015,
-                alpha = 0.4,
-                epsilon = 1.0e-10,
-                eta = 0.04,
-                n_input = self.controller.pixels[0]*self.controller.pixels[0],
+        self.gp = GoalPredictor(
                 n_goal_units = self.GOAL_NUMBER,
-                n_echo_units = 100,
-                n_rout_units = self.controller.actuator.NUMBER_OF_JOINTS*2,
-                im_decay = 0.9,
-                match_decay = 0.5,
-                noise = .5,
-                sm_temp = 0.2,
-                g2e_spars = 0.2,
-                echo_ampl = 5.0,
-                goal_window = 100,
-                goal_learn_start = 20,
-                reset_window = 10
+                eta = gp_eta
                 )
-
-        self.gp = GoalPredictor.GoalPredictor(
-                n_goal_units = self.GOAL_NUMBER,
-                eta = 0.05
-                )
-
-       
-        inp_dim = self.controller.pixels[0]*self.controller.pixels[1]
-        
-        self.stime = 10000
-        
-        self.gm = GoalMaker.GoalMaker(
-                n_input_layers=[inp_dim, inp_dim, inp_dim],
-                n_singlemod_layers= [64, 64, 64],
-                n_hidden_layers=[16, 16],
-                n_out=16,
-                n_goalrep= self.GOAL_NUMBER,
-                singlemod_lrs = [0.05, 0.01, 0.1],
-                hidden_lrs=[0.001, 0.001],
-                output_lr=0.001,
-                goalrep_lr=0.8,
-                goal_th=0.1,
-                stime=self.stime,
-                single_kohonen = True
+          
+        self.gm = GoalMaker(
+                n_input_layers = gm_n_input_layers,
+                n_singlemod_layers = gm_n_singlemod_layers,
+                n_hidden_layers = gm_n_hidden_layers,
+                n_out = gm_n_out,
+                n_goalrep = gm_n_goalrep,
+                singlemod_lrs = gm_singlemod_lrs,
+                hidden_lrs = gm_hidden_lrs,
+                output_lr = gm_output_lr,
+                goalrep_lr = gm_goalrep_lr,
+                goal_th = gm_goal_th,
+                stime = gm_stime,
+                single_kohonen = gm_single_kohonen
             )
 
 
-
+        self.stime = robot_stime
+        
         self.trial_window = self.gs.RESET_WINDOW + self.gs.GOAL_WINDOW
         
         self.goal_mask = np.zeros(self.gs.N_GOAL_UNITS).astype("bool")
@@ -195,9 +184,7 @@ class Robot(object) :
             res["echo_weights"] = np.linalg.norm(w-self.echo_weights)
 
         self.echo_weights = w.copy()
-
         
-
         return res  
 
     def save_match_logs(self) :
@@ -279,7 +266,6 @@ class Robot(object) :
             self.log_targets.write( log_string + "\n")
             self.log_targets.flush()
 
-
     def save_weight_logs(self):
 
         if self.log_weights is not None :
@@ -295,7 +281,6 @@ class Robot(object) :
             self.log_weights.flush()
 
     def step(self) :
-  
 
         self.timestep += 1 
 
@@ -372,7 +357,7 @@ class Robot(object) :
             
             # End of trial
             
-            self.match_value = GoalPredictor.match(
+            self.match_value = match(
                     self.gm.goalrep_layer, 
                     self.gs.goal_win
                     )
@@ -384,9 +369,7 @@ class Robot(object) :
                     self.save_match_logs()
 
                 # learn
-
                 self.gp.learn(self.match_value) 
-
                 if self.match_value == 1:
                     self.gs.update_target()
               
@@ -402,7 +385,6 @@ class Robot(object) :
                 self.gs.goal_selected = False
                 self.gs.reset(match = self.match_value)
                 self.controller.reset()
-               
                 
         else:
             

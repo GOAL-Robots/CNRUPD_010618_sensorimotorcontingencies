@@ -2,11 +2,8 @@
 
 import sys
 
-sys.path.append("../")
-
 import numpy as np
 import numpy.random as rnd
-from nets.esn import ESN
 
 def match(abstaction_layer, selection_layer) :
     '''

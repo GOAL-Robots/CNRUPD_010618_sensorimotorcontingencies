@@ -60,27 +60,27 @@ done
 
 #################################################################################
 
-CMD="python $MAIN_DIR/src/model/main.py"
+CMD="python $MAIN_DIR/src/main.py"
 if ! [ -d $MAIN_DIR/stores  ]; then mkdir $MAIN_DIR/stores; fi
 DATADIR="$MAIN_DIR/stores/store_$(date +%m%d%H%M%S)"
 mkdir $DATADIR
 
 # clean
-rm -fr $MAIN_DIR/log_*
+rm -fr $MAIN_DIR/src/log_*
 
 # run first block
 if [ -z $START ]; then
     $CMD -t $STIME -d
 else
-    cp $START $MAIN_DIR/dumped_robot
+    cp $START $MAIN_DIR/src/dumped_robot
     $CMD -t $STIME -d -l 
 fi
 
 CURR_TIME=$(date +%m%d%H%M%S)
-for f in $MAIN_DIR/log_*; do
+for f in $MAIN_DIR/src/log_*; do
     mv $f $DATADIR/$(basename $f)_${CURR_TIME} 
 done
-cp $MAIN_DIR/dumped_robot $DATADIR/dumped_robot_$CURR_TIME 
+cp $MAIN_DIR/src/dumped_robot $DATADIR/dumped_robot_$CURR_TIME 
 
 # run n blocks
 if [ $N_BLOCKS -gt 1 ]; then
@@ -88,10 +88,10 @@ if [ $N_BLOCKS -gt 1 ]; then
         # run n-th block
         $CMD -t $STIME -d -l 
         CURR_TIME=$(date +%m%d%H%M%S)
-        for f in $MAIN_DIR/log_*; do
+        for f in $MAIN_DIR/src/log_*; do
             mv $f $DATADIR/$(basename $f)_${CURR_TIME} 
         done
-        cp $MAIN_DIR/dumped_robot $DATADIR/dumped_robot_$CURR_TIME 
+        cp $MAIN_DIR/src/dumped_robot $DATADIR/dumped_robot_$CURR_TIME 
     done
 fi
 

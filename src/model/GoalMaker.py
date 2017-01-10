@@ -1,17 +1,7 @@
 #!/usr/bin/env python
-
-import sys
-sys.path.append("../")
-
 import numpy as np
-import numpy.random as rnd
-
-from nets.kohonen import Kohonen
-from utils.gauss_utils import mapND1D
-from utils.gauss_utils import map1DND
-from utils.gauss_utils import MultidimensionalGaussianMaker as GM
-
-import Controller
+from model import *
+from model.kohonen import Kohonen
 
 def step_fun(x, th):
     return 1.0 * (x > th)
@@ -63,7 +53,6 @@ class GoalMaker(object):
         # init SOM networks
 
         # SINGLE MODALITY LAYERS
-
         self.singlemod_soms = []
         for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS):
             n_input = self.N_INPUT_LAYERS[n_singlemod]
@@ -71,16 +60,16 @@ class GoalMaker(object):
             net = Kohonen(
                 n_output = n_output,
                 n_input = n_input,
-                n_dim_out = 2,
-                bins= [np.sqrt(n_output), np.sqrt(n_output)],
-                eta= singlemod_lrs[n_singlemod],
-                eta_bl= singlemod_lrs[n_singlemod] / 4.0,
-                eta_decay= self.STIME / 4.,
-                neighborhood= 2 * n_output,
-                neighborhood_decay= self.STIME / 4.,
-                neighborhood_bl= 0.5,
-                stime= self.STIME,
-                weight_bl= 0.001,
+                n_dim_out = gm_singlemod_n_dim_out,
+                bins = [np.sqrt(n_output), np.sqrt(n_output)],
+                eta = singlemod_lrs[n_singlemod],
+                eta_bl = singlemod_lrs[n_singlemod]/gm_singlemod_eta_bl_scale,
+                eta_decay = self.STIME/gm_singlemod_eta_decay_scale,
+                neighborhood = gm_singlemod_neigh_scale*n_output,
+                neighborhood_decay = self.STIME/gm_singlemod_neigh_decay_scale,
+                neighborhood_bl = gm_singlemod_neigh_bl,
+                stime = self.STIME,
+                weight_bl = gm_singlemod_weight_bl,
                 normalize = normalize
             )
             self.singlemod_soms.append(net)
@@ -91,18 +80,18 @@ class GoalMaker(object):
             n_input = sum(self.N_SINGLEMOD_LAYERS[n_hidden:(n_hidden + 2)])
             n_output = self.N_HIDDEN_LAYERS[n_hidden]
             net = Kohonen(
-                n_output=n_output,
-                n_input=n_input,
-                n_dim_out=2,
-                bins=[np.sqrt(n_output), np.sqrt(n_output)],
-                eta=hidden_lrs[n_hidden],
-                eta_bl=hidden_lrs[n_hidden] / 4.0,
-                eta_decay=self.STIME / 4.,
-                neighborhood=2 * n_output,
-                neighborhood_decay=self.STIME / 4.,
-                neighborhood_bl= 0.5,
-                stime=self.STIME,
-                weight_bl=0.001,
+                n_output = n_output,
+                n_input = n_input,
+                n_dim_out = gm_hidden_n_dim_out,
+                bins = [np.sqrt(n_output), np.sqrt(n_output)],
+                eta = hidden_lrs[n_hidden],
+                eta_bl = hidden_lrs[n_hidden]/gm_hidden_eta_bl_scale,
+                eta_decay = self.STIME/gm_hidden_eta_decay_scale,
+                neighborhood = gm_hidden_neigh_scale*n_output,
+                neighborhood_decay = self.STIME/gm_hidden_neigh_decay_scale,
+                neighborhood_bl = gm_hidden_neigh_bl,
+                stime = self.STIME,
+                weight_bl = gm_hidden_weight_bl,
                 normalize = normalize
             )
             self.hidden_soms.append(net)
@@ -111,18 +100,18 @@ class GoalMaker(object):
         n_input = sum(self.N_HIDDEN_LAYERS)
         n_output = self.N_OUTPUT_LAYER
         self.out_som = Kohonen(
-            n_output=n_output,
-            n_input=n_input,
-            n_dim_out=2,
-            bins=[np.sqrt(n_output), np.sqrt(n_output)],
-            eta=output_lr,
-            eta_bl=output_lr / 4.0,
-            eta_decay=self.STIME / 4.,
-            neighborhood=2 * n_output,
-            neighborhood_decay=self.STIME / 4.,
-            neighborhood_bl= 0.5,
-            stime=self.STIME,
-            weight_bl=0.001,
+            n_output = n_output,
+            n_input = n_input,
+            n_dim_out = gm_out_n_dim_out,
+            bins = [np.sqrt(n_output), np.sqrt(n_output)],
+            eta = output_lr,
+            eta_bl = output_lr/gm_out_eta_bl_scale,
+            eta_decay = self.STIME/gm_out_eta_decay_scale,
+            neighborhood = gm_out_neigh_scale*n_output,
+            neighborhood_decay = self.STIME/gm_out_neigh_decay_scale,
+            neighborhood_bl = gm_out_neigh_bl,
+            stime = self.STIME,
+            weight_bl = gm_out_weight_bl,
             normalize = normalize
         )
 
@@ -133,36 +122,37 @@ class GoalMaker(object):
             self.goalrep_som = Kohonen(
                 n_output = n_output,
                 n_input = n_input,
-                n_dim_out = 2,
-                bins=[np.sqrt(n_output), np.sqrt(n_output)],
+                n_dim_out = gm_single_kohonen_n_dim_out,
+                bins =[np.sqrt(n_output), np.sqrt(n_output)],
                 eta = goalrep_lr,
-                eta_bl = 0,
-                eta_decay = 1e20,
-                neighborhood= 0.01*np.sqrt(n_output),
-                neighborhood_decay=1e20,
-                neighborhood_bl= 0.5,
-                stime=self.STIME,
-                weight_bl=0.001,
+                eta_bl = gm_single_kohonen_eta_bl,
+                eta_decay = gm_single_kohonen_eta_decay,
+                neighborhood = gm_single_kohonen_neigh_scale*np.sqrt(n_output),
+                neighborhood_decay = gm_single_kohonen_neigh_decay_scale,
+                neighborhood_bl = gm_single_kohonen_neigh_bl,
+                stime =self.STIME,
+                weight_bl = gm_single_kohonen_weight_bl,
                 normalize = normalize
             )
 
         else:
 
-            n_input = sum(self.N_SINGLEMOD_LAYERS) + sum(self.N_HIDDEN_LAYERS) + self.N_OUTPUT_LAYER
+            n_input = sum(self.N_SINGLEMOD_LAYERS) \
+                    + sum(self.N_HIDDEN_LAYERS) + self.N_OUTPUT_LAYER
             n_output = self.N_GOALREP_LAYER
             self.goalrep_som = Kohonen(
                 n_output = n_output,
                 n_input = n_input,
-                n_dim_out = 1,
+                n_dim_out = gm_goalrep_n_dim_out,
                 bins = n_output,
                 eta = goalrep_lr,
-                eta_bl=goalrep_lr / 4.0,
-                eta_decay=self.STIME / 4.,
-                neighborhood=2 * n_output,
-                neighborhood_decay=self.STIME / 4.,
-                neighborhood_bl= 0.5,
-                stime=self.STIME,
-                weight_bl=0.001,
+                eta_bl = goalrep_lr/gm_goalrep_eta_bl_scale,
+                eta_decay = self.STIME/gm_goalrep_eta_decay_scale,
+                neighborhood = gm_goalrep_neigh_scale*n_output,
+                neighborhood_decay = self.STIME/gm_goalrep_neigh_decay_scale,
+                neighborhood_bl = gm_goalrep_neigh_bl,
+                stime = self.STIME,
+                weight_bl = gm_goalrep_weight_bl,
                 normalize = normalize
             )
 
@@ -260,9 +250,6 @@ class GoalMaker(object):
         # previous input storing
         for layer in xrange(self.TOT_INPUT_LAYERS):
             self.prev_raw_inputs[layer] = raw_inputs[layer]
-
-    def store(self):
-        pass
 
     def learn(self, eta_scale=None):
         for som in self.singlemod_soms:
