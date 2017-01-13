@@ -80,15 +80,16 @@ class GoalSelector(object) :
         self.goal_window_counter = 0
         self.reset_window_counter = 0
 
-        self.echonet = ESN(
-                N       = self.N_ECHO_UNITS,
-                stime   = self.GOAL_WINDOW,
-                dt      = self.DT,
-                tau     = self.TAU,
-                alpha   = self.ALPHA,
-                beta    = 1-self.ALPHA,
-                epsilon = self.EPSILON
-                )
+        self.echonet = [ 
+                ESN(
+                    N       = self.N_ECHO_UNITS,
+                    stime   = self.GOAL_WINDOW,
+                    dt      = self.DT,
+                    tau     = self.TAU,
+                    alpha   = self.ALPHA,
+                    beta    = 1-self.ALPHA,
+                    epsilon = self.EPSILON
+                    ) for x in xrange(self.N_GOAL_UNITS) ]
 
         # input -> ESN
         
@@ -117,8 +118,10 @@ class GoalSelector(object) :
                 (np.random.rand((self.N_ECHO_UNITS/2),
                     self.N_GOAL_UNITS)<self.GOAL2ECHO_SPARSENESS)
  
-        self.echo2out_w = 0.1*np.random.randn(self.N_ROUT_UNITS,
-            self.N_ECHO_UNITS)
+        self.echo2out_w = [
+                0.1*np.random.randn(self.N_ROUT_UNITS,
+            self.N_ECHO_UNITS) for x in  xrange(self.N_GOAL_UNITS) ]
+
 
         self.read_out = np.zeros(self.N_ROUT_UNITS)
         self.out = np.zeros(self.N_ROUT_UNITS)
@@ -222,11 +225,16 @@ class GoalSelector(object) :
     def reset(self, match):
             self.match_mean += self.MATCH_DECAY*(
                     -self.match_mean + match)*self.goal_win
+
+            for echo in  self.echonet:
+                echo.reset()
+            echo.reset_data()
+
             self.goal_win *= 0
             self.goal_window_counter = 0
             self.reset_window_counter = 0
-            self.echonet.reset()
-            self.echonet.reset_data()
+            self.echonet[self.goal_win].reset()
+            self.echonet[self.goal_win].reset_data()
             self.pid.reset()
    
     def getCurrMatch(self) :
@@ -254,21 +262,25 @@ class GoalSelector(object) :
                     self.goal_win*self.goal_selected
                     )) )
 
-        echo_inp = inp2echo_inp + goal2echo_inp 
-        self.echonet.step(self.ECHO_AMPL*echo_inp) 
-        self.echonet.store(self.goal_window_counter)
-
-        self.inp = self.echonet.out
-        self.read_out = np.dot(self.echo2out_w, self.echonet.out)
-        curr_match = self.getCurrMatch()
+        goalwin_idx = self.goal_index()
+        if goalwin_idx is not None:
         
-        if np.all(self.goal_win==0):
-            curr_match = 0.0
- 
-        added_signal = self.NOISE*oscillator(self.t, 10, self.random_oscil)[0]
-        #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
-        self.out = self.read_out + (1.0 - curr_match)*added_signal
-        self.tout = self.read_out 
+            echo_inp = inp2echo_inp + goal2echo_inp 
+            self.echonet[goalwin_idx].step(self.ECHO_AMPL*echo_inp) 
+            self.echonet[goalwin_idx].store(self.goal_window_counter)
+
+            self.inp = self.echonet[goalwin_idx].out
+            self.read_out = np.dot(self.echo2out_w[goalwin_idx], self.echonet[goalwin_idx].out)
+            curr_match = self.getCurrMatch()
+            
+            if np.all(self.goal_win==0):
+                curr_match = 0.0
+    
+            added_signal = self.NOISE*oscillator(self.t, 10, self.random_oscil)[0]
+            #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
+            self.out = self.read_out + (1.0 - curr_match)*added_signal
+            self.tout = self.read_out 
+
         self.t += 1
 
     def learn(self):
@@ -282,7 +294,7 @@ class GoalSelector(object) :
                 x = self.inp
                 y = self.tout
                 eta = self.ETA
-                w = self.echo2out_w
+                w = self.echo2out_w[goalwin_idx]
                 w += eta*np.outer(target-y,x)
         #------------------------------------------------
         
