@@ -1,27 +1,46 @@
+import numpy as np
+
 controller_pixels = [20, 20]
 controller_lims = [[-5, 5], [-2, 4.]]
 controller_touch_th = 0.8
-controller_touch_sensors = 11
+controller_num_touch_sensors = 11
 controller_touch_sigma = 0.25
-controller_touch_len = 0.01
 controller_actuator_NUMBER_OF_JOINTS = 3
+
+ka_num_joints = controller_actuator_NUMBER_OF_JOINTS 
+ka_left_origin = [-1.5, 0.0]
+ka_left_lims = [ 
+        [0, np.pi*0.9],    # first joint limits
+        [0, np.pi*0.5],    # second joint limits
+        [0, np.pi*0.5]     # third joint limits
+        ] 
+assert(len(ka_left_lims) == controller_actuator_NUMBER_OF_JOINTS )
+
+ka_right_origin = [1.5, 0.0]
+ka_right_lims = [ 
+        [0, np.pi*0.9],    # first joint limits
+        [0, np.pi*0.5],    # second joint limits
+        [0, np.pi*0.5]     # third joint limits
+        ] 
+assert(len(ka_right_lims) == controller_actuator_NUMBER_OF_JOINTS )
+ 
 
 GOAL_NUMBER = 9
 
 gs_dt = 0.001
-gs_tau = 0.015
-gs_alpha = 0.05
+gs_tau = 0.02
+gs_alpha = 0.001
 gs_epsilon = 1.0e-10
 gs_eta = 0.04
 gs_n_input = controller_pixels[0]*controller_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 400
 gs_n_rout_units = controller_actuator_NUMBER_OF_JOINTS*2
-gs_im_decay = 0.9
+gs_im_decay = 0.96
 gs_match_decay = 0.5
-gs_noise = .5
+gs_noise = 0.5
 gs_sm_temp = 0.2
-gs_g2e_spars = 0.2
+gs_g2e_spars = 0.01
 gs_echo_ampl = 5.0
 gs_goal_window = 100
 gs_goal_learn_start = 20

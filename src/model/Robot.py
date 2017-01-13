@@ -12,9 +12,8 @@ class Robot(object) :
                 pixels = controller_pixels,
                 lims = controller_lims,
                 touch_th = controller_touch_th,
-                touch_sensors = controller_touch_sensors,
-                touch_sigma = controller_touch_sigma,
-                touch_len = controller_touch_len
+                num_touch_sensors = controller_num_touch_sensors,
+                touch_sigma = controller_touch_sigma
                 )
 
         self.gs = GoalSelector(

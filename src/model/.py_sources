@@ -5,6 +5,10 @@
 ./GoalSelector.py
 ./Robot.py
 ./__init__.py
-./main.py
+./esn.py
+./gauss_utils.py
+./kinematics.py
+./kohonen.py
+./parameters.py
 ./plotter.py
 ./test_main.py
