@@ -162,24 +162,32 @@ class Kohonen(object) :
  
         return eta
 
-    def learn(self, eta_scale = None) :
+    def learn(self, eta_scale = None, pred = None) :
         """ 
         Learning step
 
         :param  eta_scale   the value of current eta decay (see updateEta)
+        :param  pred        the current amount of learning of each output receptive field
         :type   eta_scale   float
+        :type   pred        array(float)
+
         
         """
+        
+        if pred is None: 
+            pred = np.ones(self.N_OUTPUT)
+
+        assert( len(pred) == self.N_OUTPUT )
 
         eta = self.updateEta(eta_scale)
-        
+
         # Update weights
         x = self.inp
         y = self.out if self.neighborhood > 0 \
                 else self.out*(self.out == self.out.max())
         w = self.inp2out_w 
 
-        w += eta* (np.outer(y,x) -  np.outer(y, np.ones(self.N_INPUT)) *w )
+        w += eta* (np.outer(y*pred,x) -  np.outer(y*pred, np.ones(self.N_INPUT)) *w )
 
     def store(self):
         """ storage """

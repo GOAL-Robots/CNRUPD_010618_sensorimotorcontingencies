@@ -33,7 +33,8 @@ class GoalSelector(object) :
     def __init__(self, dt, tau, alpha, epsilon, eta, n_input,
             n_goal_units, n_echo_units, n_rout_units,
             im_decay, match_decay, noise, sm_temp, g2e_spars,
-            goal_window, goal_learn_start, reset_window, echo_ampl=1000):
+            goal_window, goal_learn_start, reset_window, echo_ampl=1000,
+            multiple_echo=True):
         '''
         :param dt: integration time of the ESN
         :param tau: decay of the ESN
@@ -53,6 +54,7 @@ class GoalSelector(object) :
         :param goal_learn_start: start of learning during trial 
         :param reset_window: duration of reset
         :param echo_ampl: amplitude of the input to the echo-state
+        :param multiple_echo: if True each goal calls its own esn
         '''
 
         self.DT = dt
@@ -74,6 +76,7 @@ class GoalSelector(object) :
         self.N_ROUT_UNITS = n_rout_units
         self.GOAL2ECHO_SPARSENESS = g2e_spars
         self.ECHO_AMPL = echo_ampl
+        self.MULTIPLE_ECHO = multiple_echo
 
         self.goalvec = np.zeros(self.N_GOAL_UNITS)
         self.goal_win = np.zeros(self.N_GOAL_UNITS)
@@ -89,10 +92,9 @@ class GoalSelector(object) :
                     alpha   = self.ALPHA,
                     beta    = 1-self.ALPHA,
                     epsilon = self.EPSILON
-                    ) for x in xrange(self.N_GOAL_UNITS) ]
+                    ) for x in xrange(self.N_GOAL_UNITS + 1) ]
 
-        # input -> ESN
-        
+        # input -> ESN   
         unit_int = self.N_ECHO_UNITS/4
         self.INP2ECHO_W = np.zeros([self.N_ECHO_UNITS, 
             self.N_INPUT+ self.N_GOAL_UNITS])
@@ -120,7 +122,7 @@ class GoalSelector(object) :
  
         self.echo2out_w = [
                 0.1*np.random.randn(self.N_ROUT_UNITS,
-            self.N_ECHO_UNITS) for x in  xrange(self.N_GOAL_UNITS) ]
+            self.N_ECHO_UNITS) for x in  xrange(self.N_GOAL_UNITS + 1) ]
 
 
         self.read_out = np.zeros(self.N_ROUT_UNITS)
@@ -138,6 +140,9 @@ class GoalSelector(object) :
 
 
         self.pid = KM.PID(n=self.N_ROUT_UNITS);
+        self.curr_echonet = self.echonet[-1]
+        self.curr_echo2out_w = self.echo2out_w[-1]
+
 
     def goal_index(self):
 
@@ -198,9 +203,21 @@ class GoalSelector(object) :
             self.goal_selected = True
             
             goalwin_idx = self.goal_index()
-            if goalwin_idx is not None and self.target_position.has_key(goalwin_idx):
-                target = self.target_position[goalwin_idx]
-                self.gout = target 
+
+            MULTIPLE_ECHO = self.MULTIPLE_ECHO
+            
+            if not MULTIPLE_ECHO and goalwin_idx is not None:
+                self.curr_echonet = self.echonet[goalwin_idx]
+                self.curr_echo2out_w = self.echo2out_w[goalwin_idx]
+            else : 
+                self.curr_echonet = self.echonet[-1]
+                self.curr_echo2out_w = self.echo2out_w[-1]
+
+
+            if goalwin_idx is not None:
+                if self.target_position.has_key(goalwin_idx):
+                    target = self.target_position[goalwin_idx]
+                    self.gout = target 
             else : 
                 self.gout = np.zeros(self.N_ROUT_UNITS) 
 
@@ -225,16 +242,13 @@ class GoalSelector(object) :
     def reset(self, match):
             self.match_mean += self.MATCH_DECAY*(
                     -self.match_mean + match)*self.goal_win
-
-            for echo in  self.echonet:
-                echo.reset()
-            echo.reset_data()
-
+           
+            self.curr_echonet.reset()
+            self.curr_echonet.reset_data()
+ 
             self.goal_win *= 0
             self.goal_window_counter = 0
             self.reset_window_counter = 0
-            self.echonet[self.goal_win].reset()
-            self.echonet[self.goal_win].reset_data()
             self.pid.reset()
    
     def getCurrMatch(self) :
@@ -263,23 +277,22 @@ class GoalSelector(object) :
                     )) )
 
         goalwin_idx = self.goal_index()
-        if goalwin_idx is not None:
         
-            echo_inp = inp2echo_inp + goal2echo_inp 
-            self.echonet[goalwin_idx].step(self.ECHO_AMPL*echo_inp) 
-            self.echonet[goalwin_idx].store(self.goal_window_counter)
+        echo_inp = inp2echo_inp + goal2echo_inp 
+        self.curr_echonet.step(self.ECHO_AMPL*echo_inp) 
+        self.curr_echonet.store(self.goal_window_counter)
 
-            self.inp = self.echonet[goalwin_idx].out
-            self.read_out = np.dot(self.echo2out_w[goalwin_idx], self.echonet[goalwin_idx].out)
-            curr_match = self.getCurrMatch()
-            
-            if np.all(self.goal_win==0):
-                curr_match = 0.0
-    
-            added_signal = self.NOISE*oscillator(self.t, 10, self.random_oscil)[0]
-            #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
-            self.out = self.read_out + (1.0 - curr_match)*added_signal
-            self.tout = self.read_out 
+        self.inp = self.curr_echonet.out
+        self.read_out = np.dot(self.curr_echo2out_w, self.curr_echonet.out)
+        curr_match = self.getCurrMatch()
+        
+        if np.all(self.goal_win==0):
+            curr_match = 0.0
+
+        added_signal = self.NOISE*oscillator(self.t, 10, self.random_oscil)[0]
+        #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
+        self.out = self.read_out + (1.0 - curr_match)*added_signal
+        self.tout = self.read_out 
 
         self.t += 1
 
@@ -294,7 +307,7 @@ class GoalSelector(object) :
                 x = self.inp
                 y = self.tout
                 eta = self.ETA
-                w = self.echo2out_w[goalwin_idx]
+                w = self.curr_echo2out_w
                 w += eta*np.outer(target-y,x)
         #------------------------------------------------
         

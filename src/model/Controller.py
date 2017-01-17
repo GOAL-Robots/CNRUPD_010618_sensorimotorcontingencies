@@ -219,7 +219,7 @@ class PerceptionManager(object) :
             # for heach edge iterate over the other points
             for y,point in enumerate(self.sensors):        
                 # do not count the edge with itself (it would be autotouch!!)
-                if x != y:
+                if x != y and abs(y-x)>self.num_touch_sensors/4:
                     # touch is measured as a radial basis of the distance from the sensor
                     touches[y] += \
                     np.exp(-((np.linalg.norm(point - sensor))**2)/\
@@ -248,7 +248,7 @@ class PerceptionManager(object) :
             # build the 2d_gaussian on the retina-grid
             g = self.gm(point, sigma )[0]
             # add the current gaussian to the retina if touch is greater than threshold
-            if touch>self.touch_th :
+            if touch>self.touch_th:
                 image += g.reshape(*self.pixels)
          
         #TODO: control all rotations  (it works, but why we transpose this?)
