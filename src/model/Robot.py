@@ -12,9 +12,8 @@ class Robot(object) :
                 pixels = controller_pixels,
                 lims = controller_lims,
                 touch_th = controller_touch_th,
-                touch_sensors = controller_touch_sensors,
-                touch_sigma = controller_touch_sigma,
-                touch_len = controller_touch_len
+                num_touch_sensors = controller_num_touch_sensors,
+                touch_sigma = controller_touch_sigma
                 )
 
         self.gs = GoalSelector(
@@ -35,7 +34,8 @@ class Robot(object) :
                 echo_ampl = gs_echo_ampl,
                 goal_window = gs_goal_window,
                 goal_learn_start = gs_goal_learn_start,
-                reset_window = gs_reset_window
+                reset_window = gs_reset_window,
+                multiple_echo = gs_multiple_echo
                 )
 
         self.gp = GoalPredictor(
@@ -104,7 +104,7 @@ class Robot(object) :
         matched_targets = np.array([ 1.0*(target in acquired_targets) 
             for target in np.arange(self.gs.N_GOAL_UNITS) ])
         targets = self.gp.w
-        esn_data = self.gs.echonet.data[self.gs.echonet.out_lab]
+        esn_data = self.gs.curr_echonet.data[self.gs.curr_echonet.out_lab]
  
         return gmask, gv, gw, gr,matched_targets, targets, self.gs.target_position, \
                 esn_data 
@@ -177,14 +177,17 @@ class Robot(object) :
         self.kohonen_weights = w.copy()
 
         # add norm of the ESN weights
-        w = self.gs.echo2out_w
+        w = self.gs.curr_echo2out_w
         if self.echo_weights is None :
             res["echo_weights"] = np.linalg.norm(w)
         else:
             res["echo_weights"] = np.linalg.norm(w-self.echo_weights)
-
-        self.echo_weights = w.copy()
         
+        self.echo_weights = w.copy()
+
+
+        
+
         return res  
 
     def save_match_logs(self) :
@@ -344,9 +347,12 @@ class Robot(object) :
 
             # Train goal maker
             self.gm.step( self.gm_input )
-            self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()))
-
- 
+            # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()), pred = (1.0 - self.gp.w) )
+            # self.gm.learn(pred = (1.0 - self.gp.w) )
+            self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()) )
+            # self.gm.learn(pred = (1.0 - self.gs.match_mean) )
+            # self.gm.learn(pred = (1.0 - self.gs.match_mean)*self.gs.goal_win )
+            
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
                 self.gs.learn()

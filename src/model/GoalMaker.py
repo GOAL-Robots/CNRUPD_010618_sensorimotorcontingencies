@@ -251,13 +251,13 @@ class GoalMaker(object):
         for layer in xrange(self.TOT_INPUT_LAYERS):
             self.prev_raw_inputs[layer] = raw_inputs[layer]
 
-    def learn(self, eta_scale=None):
+    def learn(self, eta_scale=None, pred=None):
         for som in self.singlemod_soms:
             som.learn(eta_scale=eta_scale)
         for som in self.hidden_soms:
             som.learn(eta_scale=eta_scale)
         self.out_som.learn(eta_scale=eta_scale)
-        self.goalrep_som.learn(eta_scale=eta_scale)
+        self.goalrep_som.learn(eta_scale=eta_scale, pred=pred)
 
 
 #----------------------------------------------------------------
