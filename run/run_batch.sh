@@ -84,6 +84,8 @@ if ! [ -d $MAIN_DIR/stores  ]; then mkdir $MAIN_DIR/stores; fi
 DATADIR="$MAIN_DIR/stores/store_$(date +%m%d%H%M%S)"
 mkdir $DATADIR
 
+
+
 # clean
 rm -fr $WORK_DIR/*
 
@@ -114,5 +116,4 @@ if [ $N_BLOCKS -gt 1 ]; then
     done
 fi
 
-
-
+echo $DATADIR > datadir
