@@ -38,6 +38,12 @@ class GoalPredictor(object) :
 
         self.goal_win = goal_win
         self.out = np.dot(self.w,self.goal_win)
+    
+    def getCurrPred(self) :
+        res = self.w[self.goal_win>0]
+        if len(res) == 1:
+            return np.asscalar(res)
+        return 0
 
     def learn(self, match):
         

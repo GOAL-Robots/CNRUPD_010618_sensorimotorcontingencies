@@ -256,7 +256,7 @@ class GoalSelector(object) :
         if len(res) == 1:
             return np.asscalar(res)
         return 0
-
+    
     def step(self, inp):
         '''
         :param im_value: current intrinsic motivational value
