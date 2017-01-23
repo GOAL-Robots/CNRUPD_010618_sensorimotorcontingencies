@@ -2,11 +2,11 @@ require(reshape2)
 require(ggplot2)
 library(grid)
 library(gridExtra)
-pkg = "gridExtra"
 if(!require(pkg, character.only=TRUE) )
 { 
     install.packages(pkg, repos = "http://cran.us.r-project.org")
 }
+pkg = "gridExtra"
 
 d =read.table("test/log_predictions")
 dd = melt(d, id.vars=c(1,11), measure.vars=2:10 )

@@ -351,7 +351,7 @@ class Robot(object) :
             # self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred = (1.0 - self.gp.w) ) # MIXED-2
             # self.gm.learn(pred = (1.0 - self.gp.w) ) # PRED
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()) ) # MATCH
-            # self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()) ) # MATCH-2
+            self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()) ) # MATCH-2
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
                 self.gs.learn()
