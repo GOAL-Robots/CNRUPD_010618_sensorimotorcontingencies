@@ -12,6 +12,7 @@ This script runs the robot simulation in batch mode and collects data
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
+   -w --wdir        working directory
    -s --start       dumped_robot to start from
    -n --n_blocks    number of simulation blocks
    -h --help        show this help
@@ -44,7 +45,7 @@ STIME=100000
 N_BLOCKS=1
 
 # getopt
-GOTEMP="$(getopt -o "t:n:s:h" -l "stime:,n_blocks:,start:,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:w:n:s:h" -l "stime:,wdir:,n_blocks:,start:,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -58,6 +59,9 @@ do
     case "$1" in
         -t | --stime) 
             STIME="$2"
+            shift 2;;
+        -w | --wdir) 
+            WORK_DIR="$2"
             shift 2;;
         -n | --n_blocks) 
             N_BLOCKS="$2"
@@ -75,7 +79,12 @@ do
     esac
 done
 
-echo "threads: $OMP_NUM_THREADS"
+if [ -z $OMP_NUM_THREADS ]; then
+
+    echo "OMP_NUM_THREADSì:autoS"
+else
+    echo "OMP_NUM_THREADSì: $OMP_NUM_THREADS"
+fi
 
 #################################################################################
 
