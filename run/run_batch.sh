@@ -37,14 +37,12 @@ find_maindir()
     done
 }
 
+CURR_DIR=$(pwd)
 MAIN_DIR="$(find_maindir)"
-
 if [ -z $MAIN_DIR ]; then
     echo "you must execute within the project dirrctory"
+    exit;
 fi
-
-
-
 WORK_DIR=$MAIN_DIR/test
 
 START=
@@ -88,9 +86,9 @@ done
 
 if [ -z $OMP_NUM_THREADS ]; then
 
-    echo "OMP_NUM_THREADSì auto"
+    echo "OMP_NUM_THREADS auto"
 else
-    echo "OMP_NUM_THREADSì: $OMP_NUM_THREADS"
+    echo "OMP_NUM_THREADS: $OMP_NUM_THREADS"
 fi
 
 #################################################################################
@@ -103,10 +101,8 @@ mkdir $DATADIR
 
 
 # clean
-
-if [ ! -e $WORK_DIR ]; then
-    mkdir $WORK_DIR
-fi
+[[ ! $WORK_DIR =~ ^/ ]] && WORK_DIR=${CURR_DIR}/$WORK_DIR
+[ ! -e $WORK_DIR ] && mkdir $WORK_DIR
 
 rm -fr $WORK_DIR/*
 
