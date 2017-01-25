@@ -43,7 +43,7 @@ if [ -z $MAIN_DIR ]; then
     echo "you must execute within the project dirrctory"
     exit;
 fi
-WORK_DIR=$MAIN_DIR/test
+WORK_DIR=
 
 START=
 STIME=100000
@@ -95,16 +95,14 @@ fi
 
 CMD="python $MAIN_DIR/src/main.py"
 if ! [ -d $MAIN_DIR/stores  ]; then mkdir $MAIN_DIR/stores; fi
-DATADIR="$MAIN_DIR/stores/store_$(date +%m%d%H%M%S)"
-mkdir $DATADIR
-
-
-
 # clean
 [[ ! $WORK_DIR =~ ^/ ]] && WORK_DIR=${CURR_DIR}/$WORK_DIR
 [ ! -e $WORK_DIR ] && mkdir $WORK_DIR
 
 rm -fr $WORK_DIR/*
+
+DATADIR="$MAIN_DIR/stores/store_$(date +%m%d%H%M%S)"
+mkdir $DATADIR
 
 # run first block
 if [ ! -z $START ]; then    
