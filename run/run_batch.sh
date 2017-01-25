@@ -38,6 +38,13 @@ find_maindir()
 }
 
 MAIN_DIR="$(find_maindir)"
+
+if [ -z $MAIN_DIR ]; then
+    echo "you must execute within the project dirrctory"
+fi
+
+
+
 WORK_DIR=$MAIN_DIR/test
 
 START=
@@ -81,7 +88,7 @@ done
 
 if [ -z $OMP_NUM_THREADS ]; then
 
-    echo "OMP_NUM_THREADSì:autoS"
+    echo "OMP_NUM_THREADSì auto"
 else
     echo "OMP_NUM_THREADSì: $OMP_NUM_THREADS"
 fi
@@ -96,6 +103,11 @@ mkdir $DATADIR
 
 
 # clean
+
+if [ ! -e $WORK_DIR ]; then
+    mkdir $WORK_DIR
+fi
+
 rm -fr $WORK_DIR/*
 
 # run first block
