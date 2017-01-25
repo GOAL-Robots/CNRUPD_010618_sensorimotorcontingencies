@@ -1,11 +1,11 @@
 require(reshape2)
 require(ggplot2)
 library(grid)
+pkg = "gridExtra"
 if(!require(pkg, character.only=TRUE) )
 { 
     install.packages(pkg, repos = "http://cran.us.r-project.org")
 }
-pkg = "gridExtra"
 library(gridExtra)
 
 d =read.table("test/log_predictions")

@@ -21,28 +21,9 @@ EOF
 }
 
 
-find_maindir()
-{
-    local current_dir=$(pwd)
-    local parent_dir=$current_dir
-    while [ ! -z $parent_dir ]; do 
-        if [ -d $parent_dir ]; then
-            local parent_children=$(ls $parent_dir) 
-            if [[ "$parent_children" =~ MAIN_DIR ]]; then
-                echo $parent_dir
-                break
-            fi
-        fi
-        local parent_dir=$(echo $parent_dir| sed -e"s/\/[^\/]\+$//"); 
-    done
-}
-
 CURR_DIR=$(pwd)
-MAIN_DIR="$(find_maindir)"
-if [ -z $MAIN_DIR ]; then
-    echo "you must execute within the project dirrctory"
-    exit;
-fi
+[ ! -f src/model/Robot.py ] && (echo "you must execute within the project directory"; exit)
+
 WORK_DIR=
 
 START=
@@ -93,15 +74,15 @@ fi
 
 #################################################################################
 
-CMD="python $MAIN_DIR/src/main.py"
-if ! [ -d $MAIN_DIR/stores  ]; then mkdir $MAIN_DIR/stores; fi
+CMD="python $CURR_DIR/src/main.py"
+if ! [ -d $CURR_DIR/stores  ]; then mkdir $CURR_DIR/stores; fi
 # clean
 [[ ! $WORK_DIR =~ ^/ ]] && WORK_DIR=${CURR_DIR}/$WORK_DIR
 [ ! -e $WORK_DIR ] && mkdir $WORK_DIR
 
 rm -fr $WORK_DIR/*
 
-DATADIR="$MAIN_DIR/stores/store_$(date +%m%d%H%M%S)"
+DATADIR="$CURR_DIR/stores/store_$(date +%m%d%H%M%S)"
 mkdir $DATADIR
 
 # run first block
@@ -114,7 +95,7 @@ fi
 
 CURR_TIME=$(date +%m%d%H%M%S)
 for f in $WORK_DIR/log_*; do
-    mv $f $DATADIR/$(basename $f)_${CURR_TIME} 
+    cp $f $DATADIR/$(basename $f)_${CURR_TIME} 
 done
 cp $WORK_DIR/dumped_robot $DATADIR/dumped_robot_$CURR_TIME 
 
@@ -125,10 +106,9 @@ if [ $N_BLOCKS -gt 1 ]; then
         $CMD -t $STIME -d -l -s $WORK_DIR
         CURR_TIME=$(date +%m%d%H%M%S)
         for f in $WORK_DIR/log_*; do
-            mv $f $DATADIR/$(basename $f)_${CURR_TIME} 
+            cp $f $DATADIR/$(basename $f)_${CURR_TIME} 
         done
         cp $WORK_DIR/dumped_robot $DATADIR/dumped_robot_$CURR_TIME 
     done
 fi
-
-echo $DATADIR > datadir
+echo done
