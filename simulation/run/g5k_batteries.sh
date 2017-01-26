@@ -91,6 +91,7 @@ run()
         perl -pi -e "s/^(\s*)([^#]+)( # MATCH)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
         perl -pi -e "s/^(\s*)([^#]+)( # MATCH-2)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
         perl -pi -e "s/^(\s*)([^#]+)( # MIXED-2)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
+        perl -pi -e "s/^(\s*)([^#]+)( # MIXED-3)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
 
         perl -pi -e "s/^(\s*)# ([^#]+)( # $CURR)(\s*)\n$/\1\2\3\n/" src/model/Robot.py 
 
@@ -119,6 +120,7 @@ do
     run PRED $n > log_pred_$num 2>&1 &
     wait
     run MATCH $n > log_match_$num 2>&1 &
+    run MIXED-3 $n > log_mixed_3_$num 2>&1 &
     run MATCH-2 $n > log_match_2_$num 2>&1 &
     wait
 done 
