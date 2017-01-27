@@ -78,7 +78,7 @@ run()
     local curr=$( echo $CURR| sed -e"s/\(.*\)/\L\1\E/")
     local sim_dir=${curr}_$NUM
 
-    if [ -d $sim_dir ]; then
+    if [ -d $sim_dir ] && [ ! -z "$(find $sim_dir| grep pdf)" ]; then
         echo "simulation already done" 
     else
 
