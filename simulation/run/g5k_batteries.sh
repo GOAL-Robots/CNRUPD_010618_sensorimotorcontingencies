@@ -21,6 +21,7 @@ This script runs batteries of robot simulations
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
    -n --num         number of simulations
+   -s --start       start i dex of simulation
    -d --template    template folder containing the exec environment
    -h --help        show this help
 
@@ -31,10 +32,10 @@ CURR_DIR=$(pwd)
 TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
 ITER=1
-
+START=0
 
 # getopt
-GOTEMP="$(getopt -o "t:n:d:h" -l "stime:,num:,template:,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:s:d:h" -l "stime:,num:,start:,template:,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -50,6 +51,9 @@ do
             shift 2;;
         -n | --num) 
             ITER="$2"
+            shift 2;;
+        -s | --start) 
+            START="$2"
             shift 2;;
         -d | --template) 
             TEMPLATE="$2"
@@ -108,7 +112,7 @@ run()
 }
 
 echo start
-for n in $(seq $ITER); 
+for n in $(seq $START $[START + ITER]); 
 do
     num=$(printf "%06d" $n)
     echo "iter: $n"
