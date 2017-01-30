@@ -21,6 +21,7 @@ This script runs batteries of robot simulations
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
    -n --num         number of simulations
+   -s --start       start i dex of simulation
    -d --template    template folder containing the exec environment
    -h --help        show this help
 
@@ -31,10 +32,10 @@ CURR_DIR=$(pwd)
 TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
 ITER=1
-
+START=0
 
 # getopt
-GOTEMP="$(getopt -o "t:n:d:h" -l "stime:,num:,template:,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:s:d:h" -l "stime:,num:,start:,template:,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -50,6 +51,9 @@ do
             shift 2;;
         -n | --num) 
             ITER="$2"
+            shift 2;;
+        -s | --start) 
+            START="$2"
             shift 2;;
         -d | --template) 
             TEMPLATE="$2"
@@ -78,7 +82,7 @@ run()
     local curr=$( echo $CURR| sed -e"s/\(.*\)/\L\1\E/")
     local sim_dir=${curr}_$NUM
 
-    if [ -d $sim_dir ]; then
+    if [ -d $sim_dir ] && [ ! -z "$(find $sim_dir| grep pdf)" ]; then
         echo "simulation already done" 
     else
 
@@ -91,6 +95,7 @@ run()
         perl -pi -e "s/^(\s*)([^#]+)( # MATCH)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
         perl -pi -e "s/^(\s*)([^#]+)( # MATCH-2)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
         perl -pi -e "s/^(\s*)([^#]+)( # MIXED-2)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
+        perl -pi -e "s/^(\s*)([^#]+)( # MIXED-3)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
 
         perl -pi -e "s/^(\s*)# ([^#]+)( # $CURR)(\s*)\n$/\1\2\3\n/" src/model/Robot.py 
 
@@ -107,7 +112,7 @@ run()
 }
 
 echo start
-for n in $(seq $ITER); 
+for n in $(seq $START $[START + ITER]); 
 do
     num=$(printf "%06d" $n)
     echo "iter: $n"
@@ -119,6 +124,7 @@ do
     run PRED $n > log_pred_$num 2>&1 &
     wait
     run MATCH $n > log_match_$num 2>&1 &
+    run MIXED-3 $n > log_mixed_3_$num 2>&1 &
     run MATCH-2 $n > log_match_2_$num 2>&1 &
     wait
 done 
