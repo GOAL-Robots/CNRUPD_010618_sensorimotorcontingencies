@@ -19,10 +19,9 @@ sem<-function(x) sd(x)/sqrt(length(x))
 ###############################################################################################################################
 
 
-predictions <- read.table("all_predictions")
+predictions <- fread("all_predictions")
 N_GOALS = dim(predictions)[2] - 4 
 names(predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
-predictions = data.table(predictions)
 
 
 predictions = melt(predictions, 
