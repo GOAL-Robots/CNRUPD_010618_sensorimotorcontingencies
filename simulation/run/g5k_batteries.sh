@@ -138,7 +138,7 @@ do
     cd ${CURR_DIR}
 
     [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n > log_mixed_$num 2>&1 &
-    [ $LEARN == imixed-2 ] || [ $LEARN == all  ] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
+    [ $LEARN == mixed-2  ] || [ $LEARN == all  ] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
     [ $LEARN == pred     ] || [ $LEARN == all  ] &&  run PRED $n > log_pred_$num 2>&1 &
     wait
     [ $LEARN == match    ] || [ $LEARN == all  ] &&  run MATCH $n > log_match_$num 2>&1 &
