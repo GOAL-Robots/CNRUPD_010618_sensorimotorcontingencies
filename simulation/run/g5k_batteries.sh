@@ -130,10 +130,11 @@ run()
 }
 
 echo start
-for n in $(seq $START $[START + ITER]); 
+for n in $(seq $ITER); 
 do
-    num=$(printf "%06d" $n)
-    echo "iter: $n"
+    nn=$[n + $START]
+    num=$(printf "%06d" $nn)
+    echo "iter: $nn"
     
     cd ${CURR_DIR}
 
