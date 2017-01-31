@@ -23,6 +23,7 @@ OPTIONS:
    -n --num         number of simulations
    -s --start       start i dex of simulation
    -d --template    template folder containing the exec environment
+   -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
    -p --params      set initial parameters interactivelly
    -h --help        show this help
 
@@ -32,12 +33,13 @@ EOF
 CURR_DIR=$(pwd)
 TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
-ITER=1
+ITER=0
 START=0
 PARAMS=false
+LEARN=all
 
 # getopt
-GOTEMP="$(getopt -o "t:n:s:d:ph" -l "stime:,num:,start:,template:,params,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:s:d:l:ph" -l "stime:,num:,start:,template:,learn:,params,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -59,6 +61,9 @@ do
             shift 2;;
         -d | --template) 
             TEMPLATE="$2"
+            shift 2;;
+        -l | --learn) 
+            LEARN="$2"
             shift 2;;
         -p | --params) 
             PARAMS=true
@@ -132,13 +137,13 @@ do
     
     cd ${CURR_DIR}
 
-    run MIXED $n > log_mixed_$num 2>&1 &
-    run MIXED-2 $n > log_mixed_2_$num 2>&1 &
-    run PRED $n > log_pred_$num 2>&1 &
+    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MIXED $n > log_mixed_$num 2>&1 &
+    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
+    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run PRED $n > log_pred_$num 2>&1 &
     wait
-    run MATCH $n > log_match_$num 2>&1 &
-    run MIXED-3 $n > log_mixed_3_$num 2>&1 &
-    run MATCH-2 $n > log_match_2_$num 2>&1 &
+    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MATCH $n > log_match_$num 2>&1 &
+    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MIXED-3 $n > log_mixed_3_$num 2>&1 &
+    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MATCH-2 $n > log_match_2_$num 2>&1 &
     wait
 done 
 echo "all done"
