@@ -23,6 +23,7 @@ OPTIONS:
    -n --num         number of simulations
    -s --start       start i dex of simulation
    -d --template    template folder containing the exec environment
+   -p --params      set initial parameters interactivelly
    -h --help        show this help
 
 EOF
@@ -33,9 +34,10 @@ TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
 ITER=1
 START=0
+PARAMS=false
 
 # getopt
-GOTEMP="$(getopt -o "t:n:s:d:h" -l "stime:,num:,start:,template:,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:s:d:ph" -l "stime:,num:,start:,template:,params,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -58,6 +60,9 @@ do
         -d | --template) 
             TEMPLATE="$2"
             shift 2;;
+        -p | --params) 
+            PARAMS=true
+            shift;;
         -h | --help)
             echo "on help"
             usage; exit;
@@ -73,6 +78,14 @@ cd ${HOME}
 if [ -z "$(mount | grep working)" ]; then 
     [ -d working ] && [ -z "$(ls -A working/)" ] && \
         sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 rennes:/home/fmannella/working ${HOME}/working
+fi
+
+# parameters
+if [ $PARAMS == true ]; then
+    TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
+    cp -r $TEMPLATE $TMP_TEMPLATE
+    TEMPLATE=$TMP_TEMPLATE
+    vim $TEMPLATE/src/model/parameters.py
 fi
 
 run()
