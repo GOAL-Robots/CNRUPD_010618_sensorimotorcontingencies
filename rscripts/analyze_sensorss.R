@@ -1,0 +1,67 @@
+require(data.table)
+require(ggplot2)
+
+toInstall <- c("extrafont")
+for(pkg in toInstall)
+    if(!require(pkg, character.only=TRUE) )
+    {
+        install.packages(pkg, repos = "http://cran.us.r-project.org")
+        library(extrafont)
+        font_import()
+    }
+
+library(extrafont)
+
+###############################################################################################################################
+
+sem<-function(x) sd(x)/sqrt(length(x))
+
+###############################################################################################################################
+predictions <- fread("all_predictions")
+N_GOALS = dim(predictions)[2] - 4 
+names(predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
+
+
+predictions = melt(predictions, 
+             id.vars = c("LEARNING_TYPE", "TIMESTEPS", "INDEX"), 
+             measure.vars = paste("G", 1:N_GOALS, sep = ""), 
+             variable.name="GOAL", 
+             value.name="prediction" )
+
+sensors = fread('all_sensors')
+N_SENSORS = (dim(sensors)[2] - 4)
+
+sens_labels = paste("S", 1:N_SENSORS, sep = "")
+
+names(sensors) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", sens_labels, "CURR_GOAL")
+
+
+sensors = melt(sensors, 
+             id.vars = c("LEARNING_TYPE", "INDEX", "TIMESTEPS", "CURR_GOAL"), 
+             measure.vars = sens_labels, 
+             variable.name="sensor", 
+             value.name="amp" )
+
+
+
+means = sensors[,.(a_mean = mean(amp), 
+                         a_sd = sd(amp),  
+                         a_err = sem(amp), 
+                         a_min = min(amp),
+                         a_max = max(amp)), by=.(LEARNING_TYPE, sensor)]
+
+
+gp = ggplot(means, aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
+gp = gp + geom_ribbon(aes(ymin = a_min, ymax = a_max), colour = "#666666", fill = "#dddddd")
+gp = gp + geom_line(size = 1.5, colour = "#000000")
+gp = gp + theme_bw() 
+gp = gp + facet_grid(LEARNING_TYPE~.)
+gp = gp + theme( 
+                text=element_text(size=14, family="Verdana"), 
+                panel.border=element_blank(),
+                legend.title = element_blank(),
+                legend.background = element_blank(),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank()
+                )
+print(gp)
