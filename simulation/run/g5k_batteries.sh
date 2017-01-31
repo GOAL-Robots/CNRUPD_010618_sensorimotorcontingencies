@@ -137,13 +137,13 @@ do
     
     cd ${CURR_DIR}
 
-    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MIXED $n > log_mixed_$num 2>&1 &
-    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
-    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run PRED $n > log_pred_$num 2>&1 &
+    [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n > log_mixed_$num 2>&1 &
+    [ $LEARN == imixed-2 ] || [ $LEARN == all  ] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
+    [ $LEARN == pred     ] || [ $LEARN == all  ] &&  run PRED $n > log_pred_$num 2>&1 &
     wait
-    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MATCH $n > log_match_$num 2>&1 &
-    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MIXED-3 $n > log_mixed_3_$num 2>&1 &
-    [[ $LEARN =~ mixed ]] || [[ $LEARN =~ all  ]] &&  run MATCH-2 $n > log_match_2_$num 2>&1 &
+    [ $LEARN == match    ] || [ $LEARN == all  ] &&  run MATCH $n > log_match_$num 2>&1 &
+    [ $LEARN == match-2  ] || [ $LEARN == all  ] &&  run MIXED-3 $n > log_mixed_3_$num 2>&1 &
+    [ $LEARN == match-3  ] || [ $LEARN == all  ] &&  run MATCH-2 $n > log_match_2_$num 2>&1 &
     wait
 done 
 echo "all done"
