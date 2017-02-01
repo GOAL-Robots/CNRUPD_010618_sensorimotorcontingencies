@@ -24,6 +24,7 @@ OPTIONS:
    -s --start       start i dex of simulation
    -d --template    template folder containing the exec environment
    -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
+   -b --dumped      start from a dumped file
    -p --params      set initial parameters interactivelly
    -h --help        show this help
 
@@ -35,11 +36,12 @@ TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
 ITER=0
 START=0
+DUMPED=false
 PARAMS=false
 LEARN=all
 
 # getopt
-GOTEMP="$(getopt -o "t:n:s:d:l:ph" -l "stime:,num:,start:,template:,learn:,params,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:s:d:l:bph" -l "stime:,num:,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -65,6 +67,9 @@ do
         -l | --learn) 
             LEARN="$2"
             shift 2;;
+        -b | --dumped) 
+            DUMPED=true
+            shift;;
         -p | --params) 
             PARAMS=true
             shift;;
@@ -100,7 +105,9 @@ run()
     local curr=$( echo $CURR| sed -e"s/\(.*\)/\L\1\E/")
     local sim_dir=${curr}_$NUM
 
-    if [ -d $sim_dir ] && [ ! -z "$(find $sim_dir| grep pdf)" ]; then
+    if [ -d $sim_dir ] && \
+        [ ! -z "$(find $sim_dir| grep pdf)" ] && \
+        [ $DUMPED == false ]; then
         echo "simulation already done" 
     else
 
@@ -118,7 +125,7 @@ run()
         perl -pi -e "s/^(\s*)# ([^#]+)( # $CURR)(\s*)\n$/\1\2\3\n/" src/model/Robot.py 
 
         local wdir=test
-        run/run_batch.sh -t $TIMESTEPS -w $wdir 
+        run/run_batch.sh -t $TIMESTEPS -w $wdir $([ $DUMPED == true] && "-s $wdir/dumped_robot" )
 
         echo plot
         R CMD BATCH plot.R  
