@@ -107,9 +107,9 @@ run()
         [ $DUMPED == false ]; then
         echo "simulation already completed" 
     else
-
+       
         cd ${CURR_DIR}
-        cp -r $TEMPLATE $sim_dir
+        [ $DUMPED == false ] && cp -r $TEMPLATE $sim_dir
         cd $sim_dir 
 
         perl -pi -e "s/^(\s*)([^#]+)( # MIXED)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
