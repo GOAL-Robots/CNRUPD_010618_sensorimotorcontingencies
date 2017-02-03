@@ -87,12 +87,9 @@ CMD="python $CURR_DIR/src/main.py"
 [ ! -e $WORK_DIR ] && mkdir $WORK_DIR
 rm -fr $WORK_DIR/*
 
-# clean storage dir
-[ ! -e store ] && mkdir store
-rm -fr store/*
-
 # run  n-th blocks
-for((n=0;n<$[N_BLOCKS];n++)); do
+for((n=0;n<$[N_BLOCKS];n++)); 
+do
     
     snum="$(printf "%06d" $n)"
 
@@ -120,7 +117,7 @@ for((n=0;n<$[N_BLOCKS];n++)); do
     # store block 
     for f in $WORK_DIR/*; 
     do
-        cp $f store/"$(basename $f)"-${snum}
+        cp $f store/"$(basename $f)-$(date +%Y%m%d%H%M%S)"
     done
 
 done

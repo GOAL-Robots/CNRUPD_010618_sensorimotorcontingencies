@@ -96,6 +96,7 @@ if [ $PARAMS == true ]; then
     cp -r $TEMPLATE $TMP_TEMPLATE
     TEMPLATE=$TMP_TEMPLATE
     vim $TEMPLATE/src/model/parameters.py
+    echo "done parameter setting"
 fi
 
 run()
@@ -108,7 +109,7 @@ run()
     if [ -d $sim_dir ] && \
         [ ! -z "$(find $sim_dir| grep pdf)" ] && \
         [ $DUMPED == false ]; then
-        echo "simulation already done" 
+        echo "simulation already completed" 
     else
 
         cd ${CURR_DIR}
@@ -125,13 +126,21 @@ run()
         perl -pi -e "s/^(\s*)# ([^#]+)( # $CURR)(\s*)\n$/\1\2\3\n/" src/model/Robot.py 
 
         local wdir=test
-        run/run_batch.sh -t $TIMESTEPS -w $wdir $([ $DUMPED == true] && "-s $wdir/dumped_robot" )
+        echo "starting the simulation..."
 
-        echo plot
+        run/run_batch.sh -t $TIMESTEPS -w $wdir $([ $DUMPED == true ] && echo -n "-s $wdir/dumped_robot" )
+        echo "simulation ended"    
+
+        echo "plotting ..."
         R CMD BATCH plot.R  
         if [ -f plot.pdf ]; then
-            mv plot.pdf ${wdir}/${curr}.pdf  
+            mv plot.pdf ${wdir}/${curr}.pdf
+            echo "plotting ended"  
+        else
+            echo "plotting failed"
+            [ -f plot.Rout ] && cat plot.Rout
         fi
+
         cd ${CURR_DIR}
     fi 
 }
