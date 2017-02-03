@@ -114,10 +114,11 @@ do
 
     fi
     
-    # store block 
+    # store block
+    tag=$(date +%Y%m%d%H%M%S) 
     for f in $WORK_DIR/*; 
     do
-        cp $f store/"$(basename $f)-$(date +%Y%m%d%H%M%S)"
+        cp $f store/"$(basename $f)-$tag"
     done
 
 done
