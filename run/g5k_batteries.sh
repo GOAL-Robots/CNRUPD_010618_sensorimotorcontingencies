@@ -21,7 +21,7 @@ This script runs batteries of robot simulations
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
    -n --num         number of simulations
-   -s --start       start i dex of simulation
+   -s --start       start index of simulation
    -d --template    template folder containing the exec environment
    -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
    -b --dumped      start from a dumped file
@@ -84,17 +84,13 @@ do
 done
 
 cd ${HOME}
-# mount working folder if we are within g5k network 
-if [ -z "$(mount | grep working)" ]; then 
-    [ -d working ] && [ -z "$(ls -A working/)" ] && \
-        sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 rennes:/home/fmannella/working ${HOME}/working
-fi
 
 # parameters
+TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
+cp -r $TEMPLATE $TMP_TEMPLATE
+TEMPLATE=$TMP_TEMPLATE
+MAIN_DIR=$(echo $TEMPLATE | sed -e"s/\/simulation//")
 if [ $PARAMS == true ]; then
-    TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
-    cp -r $TEMPLATE $TMP_TEMPLATE
-    TEMPLATE=$TMP_TEMPLATE
     vim $TEMPLATE/src/model/parameters.py
     echo "done parameter setting"
 fi
