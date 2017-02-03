@@ -170,7 +170,7 @@ class GoalMaker(object):
         # Derivatives
         for layer in xrange(self.TOT_INPUT_LAYERS):
             self.input_layers[layer] = \
-                raw_inputs[layer] - self.prev_raw_inputs[layer]
+                np.maximum(0,raw_inputs[layer] - self.prev_raw_inputs[layer])
 
         # PREPARE INPUTS
 
