@@ -124,7 +124,9 @@ run()
         local wdir=test
         echo "starting the simulation..."
 
-        ${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS -w $wdir $([ $DUMPED == true ] && echo -n "-s $wdir/dumped_robot" )
+        ${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS -w $wdir $([ $DUMPED == true ] && \
+            [ -f $wdir/dumped_robot ] && \
+            echo -n "-s $wdir/dumped_robot" )
         echo "simulation ended"    
 
         echo "plotting ..."
