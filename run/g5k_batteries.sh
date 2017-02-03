@@ -86,10 +86,10 @@ done
 cd ${HOME}
 
 # parameters
+MAIN_DIR=$(echo $TEMPLATE | sed -e"s/\/simulation//")
 TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
 cp -r $TEMPLATE $TMP_TEMPLATE
 TEMPLATE=$TMP_TEMPLATE
-MAIN_DIR=$(echo $TEMPLATE | sed -e"s/\/simulation//")
 if [ $PARAMS == true ]; then
     vim $TEMPLATE/src/model/parameters.py
     echo "done parameter setting"
