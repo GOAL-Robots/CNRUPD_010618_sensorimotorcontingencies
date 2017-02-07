@@ -20,6 +20,7 @@ This script runs batteries of robot simulations
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
+   -c --cum         cumulative simulations
    -n --num         number of simulations
    -s --start       start index of simulation
    -d --template    template folder containing the exec environment
@@ -39,9 +40,10 @@ START=0
 DUMPED=false
 PARAMS=false
 LEARN=all
+CUMULATIVE=false
 
 # getopt
-GOTEMP="$(getopt -o "t:n:s:d:l:bph" -l "stime:,num:,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:cn:s:d:l:bph" -l "stime:,cum,num:,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -55,6 +57,9 @@ do
         -t | --stime) 
             TIMESTEPS="$2"
             shift 2;;
+        -c | --cum) 
+            CUMULATIVE=true
+            shift;;
         -n | --num) 
             ITER="$2"
             shift 2;;
@@ -85,16 +90,22 @@ done
 
 cd ${HOME}
 
-# parameters
+# prepare working folder
 MAIN_DIR=$(echo $TEMPLATE | sed -e"s/\/simulation//")
 TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
 cp -r $TEMPLATE $TMP_TEMPLATE
+mkdir $TMP_TEMPLATE/store
+mkdir $TMP_TEMPLATE/test
 TEMPLATE=$TMP_TEMPLATE
+
+# prepare parameters
 if [ $PARAMS == true ]; then
     vim $TEMPLATE/src/model/parameters.py
     echo "done parameter setting"
 fi
 
+# :param $1 type of siimulation
+# :param $2 number oof simulation 
 run()
 {
     local CURR=$1
@@ -109,8 +120,12 @@ run()
     else
        
         cd ${CURR_DIR}
-        [ $DUMPED == false ] && cp -r $TEMPLATE $sim_dir
-        cd $sim_dir 
+        if [ $DUMPED == false ] || [ ! -d $sim_dir ]; then
+            cp -r $TEMPLATE $sim_dir
+        elif [ $DUMPED == true ] || [ -d $sim_dir ]; then 
+            cp (find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1) ${sim_dir}/test/dumped_robot 
+        fi
+        cd $sim_dir
 
         perl -pi -e "s/^(\s*)([^#]+)( # MIXED)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
         perl -pi -e "s/^(\s*)([^#]+)( # PRED)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
@@ -123,10 +138,17 @@ run()
 
         local wdir=test
         echo "starting the simulation..."
+        
+        CUM_OPT="$([ $CUMULATIVE == true ] && echo -n "-n $ITER" )"
+        DUMP_OPT=
+        if [ $DUMPED == true ]; then
+            if [ -e ${wdir}/dumped_robot ]; then
+                DUMP_OPT="-s ${wdir}/dumped_robot"
+            fi
+        fi 
+        ${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS  -w $wdir $CUM_OPT $DUMP_OPT
 
-        ${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS -w $wdir $([ $DUMPED == true ] && \
-            [ -f $wdir/dumped_robot ] && \
-            echo -n "-s $wdir/dumped_robot" )
+
         echo "simulation ended"    
 
         echo "plotting ..."
@@ -144,13 +166,24 @@ run()
 }
 
 echo start
-for n in $(seq $ITER); 
+
+if [ $CUMULATIVE == false ]; then
+    iterations=$ITER
+else
+    iterations=1
+fi
+
+for n in $(seq $iterations); 
 do
-    nn=$[n + $START]
+    nn=$[n + START - 1]
     num=$(printf "%06d" $nn)
     echo "iter: $nn"
     
     cd ${CURR_DIR}
+
+    cnum=$num
+    in=$nn
+
 
     [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n > log_mixed_$num 2>&1 &
     [ $LEARN == mixed-2  ] || [ $LEARN == all  ] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
@@ -160,5 +193,6 @@ do
     [ $LEARN == match-2  ] || [ $LEARN == all  ] &&  run MIXED-3 $n > log_mixed_3_$num 2>&1 &
     [ $LEARN == match-3  ] || [ $LEARN == all  ] &&  run MATCH-2 $n > log_match_2_$num 2>&1 &
     wait
+    sleep 1
 done 
 echo "all done"

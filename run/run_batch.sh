@@ -83,10 +83,6 @@ done
 # the execution command
 CMD="python $CURR_DIR/src/main.py"
 
-# clean working dir
-[ ! -e $WORK_DIR ] && mkdir $WORK_DIR
-rm -fr $WORK_DIR/*
-
 # run  n-th blocks
 for((n=0;n<$[N_BLOCKS];n++)); 
 do
