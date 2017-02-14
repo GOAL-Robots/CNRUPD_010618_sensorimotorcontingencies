@@ -20,10 +20,12 @@ This script runs batteries of robot simulations
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
+   -c --cum         cumulative simulations
    -n --num         number of simulations
-   -s --start       start i dex of simulation
+   -s --start       start index of simulation
    -d --template    template folder containing the exec environment
    -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
+   -b --dumped      start from a dumped file
    -p --params      set initial parameters interactivelly
    -h --help        show this help
 
@@ -35,11 +37,13 @@ TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
 ITER=0
 START=0
+DUMPED=false
 PARAMS=false
 LEARN=all
+CUMULATIVE=false
 
 # getopt
-GOTEMP="$(getopt -o "t:n:s:d:l:ph" -l "stime:,num:,start:,template:,learn:,params,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:cn:s:d:l:bph" -l "stime:,cum,num:,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -53,6 +57,9 @@ do
         -t | --stime) 
             TIMESTEPS="$2"
             shift 2;;
+        -c | --cum) 
+            CUMULATIVE=true
+            shift;;
         -n | --num) 
             ITER="$2"
             shift 2;;
@@ -65,6 +72,9 @@ do
         -l | --learn) 
             LEARN="$2"
             shift 2;;
+        -b | --dumped) 
+            DUMPED=true
+            shift;;
         -p | --params) 
             PARAMS=true
             shift;;
@@ -79,20 +89,23 @@ do
 done
 
 cd ${HOME}
-# mount working folder if we are within g5k network 
-if [ -z "$(mount | grep working)" ]; then 
-    [ -d working ] && [ -z "$(ls -A working/)" ] && \
-        sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 rennes:/home/fmannella/working ${HOME}/working
-fi
 
-# parameters
+# prepare working folder
+MAIN_DIR=$(echo $TEMPLATE | sed -e"s/\/simulation//")
+TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
+cp -r $TEMPLATE $TMP_TEMPLATE
+mkdir $TMP_TEMPLATE/store
+mkdir $TMP_TEMPLATE/test
+TEMPLATE=$TMP_TEMPLATE
+
+# prepare parameters
 if [ $PARAMS == true ]; then
-    TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
-    cp -r $TEMPLATE $TMP_TEMPLATE
-    TEMPLATE=$TMP_TEMPLATE
     vim $TEMPLATE/src/model/parameters.py
+    echo "done parameter setting"
 fi
 
+# :param $1 type of siimulation
+# :param $2 number oof simulation 
 run()
 {
     local CURR=$1
@@ -100,13 +113,19 @@ run()
     local curr=$( echo $CURR| sed -e"s/\(.*\)/\L\1\E/")
     local sim_dir=${curr}_$NUM
 
-    if [ -d $sim_dir ] && [ ! -z "$(find $sim_dir| grep pdf)" ]; then
-        echo "simulation already done" 
+    if [ -d $sim_dir ] && \
+        [ ! -z "$(find $sim_dir| grep pdf)" ] && \
+        [ $DUMPED == false ]; then
+        echo "simulation already completed" 
     else
-
+       
         cd ${CURR_DIR}
-        cp -r $TEMPLATE $sim_dir
-        cd $sim_dir 
+        if [ $DUMPED == false ] || [ ! -d $sim_dir ]; then
+            cp -r $TEMPLATE $sim_dir
+        elif [ $DUMPED == true ] || [ -d $sim_dir ]; then 
+            cp (find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1) ${sim_dir}/test/dumped_robot 
+        fi
+        cd $sim_dir
 
         perl -pi -e "s/^(\s*)([^#]+)( # MIXED)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
         perl -pi -e "s/^(\s*)([^#]+)( # PRED)(\s*)$/\1# \2\3\n/" src/model/Robot.py 
@@ -118,25 +137,53 @@ run()
         perl -pi -e "s/^(\s*)# ([^#]+)( # $CURR)(\s*)\n$/\1\2\3\n/" src/model/Robot.py 
 
         local wdir=test
-        run/run_batch.sh -t $TIMESTEPS -w $wdir 
+        echo "starting the simulation..."
+        
+        CUM_OPT="$([ $CUMULATIVE == true ] && echo -n "-n $ITER" )"
+        DUMP_OPT=
+        if [ $DUMPED == true ]; then
+            if [ -e ${wdir}/dumped_robot ]; then
+                DUMP_OPT="-s ${wdir}/dumped_robot"
+            fi
+        fi 
+        ${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS  -w $wdir $CUM_OPT $DUMP_OPT
 
-        echo plot
+
+        echo "simulation ended"    
+
+        echo "plotting ..."
         R CMD BATCH plot.R  
         if [ -f plot.pdf ]; then
-            mv plot.pdf ${wdir}/${curr}.pdf  
+            mv plot.pdf ${wdir}/${curr}.pdf
+            echo "plotting ended"  
+        else
+            echo "plotting failed"
+            [ -f plot.Rout ] && cat plot.Rout
         fi
+
         cd ${CURR_DIR}
     fi 
 }
 
 echo start
-for n in $(seq $ITER); 
+
+if [ $CUMULATIVE == false ]; then
+    iterations=$ITER
+else
+    iterations=1
+fi
+
+for n in $(seq $iterations); 
 do
-    nn=$[n + $START]
+    nn=$[n + START - 1]
     num=$(printf "%06d" $nn)
     echo "iter: $nn"
     
     cd ${CURR_DIR}
+
+    cnum=$num
+    in=$nn
+
 
     [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n > log_mixed_$num 2>&1 &
     [ $LEARN == mixed-2  ] || [ $LEARN == all  ] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
@@ -146,5 +193,6 @@ do
     [ $LEARN == match-2  ] || [ $LEARN == all  ] &&  run MIXED-3 $n > log_mixed_3_$num 2>&1 &
     [ $LEARN == match-3  ] || [ $LEARN == all  ] &&  run MATCH-2 $n > log_match_2_$num 2>&1 &
     wait
+    sleep 1
 done 
 echo "all done"
