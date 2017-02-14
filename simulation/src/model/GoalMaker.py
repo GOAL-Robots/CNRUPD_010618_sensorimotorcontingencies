@@ -258,8 +258,7 @@ class GoalMaker(object):
             som.learn(eta_scale=eta_scale)
         self.out_som.learn(eta_scale=eta_scale)
         self.goalrep_som.learn(eta_scale=eta_scale, pred=pred)
-
-
+        
 #----------------------------------------------------------------
 
 class GoalTesterSim(object):
