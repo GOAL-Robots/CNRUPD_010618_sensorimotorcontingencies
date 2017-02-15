@@ -94,7 +94,7 @@ do
         
         if [ ! -z $START ]; then  # THERE IS a previous dump from which to start 
 
-            cp $START $WORK_DIR 
+            cp $START $WORK_DIR/dumped_robot 
             $CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR
 
         else    # NO previous dumps from which to start
