@@ -51,6 +51,7 @@ means = means[,
 
 means$th = 1
 
+pdf("means.pdf")
 gp = ggplot(means, aes(x = TIMESTEPS, y = p_mean, group = LEARNING_TYPE))
 gp = gp + geom_ribbon(aes(ymin = p_min, ymax = p_max), colour = "#666666", fill = "#dddddd")
 gp = gp + geom_line(size = 1.5, colour = "#000000")
@@ -67,3 +68,4 @@ gp = gp + theme(
                 panel.grid.minor = element_blank()
                 )
 print(gp)
+dev.off()

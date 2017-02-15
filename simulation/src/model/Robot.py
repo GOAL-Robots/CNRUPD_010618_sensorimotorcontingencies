@@ -347,8 +347,8 @@ class Robot(object) :
 
             # Train goal maker
             self.gm.step( self.gm_input )
-            self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()), pred = (1.0 - self.gp.w) ) # MIXED
-            # self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred = (1.0 - self.gp.w) ) # MIXED-2
+            # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()), pred = (1.0 - self.gp.w) ) # MIXED
+            self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred = (1.0 - self.gp.w) ) # MIXED-2
             # self.gm.learn(eta_scale=(1 - self.gp.getCurrMatch()), pred = (1.0 - self.gs.match_mean) ) # MIXED-3
             # self.gm.learn(pred = (1.0 - self.gp.w) ) # PRED
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()) ) # MATCH

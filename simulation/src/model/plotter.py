@@ -5,6 +5,7 @@ import sys
 import copy 
 import numpy as np
 from model.Robot import Robot
+np.set_printoptions(suppress=True, precision=5, linewidth=9999999)
 
 #################################################################
 #################################################################
@@ -14,6 +15,15 @@ from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph.ptime import time
 pg.setConfigOptions(antialias=True)
+
+
+def hist_comp(x): 
+    h = np.histogram(x) 
+    freqs = h[0]
+    centr = np.linspace(h[1][0],h[1][-1], 
+            2*len(h[1])-1 )[1::2]
+    return np.vstack([freqs, centr]).T
+
 
 #################################################################
 #################################################################
@@ -280,7 +290,7 @@ class GoalAbstractionMaps(pg.GraphicsView):
         return (view, img)
 
     def timerEvent(self, event):
-                
+
         (i1, i2, i3, sm1, sm2, sm3, h1, 
             h2, o1, wsm1, wsm2, wsm3, wh1, 
             wh2, wo1, wgr1, gr1) = self.robot.get_sensory_arrays()
@@ -320,7 +330,6 @@ class GoalAbstractionMaps(pg.GraphicsView):
         
         if self.robot.gm.SINGLE_KOHONEN :
             wi3_gr =reshape_weights(wgr1)
-
         else:
             wsm1_gr = wgr1[:,(0*sm_l):(1*sm_l)]
             wsm2_gr = wgr1[:,(1*sm_l):(2*sm_l)]
@@ -346,11 +355,9 @@ class GoalAbstractionMaps(pg.GraphicsView):
         raw_gr1 = int(np.sqrt(len(gr1)))
         gr1 = gr1.reshape(raw_gr1,raw_gr1, order="F")
 
-
-
         if self.robot.gm.SINGLE_KOHONEN :
-            self.imgs[0].setImage( i3 , levels=(-1,1) )
-            self.imgs[1].setImage( wi3_gr , levels=(-1,1) )
+            self.imgs[0].setImage( i3 , levels=(0,10) )
+            self.imgs[1].setImage( wi3_gr , levels=(0,1) )
             self.imgs[2].setImage( gr1 , levels=(0,1) )
         else:
 

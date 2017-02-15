@@ -48,23 +48,30 @@ sensors = melt(sensors,
              variable.name="sensor", 
              value.name="amp" )
 
-means = sensors[,.(a_mean = mean(amp), 
+sensors_last = subset(sensors, TIMESTEPS > 195000)
+
+means = sensors_last[,.(a_mean = mean(amp), 
                          a_sd = sd(amp),  
                          a_err = sem(amp), 
                          a_min = min(amp),
-                         a_max = max(amp)), by=.(LEARNING_TYPE, sensor)]
+                         a_max = max(amp)), by=.(LEARNING_TYPE, INDEX, sensor)]
 
-gp = ggplot(means, aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
-gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
-gp = gp + geom_line(size = 1.5, colour = "#000000")
-gp = gp + theme_bw() 
-gp = gp + facet_grid(LEARNING_TYPE~.)
-gp = gp + theme( 
-                text=element_text(size=14, family="Verdana"), 
-                panel.border=element_blank(),
-                legend.title = element_blank(),
-                legend.background = element_blank(),
-                panel.grid.major = element_blank(),
-                panel.grid.minor = element_blank()
-                )
-print(gp)
+
+for(idx in unique(means$INDEX)) 
+{ 
+    dev.new()
+    gp = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
+    gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
+    gp = gp + geom_line(size = 1.5, colour = "#000000")
+    gp = gp + theme_bw() 
+    gp = gp + facet_grid(LEARNING_TYPE~.)
+    gp = gp + theme( 
+                    text=element_text(size=14, family="Verdana"), 
+                    panel.border=element_blank(),
+                    legend.title = element_blank(),
+                    legend.background = element_blank(),
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank()
+                    )
+    print(gp)
+}
