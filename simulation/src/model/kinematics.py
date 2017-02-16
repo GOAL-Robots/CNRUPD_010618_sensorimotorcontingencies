@@ -399,19 +399,19 @@ if __name__ == "__main__" :
     arm = Arm(
             number_of_joint = 6,    # 3 joints 
             origin = [0.0,0.0], # origin at (1.0 , 0.5)
-            segment_lengths = array([1,1,3,1,1,2])/2.,
+            segment_lengths = np.array([1,1,3,1,1,2])/2.,
             joint_lims = [ 
-                [0, pi],    # first joint limits                   
-                [0, pi],    # second joint limits             
-                [0, pi],     # third joint limits
-                [0, pi],     # third joint limits
-                [0, pi],     # third joint limits
-                [0, pi]     # third joint limits
+                [0, np.pi],    # first joint limits                   
+                [0, np.pi],    # second joint limits             
+                [0, np.pi],     # third joint limits
+                [0, np.pi],     # third joint limits
+                [0, np.pi],     # third joint limits
+                [0, np.pi]     # third joint limits
                 ],  
             mirror=True
             )
     
-    angle = zeros(6)  
+    angle = np.zeros(6)  
     pos,angle = arm.get_joint_positions(angle)
     poly = Polychain()
     poly.set_chain(pos)
@@ -427,8 +427,8 @@ if __name__ == "__main__" :
     yl = [-8,8]    #y-axis limits
     ax.plot(xl, [0,0], c = "black", linestyle = "--")    # plot x-axis
     ax.plot([0,0], yl, c = "black", linestyle = "--")    # plot y-axis     
-    external_point = scatter(*point, s= 30, c="r") # plot arm edges
-    dense_points = scatter(*zeros([2,25]), s= 20, c=[1,1,0]) # plot arm edges
+    external_point = plt.scatter(*point, s= 30, c="r") # plot arm edges
+    dense_points = plt.scatter(*np.zeros([2,25]), s= 20, c=[1,1,0]) # plot arm edges
     plt.xlim(xl)
     plt.ylim(yl) 
 
@@ -436,7 +436,7 @@ if __name__ == "__main__" :
     for t in range(200):
       
         # set a random gaussian increment for each joint
-        angle = ones(6)*(t*((2*pi)/400.0)) 
+        angle = np.ones(6)*(t*((2*np.pi)/400.0)) 
         angle[5] = 0 
         # calculate current position given the increment
         pos, angle = arm.get_joint_positions(angle)

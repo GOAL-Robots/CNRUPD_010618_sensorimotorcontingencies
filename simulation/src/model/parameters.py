@@ -7,6 +7,13 @@ controller_num_touch_sensors = 31
 controller_touch_sigma = 0.1
 controller_actuator_NUMBER_OF_JOINTS = 3
 
+pm_proprioceptive_retina_sigma = 0.1
+pm_touch_retina_sigma = 0.1
+pm_touch_retina_sigma_width_scale = 0.2
+pm_proprioceptive_retina_sigma_width_scale = 0.2
+pm_proprioceptive_angle_threshold = 1e-5
+pm_image_resolution = 12
+
 ka_num_joints = controller_actuator_NUMBER_OF_JOINTS 
 ka_left_origin = [-1.5, 0.0]
 ka_left_lims = [ 
@@ -25,7 +32,7 @@ ka_right_lims = [
 assert(len(ka_right_lims) == controller_actuator_NUMBER_OF_JOINTS )
  
 
-GOAL_NUMBER = 9
+GOAL_NUMBER = 25
 
 gs_dt = 0.001
 gs_tau = 0.04

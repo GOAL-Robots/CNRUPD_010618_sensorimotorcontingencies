@@ -366,7 +366,7 @@ class Robot(object) :
             self.match_value = match(
                     self.gm.goalrep_layer, 
                     self.gs.goal_win
-                    )
+                    )*0 #TODO !!!!!!!! this is only a debug --- 
             
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                

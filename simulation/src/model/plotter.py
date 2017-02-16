@@ -80,7 +80,6 @@ class Plotter(QtGui.QWidget):
     def __init__(self, app, amaps, smaps, kin, robot):
         
         super(Plotter, self).__init__()
-        
         self.amaps = amaps
         self.smaps = smaps
         self.kin = kin
@@ -441,12 +440,11 @@ class GoalSelectionMaps(pg.GraphicsView):
         view.addItem(self.plot6)
         view.setAspectLocked(lock=True, ratio=1)       
         
-        self.plot5view = layout.addViewBox(row=0,col=3, colspan=2)
+        self.plot5view = layout.addViewBox(row=0,col=3, colspan=2, rowspan=1)
         self.plot5 = pg.GraphItem()
         self.plot5view.addItem(self.plot5)
  
-        self.plot2 = layout.addPlot(row=2,col=0, rowspan=3, colspan=5) 
-        view = layout.addViewBox(row=4,col=2)   
+        self.plot2 = layout.addPlot(row=4,col=0, colspan=5) 
 
         self.robot = robot
        
@@ -620,8 +618,7 @@ class KinematicsView(QtGui.QWidget):
                 self.WINDOW_WIDTH, 
                 self.WINDOW_HEIGHT)  
 
-        (real_l_pos, real_r_pos, target_l_pos,
-                target_r_pos, theor_l_pos, 
+        ( real_l_pos, real_r_pos, target_l_pos, target_r_pos, theor_l_pos,
                 theor_r_pos, sensors ) = self.robot.get_arm_positions()
         
         touches = self.robot.controller.touches
@@ -669,15 +666,14 @@ class KinematicsView(QtGui.QWidget):
  
         curr_color = QtCore.Qt.black
         curr_width = 1
-
-        curr_pos = real_l_pos
-        paint_arm(curr_pos, curr_color, curr_width)
-           
-        curr_pos = real_r_pos
-        paint_arm(curr_pos, curr_color, curr_width)
-        
-        
+  
         if self.robot.gs.goal_selected :
+            curr_pos = real_l_pos
+            paint_arm(curr_pos, curr_color, curr_width)
+            
+            curr_pos = real_r_pos
+            paint_arm(curr_pos, curr_color, curr_width)
+            
             curr_pos = np.vstack([theor_l_pos[0], real_r_pos[0]])
             paint_arm(curr_pos, curr_color, curr_width)
                

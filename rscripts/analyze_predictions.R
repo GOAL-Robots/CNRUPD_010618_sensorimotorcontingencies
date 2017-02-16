@@ -69,3 +69,42 @@ gp = gp + theme(
                 )
 print(gp)
 dev.off()
+
+g_means = predictions[, 
+              .(p_mean = mean(prediction), 
+                p_sd = sd(prediction), 
+                p_err = sem(prediction),
+                p_min = min(prediction),
+                p_max = max(prediction) ), 
+              by = .(LEARNING_TYPE,GOAL, 
+                     TIMESTEPS, INDEX)]
+
+g_means$TIMESTEPS=floor(g_means$TIMESTEPS/1000)*1000
+g_means = g_means[, 
+              .(p_mean = mean(p_mean), 
+                p_sd = mean(p_sd), 
+                p_err = mean(p_err),
+                p_min = mean(p_min),
+                p_max = mean(p_max) ), 
+              by = .(LEARNING_TYPE,GOAL,
+                     TIMESTEPS )]
+
+g_means$th = 1
+
+pdf("g_means.pdf")
+gp = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
+gp = gp + geom_line(size = 1)
+gp = gp + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
+gp = gp + theme_bw() 
+gp = gp + facet_grid(LEARNING_TYPE~.)
+
+gp = gp + theme( 
+                text=element_text(size=14, family="Verdana"), 
+                panel.border=element_blank(),
+                legend.title = element_blank(),
+                legend.background = element_blank(),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank()
+                )
+print(gp)
+dev.off()

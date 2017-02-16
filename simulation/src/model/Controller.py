@@ -12,13 +12,6 @@ import kinematics as KM
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
-pm_proprioceptive_retina_sigma = 0.1
-pm_touch_retina_sigma = 0.1
-pm_touch_retina_sigma_width_scale = 0.2
-pm_proprioceptive_retina_sigma_width_scale = 0.2
-pm_proprioceptive_angle_threshold = 1e-5
-pm_image_resolution = 12
-
 class PerceptionManager(object) :
     '''
     Manages the computation of sensory inputs 
@@ -212,7 +205,7 @@ class PerceptionManager(object) :
         # init the vector of touch measures
         sensors_n = len(self.sensors)
         touches = np.zeros(sensors_n)
-        
+
         # read contact of the two edges (hands) with the rest of the points 
         for x,sensor  in zip( [0,sensors_n-1], [ self.sensors[0], self.sensors[-1] ] ):
 
@@ -224,15 +217,14 @@ class PerceptionManager(object) :
                     touches[y] += \
                     np.exp(-((np.linalg.norm(point - sensor))**2)/\
                             (2*self.touch_sigma**2)  )
-        
 
         #### write information into the touch retina
 
         # init retina
         image = np.zeros(self.pixels)
   
-        # add a column with the number of joints to the lims array (x-axis) -  needed for 
-        # telling the number of bins to linspace
+        # add a column with the number of joints to the lims array (x-axis) -  needed to 
+        # tell the number of bins to linspace
         lims = np.hstack([self.lims[0], sensors_n])
         
         # compute the center of joint gaussians within the retina
