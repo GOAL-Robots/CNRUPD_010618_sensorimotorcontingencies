@@ -29,6 +29,7 @@ class Robot(object) :
                 im_decay = gs_im_decay,
                 match_decay = gs_match_decay,
                 noise = gs_noise,
+                scale = gs_noise_scale,
                 sm_temp = gs_sm_temp,
                 g2e_spars = gs_g2e_spars,
                 echo_ampl = gs_echo_ampl,
@@ -336,12 +337,6 @@ class Robot(object) :
                 rarm_angles_target=rarm_angles_target,
                 active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
                 )
-        
-        self.collision = collision
-        if self.collision :
-            self.gs.out[:(self.gs.N_ROUT_UNITS/2)] = self.controller.larm_angles/np.pi
-            self.gs.out[(self.gs.N_ROUT_UNITS/2):] = self.controller.rarm_angles/np.pi
-   
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
@@ -362,11 +357,11 @@ class Robot(object) :
             self.gs.goal_window_counter += 1
             
             # End of trial
-            
+                  
             self.match_value = match(
                     self.gm.goalrep_layer, 
                     self.gs.goal_win
-                    )*0 #TODO !!!!!!!! this is only a debug --- 
+                    ) 
             
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                
@@ -377,7 +372,10 @@ class Robot(object) :
                 # learn
                 self.gp.learn(self.match_value) 
                 if self.match_value == 1:
-                    self.gs.update_target()
+                    self.gs.update_target( 
+                            np.hstack((
+                                self.controller.larm_angles[::-1],
+                                self.controller.rarm_angles))/np.pi )
               
                 # log weight metrics
                 self.save_weight_logs()

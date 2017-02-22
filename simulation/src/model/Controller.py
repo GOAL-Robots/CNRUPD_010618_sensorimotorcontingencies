@@ -214,12 +214,14 @@ class PerceptionManager(object) :
                 # do not count the edge with itself (it would be autotouch!!)
                 if x != y and abs(y-x)>self.num_touch_sensors/4:
                     # touch is measured as a radial basis of the distance from the sensor
-                    touches[y] += \
-                    np.exp(-((np.linalg.norm(point - sensor))**2)/\
+                    
+                    stouch = \
+                    np.exp(-((np.linalg.norm(point - sensor))**2)/ \
                             (2*self.touch_sigma**2)  )
 
-        #### write information into the touch retina
+                    touches[y] += stouch 
 
+        ### write information into the touch retina
         # init retina
         image = np.zeros(self.pixels)
   
@@ -322,16 +324,31 @@ class KinematicActuator(object) :
 
 
 class SensorimotorController(object) :
+    '''
+    Control sensory inputs and motor actuators
+    '''
 
     def __init__(self, pixels, lims, **kargs):
+        '''
+        :param  pixels                  width and length of the retina      
+        :param  lims                    x and y limits of the field of view 
+        :type   pixels                  list - [width, height]
+        :type   lims                    list of pairs   - [[xmin, xmax], [ymin, ymax]]
+        '''
 
         self.pixels = pixels 
         self.lims = lims
-
+        
+        # init actuators
         self.actuator = KinematicActuator()
         self.theoric_actuator = KinematicActuator()
         self.target_actuator = KinematicActuator()
 
+        self.actuator.reset()
+        self.theoric_actuator.reset()   
+        self.target_actuator.reset() 
+         
+        # init all data members
         n_joints = self.actuator.NUMBER_OF_JOINTS
         self.larm_angles = np.zeros(n_joints)
         self.rarm_angles = np.zeros(n_joints)
@@ -354,23 +371,68 @@ class SensorimotorController(object) :
         self.touch_delta = np.zeros(self.pixels)
         self.touch_old  = np.zeros(self.pixels)
 
-        self.actuator.reset()
-        self.theoric_actuator.reset()   
-        self.target_actuator.reset() 
-        
-        self.init_body_tokens = (self.actuator.position_l[::-1],        
-                                 self.actuator.position_r)
-        
-        self.perc = PerceptionManager(  
-                lims=lims, pixels=pixels, **kargs )
 
+        # initial body points
+        self.init_body_tokens = (
+                self.actuator.position_l[::-1],
+                self.actuator.position_r)
+        
+        # init the perception manager
+        self.perc = PerceptionManager( 
+                lims=lims,
+                pixels=pixels,
+                **kargs )
+
+        # 
         self.touches = np.zeros(len(self.perc.sensors))
         self.curr_body_tokens = self.init_body_tokens
 
-    def step_kinematic(self, larm_angles, rarm_angles, 
-            larm_angles_theoric, rarm_angles_theoric, 
-            larm_angles_target, rarm_angles_target, active=True ):
+    
+    def get_positions(self,
+        langles,       rangles, 
+        dlangles=None, drangles=None,
+        tlangles=None, trangles=None ):
 
+        self.actuator.set_angles(langles, rangles)
+        if dlangles is not None and  drangles is not None:
+            self.theoric_actuator.set_angles(dlangles, drangles)
+        if tlangles is not None and  trangles is not None:
+            self.target_actuator.set_angles(tlangles, trangles)                        
+
+    def get_collision(self) :
+              
+        self.larm_angles, self.rarm_angles = (self.actuator.angles_l, 
+                    self.actuator.angles_r)
+        
+        self.curr_body_tokens = (self.actuator.position_l[::-1], 
+            self.actuator.position_r) 
+            
+        ####################################################################################
+        # calculate collisions 
+    
+        autocollision = self.perc.calc_collision(
+                body_tokens=self.curr_body_tokens)
+
+        return autocollision
+
+
+    def step_kinematic(self, 
+            larm_angles, rarm_angles, 
+            larm_angles_theoric, rarm_angles_theoric, 
+            larm_angles_target, rarm_angles_target, 
+            active=True ):
+        '''
+        :param  larm_angles             actual angles of the joints of the left arm
+        :param  rarm_angles             actual angles of the joints of the right arm
+        :param  larm_angles_theoric     motor commands to the left arm
+        :param  rarm_angles_theoric     motor commands to the right arm
+        :param  larm_angles_target      desired angle end-point positions the left arm
+        :param  rarm_angles_target      desired angle end-point positions the right arm 
+        :param  active                  if the controller is currently activa
+
+        '''
+
+        # update previous data
         self.larm_delta_angles_prev  = self.larm_delta_angles 
         self.rarm_delta_angles_prev  = self.rarm_delta_angles 
         self.larm_angles_prev  = self.larm_angles 
@@ -383,8 +445,9 @@ class SensorimotorController(object) :
         self.prop_old = self.prop
         self.touch_old = self.touch 
 
-        self.larm_delta_angles = larm_angles - self.larm_angles
-        self.rarm_delta_angles = rarm_angles - self.rarm_angles
+        # update current data
+        self.larm_delta_angles =  larm_angles[::-1] - self.larm_angles
+        self.rarm_delta_angles =  rarm_angles - self.rarm_angles 
         self.larm_angles = larm_angles[::-1]
         self.rarm_angles = rarm_angles
         self.larm_angles_theoric = larm_angles_theoric[::-1]
@@ -392,48 +455,70 @@ class SensorimotorController(object) :
         self.larm_angles_target = larm_angles_target[::-1]
         self.rarm_angles_target = rarm_angles_target
 
+        # compute actual angles 
         self.actuator.set_angles(self.larm_angles, self.rarm_angles)
         self.theoric_actuator.set_angles(self.larm_angles_theoric, self.rarm_angles_theoric)
         self.target_actuator.set_angles(self.larm_angles_target, self.rarm_angles_target)
         
-        self.larm_angles, self.rarm_angles = (self.actuator.angles_l, 
-                self.actuator.angles_r)
 
-        self.curr_body_tokens = (self.actuator.position_l[::-1], 
-            self.actuator.position_r) 
-            
-        autocollision = self.perc.calc_collision(body_tokens=self.curr_body_tokens)
+        # compute actual positions given the current angles 
+        self.get_positions( self.larm_angles, self.rarm_angles,
+                self.larm_angles_theoric, self.rarm_angles_theoric,
+                self.larm_angles_target, self.rarm_angles_target )
+        
+        # compute collisions
+        autocollision = self.get_collision()
+        
+        # control collision resolution
+        count_collisions = 1
+        larm_angles = self.larm_angles 
+        rarm_angles = self.rarm_angles
+        c_scale = 2
+        while autocollision : 
+            if count_collisions <  c_scale : 
+                
+                # try angles that are a little bit moved back 
+                # from those producing collision
+                
+                # go back of a fraction of angle  
+                larm_angles = self.larm_angles - self.larm_delta_angles/float(c_scale-count_collisions)
+                rarm_angles = self.rarm_angles - self.rarm_delta_angles/float(c_scale-count_collisions)
 
-        if not autocollision :
+                # compute actual positions given the current angles 
+                self.get_positions( larm_angles, rarm_angles,
+                        self.larm_angles_theoric, self.rarm_angles_theoric,
+                        self.larm_angles_target, self.rarm_angles_target  )
+                
+                # compute collisions
+                autocollision = self.get_collision()
 
-            # VISUAL POSITION
-            self.pos = self.perc.get_image(body_tokens=self.curr_body_tokens)
+                count_collisions += 1
 
-            # PROPRIOCEPTION
-            angles_tokens = (self.larm_angles, self.rarm_angles)
-            self.prop = self.perc.get_proprioception(
-                    angles_tokens=angles_tokens)
-            #TOUCH
-            self.touch, self.touches = self.perc.get_touch(body_tokens=self.curr_body_tokens)
+            else:
 
-        else :
-            self.larm_delta_angles  = self.larm_delta_angles_prev
-            self.rarm_delta_angles  = self.rarm_delta_angles_prev
-            self.larm_angles  = self.larm_angles_prev
-            self.rarm_angles  = self.rarm_angles_prev
-            self.larm_angles_theoric  = self.larm_angles_theoric_prev
-            self.rarm_angles_theoric  = self.rarm_angles_theoric_prev
-            self.larm_angles_target  = self.larm_angles_target_prev
-            self.rarm_angles_target  = self.rarm_angles_target_prev
+                # if still colliding after 10 trials
+                # give up and reset to the angles before colliding
 
-            self.actuator.set_angles(self.larm_angles, self.rarm_angles)
-            self.theoric_actuator.set_angles(self.larm_angles_theoric, self.rarm_angles_theoric)
-            self.target_actuator.set_angles(self.larm_angles_target, self.rarm_angles_target)
+                larm_angles = self.larm_angles - self.larm_delta_angles 
+                rarm_angles = self.rarm_angles - self.rarm_delta_angles
+                autocollision = False
 
-            self.larm_angles, self.rarm_angles = (self.actuator.angles_l, 
-                    self.actuator.angles_r)
-
+        self.larm_angles = larm_angles 
+        self.rarm_angles = rarm_angles
+       
       
+        ####################################################################################
+
+        # VISUAL POSITION
+        self.pos = self.perc.get_image(body_tokens=self.curr_body_tokens)
+
+        # PROPRIOCEPTION
+        angles_tokens = (self.larm_angles, self.rarm_angles)
+        self.prop = self.perc.get_proprioception(
+                angles_tokens=angles_tokens)
+        #TOUCH
+        self.touch, self.touches = self.perc.get_touch(body_tokens=self.curr_body_tokens)
+   
         delta_angles_tokens = (self.larm_delta_angles,
             self.rarm_delta_angles) 
 

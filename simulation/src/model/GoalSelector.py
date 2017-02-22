@@ -17,22 +17,29 @@ def my_argwhere(x) :
 
     return res
 
-def oscillator(x, scale, p) :
+def oscillator(x, scale, params) :
+    '''
+    :param  x       list of timesteps
+    :param  scale   scaling factor for the frequency 
+    :param  params  list parameters' triples (amplitude, phase and frequency). 
+                    For each triple a trajectory is produced.
+    '''
     
-    x = np.array(x)
-    p = np.array(p)
-    pfreq = p[:(p.size/2)]
-    pph = p[(p.size/2):]
+    x = np.array(x) # timeseries
+    params= np.array(params)
+    pfreq = params[:int(params.size*(1/3.))]
+    pph = params[int(params.size*(2/3.)):]
+    pamp = params[int(params.size*(1/3.)):int(params.size*(2/3.))]
+
     x = np.outer(x, np.ones(pfreq.shape))
 
-    return 0.5*np.pi*np.cos(pfreq*np.pi*(x/scale-pph))
-
+    return np.pi*pamp*np.cos(np.pi*(pfreq*x/scale-10*pph))
 
 class GoalSelector(object) :
 
     def __init__(self, dt, tau, alpha, epsilon, eta, n_input,
             n_goal_units, n_echo_units, n_rout_units,
-            im_decay, match_decay, noise, sm_temp, g2e_spars,
+            im_decay, match_decay, noise, scale, sm_temp, g2e_spars,
             goal_window, goal_learn_start, reset_window, echo_ampl=1000,
             multiple_echo=True):
         '''
@@ -48,6 +55,7 @@ class GoalSelector(object) :
         :param im_decay: decay of the intrinsic trace
         :param match_decay: decay of the matching trace
         :param noise: standard deviation of white noise in the actuators
+        :param scale: scale of the noise oscillator periods
         :param sm_temp: temperature of the softmax
         :param g2e_spars: sparseness of weights form goals to esn
         :param goal_window: max duration of a goal selection
@@ -65,6 +73,7 @@ class GoalSelector(object) :
         self.IM_DECAY = im_decay
         self.MATCH_DECAY = match_decay
         self.NOISE = noise
+        self.scale = scale
         self.SM_TEMP = sm_temp
         self.GOAL_WINDOW = goal_window
         self.GOAL_LEARN_START = goal_learn_start
@@ -77,6 +86,7 @@ class GoalSelector(object) :
         self.GOAL2ECHO_SPARSENESS = g2e_spars
         self.ECHO_AMPL = echo_ampl
         self.MULTIPLE_ECHO = multiple_echo
+        
 
         self.goalvec = np.zeros(self.N_GOAL_UNITS)
         self.goal_win = np.zeros(self.N_GOAL_UNITS)
@@ -135,7 +145,7 @@ class GoalSelector(object) :
         self.curr_noise = 0.0
 
         self.goal_selected = False
-        self.random_oscil = np.random.rand(2*self.N_ROUT_UNITS)
+        self.random_oscil = np.random.rand(3*self.N_ROUT_UNITS)
         self.t = 0
 
 
@@ -198,7 +208,7 @@ class GoalSelector(object) :
             self.goal_win[goal_win_idx] = True 
 
             self.t = 0
-            self.random_oscil = np.random.rand(2*self.N_ROUT_UNITS)
+            self.random_oscil = np.random.rand(3*self.N_ROUT_UNITS)
 
             self.goal_selected = True
             
@@ -206,7 +216,7 @@ class GoalSelector(object) :
 
             MULTIPLE_ECHO = self.MULTIPLE_ECHO
             
-            if not MULTIPLE_ECHO and goalwin_idx is not None:
+            if MULTIPLE_ECHO and goalwin_idx is not None:
                 self.curr_echonet = self.echonet[goalwin_idx]
                 self.curr_echo2out_w = self.echo2out_w[goalwin_idx]
             else : 
@@ -222,7 +232,7 @@ class GoalSelector(object) :
                 self.gout = np.zeros(self.N_ROUT_UNITS) 
 
 
-    def update_target(self):
+    def update_target(self, curr_pos):
 
         goalwin_idx = self.goal_index()
 
@@ -230,7 +240,7 @@ class GoalSelector(object) :
 
             self.target_counter[goalwin_idx] = self.target_counter.setdefault(goalwin_idx,0) + 1
             self.target_counter[goalwin_idx] = 1
-            pos =  self.out
+            pos =  curr_pos
             self.target_position.setdefault(goalwin_idx,  pos)   
             pos_mean =  self.target_position[goalwin_idx]
             n =  self.target_counter[goalwin_idx] 
@@ -289,8 +299,9 @@ class GoalSelector(object) :
         if np.all(self.goal_win==0):
             curr_match = 0.0
 
-        added_signal = self.NOISE*oscillator(self.t, 10, self.random_oscil)[0]
+        added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]
         #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
+        
         self.out = self.read_out + (1.0 - curr_match)*added_signal
         self.tout = self.read_out 
 

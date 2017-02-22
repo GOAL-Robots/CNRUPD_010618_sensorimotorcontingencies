@@ -33,6 +33,7 @@ import numpy.random as rnd
 from scipy.ndimage import gaussian_filter1d
 import scipy.optimize  
 import time 
+np.set_printoptions(suppress=True, precision=5, linewidth=9999999)
 
 
 #----------------------------------------------------------------------
@@ -68,8 +69,8 @@ class Polychain(object) :
 
     def set_chain(self, chain) :
         '''
-         chain      (array):    each row is a point (x,y) 
-                                of the polygonal chain
+         :param chain   the polygonal chain
+         :type chain    a list of (x,y) points 
         '''
 
         # ensure it is a numpy array
@@ -95,54 +96,104 @@ class Polychain(object) :
             bc = self.chain[x] - self.chain[x-1]
             self.seg_angles.append(get_angle(ab, bc))
 
-    def autocollision(self, epsilon = 0.1, is_set_collinear=False):
+    def autocollision(self, epsilon = 0.3, is_set_collinear=False, debug=False):
+        '''
+        Detect if the chain is self-colliding    
+        by reading intersections between all the segments of the chain
+
+        from http://stackoverflow.com/a/565282/4209308
+        
+        q+s = sq   p+r = rp
+            \       /
+             \     /
+              \   /
+               \ /
+          p+t*r \ q+u*s  
+               / \
+              /   \
+             /     \
+            p       q
+
+        
+        :param  epsilon             a trheshold of sensitivity of 
+                                    each point of the chain (how much they 
+                                    must be close one another to "touch") 
+
+        :param  is_set_collinear    further test for collinearity (segments are 
+                                    parallel and non-intersecting)     
+        '''
+
         self.intersect = None
         (start, end) = self.chain[[1,-1]]
 
-        for x in xrange(1,len(self.chain) ) :
+        n = len(self.chain)
+        rng = np.hstack((range(1,n), range(n-2,0,-1) ))        
+        
+        # iterate over all combinations of pairs of segments
+        # of the polychain and for each pair compute intersection
+
+        for x in rng :
             
-            p = self.chain[x-1]
-            rp = self.chain[x]
-            r = rp - p
+            # points of the first segment
+            p = self.chain[x-1]    # start point
+            rp = self.chain[x]    # end point
+            r = rp - p    # end point relative to the start point
             
-            for y in xrange(1,len(self.chain) ) :
-                q = self.chain[y-1]
-                sq = self.chain[y] 
-                s = sq - q                 
+            for y in rng :
+
+                # points of the second segment
+                q = self.chain[y-1]    # start point
+                sq = self.chain[y]    # end point 
+                s = sq - q    # end point relative to the start point                 
                 
+                # test if start or end points overlap
                 not_junction = np.all(p != sq) and np.all(q != rp) 
 
+                # only compute collisions if end points are not junktions
                 if x!=y and not_junction :
 
+                    # cross product of the relative end points.
+                    # if rxs = 0 the two segments are parallels
                     rxs = np.linalg.norm(np.cross(r,s))
-                    qpxr = np.linalg.norm(np.cross(q-p, r))
-                    qpxs = np.linalg.norm(np.cross(q-p, s))
- 
                     rxs_zero = abs(rxs) < epsilon
 
-                    if is_set_collinear:
-                        test_collinear = ( rxs_zero and qpxr < epsilon )
-                        if test_collinear: 
-                            t0 = np.dot(q-p,r)/np.dot(r,r)
-                            t1 = t0 + np.dot(s,r)/np.dot(r,r)
-                            mint = min(t0, t1)
-                            maxt = max(t0, t1)
-                            if (mint > (0+epsilon) and mint < (1+epsilon)) \
-                                    or (maxt >  (0+epsilon) and maxt < (1-epsilon)) \
-                                    or (mint <= (0+epsilon) and maxt >= (1-epsilon)):
-                                return True
+                    
+                    qpxr = np.linalg.norm(np.cross(q-p, r))
+                    qpxs = np.linalg.norm(np.cross(q-p, s))
 
+                    # segments are parallel
+                    if rxs_zero :
+                         if is_set_collinear:
+                             # segments are collinear
+                             if qpxr < epsilon : 
+                                t0 = np.dot(q-p,r)/np.dot(r,r)
+                                t1 = t0 + np.dot(s,r)/np.dot(r,r)
+                                
+                                mint = min(t0, t1)
+                                maxt = max(t0, t1)
+                                # segments overlap
+                                if (mint > (0+epsilon) and mint < (1+epsilon)) \
+                                        or (maxt >  (0+epsilon) and maxt < (1-epsilon)) \
+                                        or (mint <= (0+epsilon) and maxt >= (1-epsilon)):
+                                    return (True,p,rp,r,q,sq,s) if debug else True
+
+
+                    # segments are not parallel
                     if not rxs_zero :
                         t = qpxs / rxs  
                         u = qpxr / rxs   
+                         
+                        # segments intersect 
+                        int1 = p+t*r
+                        int2 = q+u*s
 
-                        test_intersect = ((0)<t<(1)) and ((0)<u<(1)) 
-                        if test_intersect:
-                            self.intersect = p +t*r
-                            return True
+                        if np.linalg.norm(int1 - int2) < epsilon and \
+                                np.linalg.norm(t*r)<=np.linalg.norm(rp - p) and \
+                                np.linalg.norm(u*s)<=np.linalg.norm(sq - q):
+                            self.intersect = int1 
+                            return (True,p,rp,int1,q,sq,int2) if debug else True
 
-
-        return False
+        return (False,[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]) if debug else False
                 
     def isPointInChain(self, point, epsilon = 0.1 ) :
         '''
@@ -390,9 +441,249 @@ class Arm(object):
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
 
+def get_touch(body_tokens, chain, num_touch_sensors=30):
+    '''
+    Build the current touch retina.
+    All body joints are viewed as points in a 1-dimensional space.
+    At each joint position a 2D gaussian is computed with standard deviation
+    on the vertical axis defined by the amplitude of the 
+    joint angle times self.touch_retina_sigma[1] and 
+    standard deviation on the orizontal axis defined by the amplitude of 
+    self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)   
+    All gaussians are summed point-to-point to obtain a mixture.
+
+    :param  angle_tokens    list of lists of angles of all body parts' joints
+    :type   angle_token     listo f list of floats - [ [ja0, ..., jan], ... ]
     
-if __name__ == "__main__" :
+    :return a 2D array 
+    :rtype  np.array(self.size, dtype=float ) 
     
+    ''' 
+    
+    #### compute touches
+
+    # get the chain of the whole body (a single array of 2D points )
+    bts = np.vstack(body_tokens)
+    chain.set_chain( bts )
+
+    # update sensors
+    sensors = chain.get_dense_chain(num_touch_sensors)   
+
+    # init the vector of touch measures
+    sensors_n = len(sensors)
+    touches = np.zeros(sensors_n)
+    sensor_activations = [] 
+
+    # read contact of the two edges (hands) with the rest of the points 
+    for x,sensor  in zip( [0,sensors_n-1], [ sensors[0], sensors[-1] ] ):
+
+        # for heach edge iterate over the other points
+        for y,point in enumerate(sensors):        
+            # do not count the edge with itself (it would be autotouch!!)
+            if abs(y-x)>num_touch_sensors/4:
+                
+                # touch is measured as a radial basis of the distance from the sensor
+                stouch = \
+                        np.exp(-((np.linalg.norm(point - sensor))**2)/ \
+                        (2*0.1**2)  )
+                sensor_activations.append([x,y,stouch])
+
+                touches[y] += stouch  
+
+    sensor_activations = np.vstack(sensor_activations)
+
+    return touches, sensor_activations
+
+
+
+def oscillator(x, scale, params) :
+    '''
+    :param  x       list of timesteps
+    :param  scale   scaling factor for the frequency 
+    :param  params  list parameters' pairs (for each pair a trajectory is produced)
+    '''
+    
+    x = np.array(x) # timeseries
+    params= np.array(params)
+    pfreq = params[:int(params.size/2)]
+    pph = params[int(params.size/2):]
+    x = np.outer(x, np.ones(pfreq.shape))
+
+    return np.pi*np.cos(np.pi*(pfreq*x/scale-10*pph))
+
+def test_touch():
+
+    import matplotlib.pyplot as plt
+    plt.ion()
+    
+
+    polychain = Polychain()
+
+
+    larm = Arm(
+            number_of_joint = 3,    # 3 joints 
+            origin = [-1.5,0.0], # origin at (1.0 , 0.5)
+            segment_lengths = np.array([1,1,1]),
+            joint_lims = [ 
+                [0, np.pi*0.9],    # first joint limits                   
+                [0, np.pi*0.6],    # second joint limits             
+                [0, np.pi*0.6],     # third joint limits
+                ],  
+            mirror=True
+            )
+    
+    rarm = Arm(
+            number_of_joint = 3,    # 3 joints 
+            origin = [1.5,0.0], # origin at (1.0 , 0.5)
+            segment_lengths = np.array([1,1,1]),
+            joint_lims = [ 
+                [0, np.pi*0.9],    # first joint limits                   
+                [0, np.pi*0.6],    # second joint limits             
+                [0, np.pi*0.6],     # third joint limits
+                ] 
+            )
+
+    
+    stime = 200
+    xline = np.arange(stime)
+    trials = 400 
+    n_sensors = 30
+    data = np.zeros([stime*trials, 16])
+    data_sensors = np.zeros([stime*trials, n_sensors])
+    data_sensor_activations = [] 
+    langle =  np.vstack([ oscillator(xline,10,np.random.rand(6))*np.pi*1.5 for i in range(trials) ])
+    rangle =  np.vstack([ oscillator(xline,10,np.random.rand(6))*np.pi*1.5 for i in range(trials) ])
+
+    for x in range(stime*trials):
+        
+        lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
+        rpos,rangle[x,:] = rarm.get_joint_positions(rangle[x,:])
+        
+        sensor_act_idcs = range(x*n_sensors, (x+1)*n_sensors)
+        data_sensors[x,:], sensor_activations = \
+                get_touch( np.vstack((lpos[::-1], rpos)) , \
+                polychain, num_touch_sensors=n_sensors-2)
+        
+        sensor_activations = np.vstack([x*np.ones(len(sensor_activations)), \
+                sensor_activations.T]).T
+        data_sensor_activations.append(sensor_activations)
+        data[x,:] = np.hstack((lpos.ravel(), rpos.ravel()))
+        print x
+    
+    data_sensor_activations = np.vstack(data_sensor_activations)
+    
+    np.savetxt("/tmp/data_sensor_activations", data_sensor_activations)
+
+    plt.figure()
+     
+    plt.scatter(*data[:,6:8].T, s=6,lw = 0, color="blue", alpha=.1)
+    plt.scatter(*data[:,14:16].T, s=6,lw = 0, color="blue", alpha=.1)
+  
+    plt.scatter(*data[:,4:6].T, s=6,lw = 0, color="green", alpha=.1)
+    plt.scatter(*data[:,12:14].T, s=6,lw = 0, color="green", alpha=.1)
+     
+    plt.scatter(*data[:,2:4].T, s=6,lw = 0, color="red", alpha=.1)
+    plt.scatter(*data[:,10:12].T, s=6,lw = 0, color="red", alpha=.1)
+ 
+    plt.ylim([-7,7])
+    plt.xlim([-7,7])
+
+    plt.figure()
+    
+    plt.bar(np.arange(n_sensors)+0.9, data_sensors.std(0), color="red", width=0.1)
+    plt.bar(np.arange(n_sensors)+0.6, data_sensors.mean(0), color="blue", width=0.8)
+
+    plt.xlim([0,32])
+    
+    raw_input()
+   
+    return data_sensor_activations
+
+def test_collision():
+
+    import matplotlib.pyplot as plt
+    plt.ion()
+
+    polychain = Polychain()
+
+    larm = Arm(
+            number_of_joint = 3,    # 3 joints 
+            origin = [-1.5,0.0], # origin at (1.0 , 0.5)
+            segment_lengths = np.array([1,1,1]),
+            joint_lims = [ 
+                [0, np.pi*0.9],    # first joint limits                   
+                [0, np.pi*0.6],    # second joint limits             
+                [0, np.pi*0.6],     # third joint limits
+                ],  
+            mirror=True
+            )
+    
+    rarm = Arm(
+            number_of_joint = 3,    # 3 joints 
+            origin = [1.5,0.0], # origin at (1.0 , 0.5)
+            segment_lengths = np.array([1,1,1]),
+            joint_lims = [ 
+                [0, np.pi*0.9],    # first joint limits                   
+                [0, np.pi*0.6],    # second joint limits             
+                [0, np.pi*0.6],     # third joint limits
+                ] 
+            )
+
+    
+    stime = 200
+    xline = np.arange(stime)
+    trials = 400 
+    n_sensors = 30
+    langle =  np.vstack([ oscillator(xline,4,np.random.rand(6)) for i in range(trials) ])
+    rangle =  np.vstack([ oscillator(xline,4,np.random.rand(6)) for i in range(trials) ])
+    lpos,langle[0,:] = larm.get_joint_positions(langle[0,:])
+    rpos,rangle[0,:] = rarm.get_joint_positions(rangle[0,:])
+    rbt = np.vstack((lpos[::-1],rpos))
+    
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111,aspect="equal")
+    robot_img, = plt.plot(*rbt.T)
+    robot_jts = plt.scatter(*rbt.T)
+    prpl, = plt.plot(*(np.ones([2,2])*10000).T, lw=3, c="red")
+    prpp = plt.scatter(*(np.ones([2,2])*10000).T, s=60, c="red")
+    qsql, = plt.plot(*(np.ones([2,2])*10000).T, lw=3, c="green")
+    qsqp = plt.scatter(*(np.ones([2,2])*10000).T, s=60, c="green")
+    prtp = plt.scatter(*(np.ones([2,2])*10000).T, s=120, color="yellow")
+    plt.xlim([-4,4])
+    plt.ylim([-3,3])
+
+    for x in range(stime*trials):
+        lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
+        rpos,rangle[x,:] = rarm.get_joint_positions(rangle[x,:])
+        rbt = np.vstack((lpos[::-1],rpos))
+        polychain.set_chain(rbt)
+        
+        robot_img.set_data(rbt.T)
+        robot_jts.set_offsets(rbt)
+        fig.canvas.draw()    
+        
+        (if_coll,p,r,t,q,s,u) = polychain.autocollision(
+                epsilon = 0.1, is_set_collinear=True, debug=True)
+        if if_coll==True :
+            prpp.set_offsets( np.vstack([p,r]) )
+            qsqp.set_offsets( np.vstack([q,s]) )
+            prtp.set_offsets( np.vstack([t,u]) )
+            prpl.set_data( *np.vstack([p,r]).T )
+            qsql.set_data( *np.vstack([q,s]).T )
+        else :
+            prpp.set_offsets( np.vstack([p,r])*1e10 )
+            qsqp.set_offsets( np.vstack([q,s])*1e10 )
+            prtp.set_offsets( np.vstack([p,r])*1e10 )
+            prpl.set_data( *np.vstack([p,r]).T*1e10 )
+            qsql.set_data( *np.vstack([q,s]).T*1e10 )
+        
+        plt.pause(0.001)
+    raw_input()    
+
+
+def test_rots():
+
     import matplotlib.pyplot as plt
     plt.ion()
   
@@ -464,3 +755,6 @@ if __name__ == "__main__" :
     raw_input()
 
 
+if __name__ == "__main__" :
+    
+    test_collision()
