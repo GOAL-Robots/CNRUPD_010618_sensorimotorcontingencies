@@ -19,12 +19,12 @@ sem<-function(x) sd(x)/sqrt(length(x))
 ###############################################################################################################################
 
 
-predictions <- fread("all_predictions")
-N_GOALS = dim(predictions)[2] - 4 
-names(predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
+all_predictions <- fread("all_predictions")
+N_GOALS = dim(all_predictions)[2] - 4 
+names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
 
 
-predictions = melt(predictions, 
+predictions = melt(all_predictions, 
              id.vars = c("LEARNING_TYPE", "TIMESTEPS", "INDEX"), 
              measure.vars = paste("G", 1:N_GOALS, sep = ""), 
              variable.name="GOAL", 
@@ -93,6 +93,11 @@ g_means$th = 1
 
 pdf("g_means.pdf")
 gp = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
+gp = gp + geom_point(data=all_predictions, 
+                     aes(x = TIMESTEPS, y = 1 + 0.4*(CURR_GOAL)/25.0 ), 
+                     size=0.4,
+                     inherit.aes=FALSE)
+gp = gp + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1))
 gp = gp + geom_line(size = 1)
 gp = gp + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
 gp = gp + theme_bw() 

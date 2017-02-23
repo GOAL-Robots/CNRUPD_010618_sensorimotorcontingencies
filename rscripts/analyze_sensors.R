@@ -48,21 +48,24 @@ sensors = melt(sensors,
              variable.name="sensor", 
              value.name="amp" )
 
-sensors_last = subset(sensors, TIMESTEPS > 195000)
+sensors_last = subset(sensors, TIMESTEPS > max(TIMESTEPS)*(7/8))
 
 means = sensors_last[,.(a_mean = mean(amp), 
+                         a_count = sum(amp>0.2),  
                          a_sd = sd(amp),  
                          a_err = sem(amp), 
                          a_min = min(amp),
                          a_max = max(amp)), by=.(LEARNING_TYPE, INDEX, sensor)]
 
 
+
 for(idx in unique(means$INDEX)) 
 { 
-    dev.new()
+    pdf(paste("g_means",format(idx),".pdf",sep=""))
     gp = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
     gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
     gp = gp + geom_line(size = 1.5, colour = "#000000")
+    gp = gp + geom_bar(aes(y=a_count/5),stat="identity", alpha=.3)
     gp = gp + theme_bw() 
     gp = gp + facet_grid(LEARNING_TYPE~.)
     gp = gp + theme( 
@@ -74,4 +77,5 @@ for(idx in unique(means$INDEX))
                     panel.grid.minor = element_blank()
                     )
     print(gp)
+    dev.off()
 }
