@@ -32,7 +32,7 @@ ka_right_lims = [
 assert(len(ka_right_lims) == controller_actuator_NUMBER_OF_JOINTS )
  
 
-GOAL_NUMBER = 25
+GOAL_NUMBER = 25 
 
 gs_dt = 0.001
 gs_tau = 0.04
@@ -43,10 +43,10 @@ gs_n_input = controller_pixels[0]*controller_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 200
 gs_n_rout_units = controller_actuator_NUMBER_OF_JOINTS*2
-gs_im_decay = 0.98
-gs_match_decay = 0.4
+gs_im_decay = 0.2
+gs_match_decay = 0.1
 gs_noise = 0.5
-gs_noise_scale = 10.0
+gs_noise_scale = 30.0
 gs_sm_temp = 0.2
 gs_g2e_spars = 0.01
 gs_echo_ampl = 5.0
@@ -54,6 +54,7 @@ gs_goal_window = 100
 gs_goal_learn_start = 20
 gs_reset_window = 10
 gs_multiple_echo = True
+gs_im_amp = 1.0
 
 gp_eta = 0.2
         

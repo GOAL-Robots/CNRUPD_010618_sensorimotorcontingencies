@@ -44,6 +44,9 @@ np.set_printoptions(suppress=True, precision=5, linewidth=9999999)
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
 
+# cross product
+def cross(a, b): return a[0]*b[1] - a[1]*b[0]
+
 def get_angle(v1,v2) :
     """
     Calculate the angle between two vectors
@@ -154,12 +157,12 @@ class Polychain(object) :
 
                     # cross product of the relative end points.
                     # if rxs = 0 the two segments are parallels
-                    rxs = np.linalg.norm(np.cross(r,s))
+                    rxs = cross(r,s)
                     rxs_zero = abs(rxs) < epsilon
 
                     
-                    qpxr = np.linalg.norm(np.cross(q-p, r))
-                    qpxs = np.linalg.norm(np.cross(q-p, s))
+                    qpxr = np.linalg.norm(cross(q-p, r))
+                    qpxs = np.linalg.norm(cross(q-p, s))
 
                     # segments are parallel
                     if rxs_zero :

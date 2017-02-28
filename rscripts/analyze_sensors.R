@@ -17,6 +17,9 @@ library(extrafont)
 sem<-function(x) sd(x)/sqrt(length(x))
 
 ###############################################################################################################################
+
+LASTIMESTEPS = 50000
+
 predictions <- fread("all_predictions")
 N_GOALS = dim(predictions)[2] - 4 
 names(predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
@@ -48,7 +51,7 @@ sensors = melt(sensors,
              variable.name="sensor", 
              value.name="amp" )
 
-sensors_last = subset(sensors, TIMESTEPS > max(TIMESTEPS)*(7/8))
+sensors_last = subset(sensors, TIMESTEPS > (max(TIMESTEPS)-LASTIMESTEPS))
 
 means = sensors_last[,.(a_mean = mean(amp), 
                          a_count = sum(amp>0.2),  
@@ -58,6 +61,7 @@ means = sensors_last[,.(a_mean = mean(amp),
                          a_max = max(amp)), by=.(LEARNING_TYPE, INDEX, sensor)]
 
 
+count_tot = sum(means$a_count)
 
 for(idx in unique(means$INDEX)) 
 { 
@@ -65,7 +69,7 @@ for(idx in unique(means$INDEX))
     gp = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
     gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
     gp = gp + geom_line(size = 1.5, colour = "#000000")
-    gp = gp + geom_bar(aes(y=a_count/5),stat="identity", alpha=.3)
+    gp = gp + geom_bar(aes(y=a_count/count_tot),stat="identity", alpha=.3)
     gp = gp + theme_bw() 
     gp = gp + facet_grid(LEARNING_TYPE~.)
     gp = gp + theme( 

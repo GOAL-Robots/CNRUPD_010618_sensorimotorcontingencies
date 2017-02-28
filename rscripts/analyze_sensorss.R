@@ -1,4 +1,4 @@
-require(data.table)
+
 require(ggplot2)
 
 toInstall <- c("extrafont")

@@ -39,7 +39,7 @@ class GoalSelector(object) :
 
     def __init__(self, dt, tau, alpha, epsilon, eta, n_input,
             n_goal_units, n_echo_units, n_rout_units,
-            im_decay, match_decay, noise, scale, sm_temp, g2e_spars,
+            im_amp, im_decay, match_decay, noise, scale, sm_temp, g2e_spars,
             goal_window, goal_learn_start, reset_window, echo_ampl=1000,
             multiple_echo=True):
         '''
@@ -52,6 +52,7 @@ class GoalSelector(object) :
         :param n_goal_units: number of units in the goal layer
         :param n_echo_units: number of units in the ESN
         :param n_rout_units: number of actuators
+        :param im_amp: amplification of the intrinsic trace
         :param im_decay: decay of the intrinsic trace
         :param match_decay: decay of the matching trace
         :param noise: standard deviation of white noise in the actuators
@@ -70,6 +71,7 @@ class GoalSelector(object) :
         self.ALPHA = alpha
         self.EPSILON = epsilon
         self.ETA = eta
+        self.IM_AMP = im_amp
         self.IM_DECAY = im_decay
         self.MATCH_DECAY = match_decay
         self.NOISE = noise
@@ -171,7 +173,7 @@ class GoalSelector(object) :
 
         # update the movin' average for that goal
         self.goalvec[win_indx] += self.IM_DECAY*(
-                -self.goalvec[win_indx]  +100.0*im_value)
+                -self.goalvec[win_indx] +self.IM_AMP*im_value)
 
     def goal_selection(self, goal_mask = None, eye_pos=[-99,-99] ):
         '''

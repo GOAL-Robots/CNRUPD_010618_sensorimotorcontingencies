@@ -26,6 +26,7 @@ class Robot(object) :
                 n_goal_units = gs_n_goal_units,
                 n_echo_units = gs_n_echo_units,
                 n_rout_units = gs_n_rout_units,
+                im_amp = gs_im_amp,
                 im_decay = gs_im_decay,
                 match_decay = gs_match_decay,
                 noise = gs_noise,
