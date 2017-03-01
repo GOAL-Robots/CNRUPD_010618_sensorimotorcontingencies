@@ -637,8 +637,8 @@ def test_collision():
     xline = np.arange(stime)
     trials = 400 
     n_sensors = 30
-    langle =  np.vstack([ oscillator(xline,4,np.random.rand(6)) for i in range(trials) ])
-    rangle =  np.vstack([ oscillator(xline,4,np.random.rand(6)) for i in range(trials) ])
+    langle =  np.vstack([ oscillator(xline,15,np.random.rand(6)) for i in range(trials) ])
+    rangle =  np.vstack([ oscillator(xline,15,np.random.rand(6)) for i in range(trials) ])
     lpos,langle[0,:] = larm.get_joint_positions(langle[0,:])
     rpos,rangle[0,:] = rarm.get_joint_positions(rangle[0,:])
     rbt = np.vstack((lpos[::-1],rpos))
