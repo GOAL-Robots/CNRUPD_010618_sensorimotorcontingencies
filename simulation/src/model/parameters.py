@@ -32,7 +32,7 @@ ka_right_lims = [
 assert(len(ka_right_lims) == controller_actuator_NUMBER_OF_JOINTS )
  
 
-GOAL_NUMBER = 25 
+GOAL_NUMBER = 4 
 
 gs_dt = 0.001
 gs_tau = 0.04

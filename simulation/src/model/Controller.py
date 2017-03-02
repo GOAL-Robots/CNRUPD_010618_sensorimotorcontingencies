@@ -169,7 +169,7 @@ class PerceptionManager(object) :
         '''
         bts = np.vstack(body_tokens)
         self.chain.set_chain( bts ) 
-        colliding = self.chain.autocollision(is_set_collinear=True)
+        colliding = self.chain.autocollision(epsilon=0.01, is_set_collinear=True)
         
         return colliding
 
@@ -468,7 +468,7 @@ class SensorimotorController(object) :
         
         # compute collisions
         autocollision = self.get_collision()
-        
+        res_autocollision =  autocollision
         # control collision resolution
         count_collisions = 1
         larm_angles = self.larm_angles 
@@ -530,7 +530,7 @@ class SensorimotorController(object) :
                 angles_tokens=delta_angles_tokens)
         self.touch_delta = self.touch - self.touch_old
             
-        return  active and autocollision 
+        return  active and res_autocollision 
 
     def reset(self):
         self.pos_old *=0 
