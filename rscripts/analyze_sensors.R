@@ -18,7 +18,7 @@ sem<-function(x) sd(x)/sqrt(length(x))
 
 ###############################################################################################################################
 
-LASTIMESTEPS = 200000
+LASTIMESTEPS = 1500000
 AMP_TH = 0.1
 
 predictions <- fread("all_predictions")

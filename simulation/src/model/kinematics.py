@@ -602,7 +602,7 @@ def test_touch():
    
     return data_sensor_activations
 
-def test_collision():
+def test_collision(plot=True):
 
     import matplotlib.pyplot as plt
     plt.ion()
@@ -644,17 +644,18 @@ def test_collision():
     rbt = np.vstack((lpos[::-1],rpos))
     
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111,aspect="equal")
-    robot_img, = plt.plot(*rbt.T)
-    robot_jts = plt.scatter(*rbt.T)
-    prpl, = plt.plot(*(np.ones([2,2])*10000).T, lw=3, c="red")
-    prpp = plt.scatter(*(np.ones([2,2])*10000).T, s=60, c="red")
-    qsql, = plt.plot(*(np.ones([2,2])*10000).T, lw=3, c="green")
-    qsqp = plt.scatter(*(np.ones([2,2])*10000).T, s=60, c="green")
-    prtp = plt.scatter(*(np.ones([2,2])*10000).T, s=120, color="yellow")
-    plt.xlim([-4,4])
-    plt.ylim([-3,3])
+    if plot == True :
+        fig = plt.figure()
+        ax = fig.add_subplot(111,aspect="equal")
+        robot_img, = plt.plot(*rbt.T)
+        robot_jts = plt.scatter(*rbt.T)
+        prpl, = plt.plot(*(np.ones([2,2])*10000).T, lw=3, c="red")
+        prpp = plt.scatter(*(np.ones([2,2])*10000).T, s=60, c="red")
+        qsql, = plt.plot(*(np.ones([2,2])*10000).T, lw=3, c="green")
+        qsqp = plt.scatter(*(np.ones([2,2])*10000).T, s=60, c="green")
+        prtp = plt.scatter(*(np.ones([2,2])*10000).T, s=120, color="yellow")
+        plt.xlim([-4,4])
+        plt.ylim([-3,3])
 
     for x in range(stime*trials):
         lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
@@ -668,20 +669,27 @@ def test_collision():
         
         (if_coll,p,r,t,q,s,u) = polychain.autocollision(
                 epsilon = 0.1, is_set_collinear=True, debug=True)
-        if if_coll==True :
-            prpp.set_offsets( np.vstack([p,r]) )
-            qsqp.set_offsets( np.vstack([q,s]) )
-            prtp.set_offsets( np.vstack([t,u]) )
-            prpl.set_data( *np.vstack([p,r]).T )
-            qsql.set_data( *np.vstack([q,s]).T )
-        else :
-            prpp.set_offsets( np.vstack([p,r])*1e10 )
-            qsqp.set_offsets( np.vstack([q,s])*1e10 )
-            prtp.set_offsets( np.vstack([p,r])*1e10 )
-            prpl.set_data( *np.vstack([p,r]).T*1e10 )
-            qsql.set_data( *np.vstack([q,s]).T*1e10 )
         
-        plt.pause(0.001)
+
+        if plot == True:
+            if if_coll==True :
+                prpp.set_offsets( np.vstack([p,r]) )
+                qsqp.set_offsets( np.vstack([q,s]) )
+                prtp.set_offsets( np.vstack([t,u]) )
+                prpl.set_data( *np.vstack([p,r]).T )
+                qsql.set_data( *np.vstack([q,s]).T )
+                print t,u
+            else :
+                prpp.set_offsets( np.vstack([p,r])*1e10 )
+                qsqp.set_offsets( np.vstack([q,s])*1e10 )
+                prtp.set_offsets( np.vstack([p,r])*1e10 )
+                prpl.set_data( *np.vstack([p,r]).T*1e10 )
+                qsql.set_data( *np.vstack([q,s]).T*1e10 )
+        else:
+            print 
+        
+        # plt.pause(0.1)
+
     raw_input()    
 
 
