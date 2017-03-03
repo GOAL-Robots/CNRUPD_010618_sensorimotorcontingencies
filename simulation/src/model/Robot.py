@@ -85,6 +85,7 @@ class Robot(object) :
     def init_streams(self):
 
         self.log_sensors = None
+        self.log_cont_sensors = None
         self.log_position = None 
         self.log_predictions = None 
         self.log_targets = None 
@@ -191,6 +192,25 @@ class Robot(object) :
         
 
         return res  
+    
+    def save_cont_logs(self) :
+
+        if self.log_cont_sensors is not None :
+
+            # save sensor info on file 
+
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            # add touch info
+            for touch in  self.controller.touches :
+                log_string += "{:6.4f} ".format(touch)
+            # add goal index
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
+            # save to file
+            self.log_cont_sensors.write( log_string + "\n")
+            self.log_cont_sensors.flush()
 
     def save_match_logs(self) :
 
@@ -339,6 +359,9 @@ class Robot(object) :
                 active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
                 )
 
+        if collision == True:
+            self.save_cont_logs()
+
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
@@ -358,11 +381,18 @@ class Robot(object) :
             self.gs.goal_window_counter += 1
             
             # End of trial
-                  
-            self.match_value = match(
-                    self.gm.goalrep_layer, 
-                    self.gs.goal_win
-                    ) 
+            
+            #--------------------------------------------------------- 
+            #--------------------------------------------------------- 
+            # NO LEARNING
+            self.match_value = 0
+            #--------------------------------------------------------- 
+            #--------------------------------------------------------- 
+
+            # self.match_value = match(
+            #         self.gm.goalrep_layer, 
+            #         self.gs.goal_win
+            #         ) 
             
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                

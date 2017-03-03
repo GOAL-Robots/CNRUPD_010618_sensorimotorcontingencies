@@ -99,7 +99,7 @@ class Polychain(object) :
             bc = self.chain[x] - self.chain[x-1]
             self.seg_angles.append(get_angle(ab, bc))
 
-    def autocollision(self, epsilon = 0.3, is_set_collinear=False, debug=False):
+    def autocollision(self, epsilon = 0.1, is_set_collinear=False, debug=False):
         '''
         Detect if the chain is self-colliding    
         by reading intersections between all the segments of the chain
@@ -131,6 +131,7 @@ class Polychain(object) :
 
         n = len(self.chain)
         rng = np.hstack((range(1,n), range(n-2,0,-1) ))        
+        rng = range(1,n)        
         
         # iterate over all combinations of pairs of segments
         # of the polychain and for each pair compute intersection
@@ -190,7 +191,7 @@ class Polychain(object) :
                         int1 = p+t*r
                         int2 = q+u*s
 
-                        if np.linalg.norm(int1 - int2) < epsilon and \
+                        if np.linalg.norm(int1 - int2) < epsilon  and \
                                 np.linalg.norm(t*r)<=np.linalg.norm(rp - p) and \
                                 np.linalg.norm(u*s)<=np.linalg.norm(sq - q):
                             self.intersect = int1 
@@ -668,6 +669,7 @@ def test_collision(plot=True):
         fig.canvas.draw()    
         
         (if_coll,p,r,t,q,s,u) = polychain.autocollision(
+<<<<<<< HEAD
                 epsilon = 0.1, is_set_collinear=True, debug=True)
         
 
@@ -688,6 +690,28 @@ def test_collision(plot=True):
         else:
             print 
         
+=======
+                epsilon = 0.01, is_set_collinear=True, debug=True)
+        
+
+        if plot == True:
+            if if_coll==True :
+                prpp.set_offsets( np.vstack([p,r]) )
+                qsqp.set_offsets( np.vstack([q,s]) )
+                prtp.set_offsets( np.vstack([t,u]) )
+                prpl.set_data( *np.vstack([p,r]).T )
+                qsql.set_data( *np.vstack([q,s]).T )
+                print t,u
+            else :
+                prpp.set_offsets( np.vstack([p,r])*1e10 )
+                qsqp.set_offsets( np.vstack([q,s])*1e10 )
+                prtp.set_offsets( np.vstack([p,r])*1e10 )
+                prpl.set_data( *np.vstack([p,r]).T*1e10 )
+                qsql.set_data( *np.vstack([q,s]).T*1e10 )
+        else:
+            print 
+        
+>>>>>>> mke_no_learning
         # plt.pause(0.1)
 
     raw_input()    
