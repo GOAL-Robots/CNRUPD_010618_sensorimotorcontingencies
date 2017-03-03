@@ -130,7 +130,6 @@ class Polychain(object) :
         (start, end) = self.chain[[1,-1]]
 
         n = len(self.chain)
-        rng = np.hstack((range(1,n), range(n-2,0,-1) ))        
         rng = range(1,n)        
         
         # iterate over all combinations of pairs of segments
