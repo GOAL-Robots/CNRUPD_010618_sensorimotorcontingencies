@@ -209,12 +209,12 @@ class PerceptionManager(object) :
         # read contact of the two edges (hands) with the rest of the points 
         for x,sensor  in zip( [0,sensors_n-1], [ self.sensors[0], self.sensors[-1] ] ):
 
-            # for heach edge iterate over the other points
+            # for each edge iterate over the other points
             for y,point in enumerate(self.sensors):        
                 # do not count the edge with itself (it would be autotouch!!)
                 if x != y and abs(y-x)>self.num_touch_sensors/4:
-                    # touch is measured as a radial basis of the distance from the sensor
                     
+                    # touch is measured as a radial basis of the distance from the sensor
                     stouch = \
                     np.exp(-((np.linalg.norm(point - sensor))**2)/ \
                             (2*self.touch_sigma**2)  )

@@ -668,28 +668,6 @@ def test_collision(plot=True):
         fig.canvas.draw()    
         
         (if_coll,p,r,t,q,s,u) = polychain.autocollision(
-<<<<<<< HEAD
-                epsilon = 0.1, is_set_collinear=True, debug=True)
-        
-
-        if plot == True:
-            if if_coll==True :
-                prpp.set_offsets( np.vstack([p,r]) )
-                qsqp.set_offsets( np.vstack([q,s]) )
-                prtp.set_offsets( np.vstack([t,u]) )
-                prpl.set_data( *np.vstack([p,r]).T )
-                qsql.set_data( *np.vstack([q,s]).T )
-                print t,u
-            else :
-                prpp.set_offsets( np.vstack([p,r])*1e10 )
-                qsqp.set_offsets( np.vstack([q,s])*1e10 )
-                prtp.set_offsets( np.vstack([p,r])*1e10 )
-                prpl.set_data( *np.vstack([p,r]).T*1e10 )
-                qsql.set_data( *np.vstack([q,s]).T*1e10 )
-        else:
-            print 
-        
-=======
                 epsilon = 0.01, is_set_collinear=True, debug=True)
         
 
@@ -710,7 +688,6 @@ def test_collision(plot=True):
         else:
             print 
         
->>>>>>> mke_no_learning
         # plt.pause(0.1)
 
     raw_input()    
