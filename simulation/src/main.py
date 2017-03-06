@@ -41,7 +41,7 @@ def main(args):
     LOAD = int(args.load) 
    
     log_sensors = open(SDIR+"log_sensors", "w")
-    # log_cont_sensors = open(SDIR+"log_cont_sensors", "w")
+    log_cont_sensors = open(SDIR+"log_cont_sensors", "w")
     log_position = open(SDIR+"log_position", "w")
     log_predictions = open(SDIR+"log_predictions", "w")
     log_targets = open(SDIR+"log_targets", "w")
@@ -58,7 +58,7 @@ def main(args):
         robot = model.Robot()
 
     robot.log_sensors = log_sensors
-    # robot.log_cont_sensors = log_cont_sensors
+    robot.log_cont_sensors = log_cont_sensors
     robot.log_position = log_position
     robot.log_predictions = log_predictions
     robot.log_targets = log_targets

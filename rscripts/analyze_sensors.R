@@ -57,9 +57,8 @@ sensors_last = sensors #subset(sensors, TIMESTEPS > (max(TIMESTEPS)-LASTIMESTEPS
 means = sensors_last[,.(a_mean = mean(amp), 
                          a_count = sum(amp>AMP_TH),  
                          a_sd = sd(amp),  
-                         a_err = sem(amp), 
-                         a_min = min(amp),
-                         a_max = max(amp)), by=.(LEARNING_TYPE, INDEX, sensor)]
+                         a_err = sem(amp)), 
+by=.(LEARNING_TYPE, INDEX, sensor)]
 
 
 count_tot = sum(means$a_count)
