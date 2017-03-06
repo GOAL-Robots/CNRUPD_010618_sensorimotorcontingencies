@@ -3,7 +3,7 @@ import numpy as np
 controller_pixels = [20, 20]
 controller_lims = [[-5, 5], [-2, 4.]]
 controller_touch_th = 0.1
-controller_num_touch_sensors = 31
+controller_num_touch_sensors = 30
 controller_touch_sigma = 0.1
 controller_actuator_NUMBER_OF_JOINTS = 3
 

@@ -22,6 +22,7 @@ OPTIONS:
    -t --stime       number of timesteps of a single simulation block
    -c --cum         cumulative simulations
    -n --num         number of simulations
+   -g --graph       graphics on
    -s --start       start index of simulation
    -d --template    template folder containing the exec environment
    -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
@@ -35,15 +36,16 @@ EOF
 CURR_DIR=$(pwd)
 TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=200000
-ITER=0
+ITER=1
 START=0
 DUMPED=false
 PARAMS=false
 LEARN=all
 CUMULATIVE=false
+GRAPH=false
 
 # getopt
-GOTEMP="$(getopt -o "t:cn:s:d:l:bph" -l "stime:,cum,num:,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:cn:gs:d:l:bph" -l "stime:,cum,num:,graph,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -63,6 +65,9 @@ do
         -n | --num) 
             ITER="$2"
             shift 2;;
+        -g | --graph) 
+            GRAPH=true
+            shift;;
         -s | --start) 
             START="$2"
             shift 2;;
@@ -148,9 +153,11 @@ run()
     local wdir=test
     echo "starting the simulation..."
 
-    CUM_OPT="$([ $CUMULATIVE == true ] && echo -n "-n $ITER" )"
-    ${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS  -w $wdir $CUM_OPT $DUMP_OPT
-
+    CUM_OPT=; [ $CUMULATIVE == true ] &&  CUM_OPT="-n $ITER"   
+    GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
+    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
+    
+    eval "$MAIN_CMD"
 
     echo "simulation ended"    
 
@@ -186,13 +193,13 @@ do
     cnum=$num
     in=$nn
     
-    [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n > log_mixed_$num 2>&1 &
-    [ $LEARN == mixed-2  ] || [ $LEARN == all  ] &&  run MIXED-2 $n > log_mixed_2_$num 2>&1 &
-    [ $LEARN == pred     ] || [ $LEARN == all  ] &&  run PRED $n > log_pred_$num 2>&1 &
+    [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n &> log_mixed_$num &
+    [ $LEARN == mixed-2  ] || [ $LEARN == all  ] &&  run MIXED-2 $n &> log_mixed_2_$num &
+    [ $LEARN == pred     ] || [ $LEARN == all  ] &&  run PRED $n &> log_pred_$num &
     wait
-    [ $LEARN == match    ] || [ $LEARN == all  ] &&  run MATCH $n > log_match_$num 2>&1 &
-    [ $LEARN == match-2  ] || [ $LEARN == all  ] &&  run MIXED-3 $n > log_mixed_3_$num 2>&1 &
-    [ $LEARN == match-3  ] || [ $LEARN == all  ] &&  run MATCH-2 $n > log_match_2_$num 2>&1 &
+    [ $LEARN == match    ] || [ $LEARN == all  ] &&  run MATCH $n &> log_match_$num &
+    [ $LEARN == match-2  ] || [ $LEARN == all  ] &&  run MIXED-3 $n &> log_mixed_3_$num &
+    [ $LEARN == match-3  ] || [ $LEARN == all  ] &&  run MATCH-2 $n &> log_match_2_$num &
     wait
     sleep 1
 done 

@@ -18,7 +18,7 @@ sem<-function(x) sd(x)/sqrt(length(x))
 
 ###############################################################################################################################
 
-LASTIMESTEPS = 1500000
+LASTIMESTEPS = 100000
 AMP_TH = 0.1
 
 predictions <- fread("all_predictions")
@@ -52,7 +52,7 @@ sensors = melt(sensors,
              variable.name="sensor", 
              value.name="amp" )
 
-sensors_last = subset(sensors, TIMESTEPS > (max(TIMESTEPS)-LASTIMESTEPS))
+sensors_last = sensors #subset(sensors, TIMESTEPS > (max(TIMESTEPS)-LASTIMESTEPS))
 
 means = sensors_last[,.(a_mean = mean(amp), 
                          a_count = sum(amp>AMP_TH),  

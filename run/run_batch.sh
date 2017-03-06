@@ -24,6 +24,7 @@ This script runs the robot simulation in batch mode and collects data
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
+   -g --graph       graphics on
    -w --wdir        working directory
    -s --start       dumped_robot to start from
    -n --n_blocks    number of simulation blocks
@@ -38,9 +39,11 @@ WORK_DIR=
 START=
 STIME=100000
 N_BLOCKS=1
+GRAPH=false
 
 # getopt
-GOTEMP="$(getopt -o "t:w:n:s:h" -l "stime:,wdir:,n_blocks:,start:,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:w:n:s:gh" -l "stime:,wdir:,n_blocks:,start:,graph,help"  -n '' -- "$@")"
+
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -63,6 +66,9 @@ do
         -s | --start) 
             START="$2"
             shift 2;;
+        -g | --graph) 
+            GRAPH=true
+            shift;;
         -h | --help)
             echo "on help"
             usage; exit;
@@ -84,31 +90,35 @@ done
 CMD="python $CURR_DIR/src/main.py"
 
 # run  n-th blocks
-for((n=0;n<$[N_BLOCKS];n++)); 
+for((n=0;n<N_BLOCKS;n++)); 
 do
     
     snum="$(printf "%06d" $n)"
 
+    GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
+    CMD="$CMD $GR_OPT"
     # run first block
     if [ $n -eq 0 ]; then
         
-        if [ ! -z $START ]; then  # THERE IS a previous dump from which to start 
-
+        if [ -f "$START" ]; then  # THERE IS a previous dump from which to start 
+            
             cp $START $WORK_DIR/dumped_robot 
-            $CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR
+            CMD="$CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR"
 
         else    # NO previous dumps from which to start
             
-            $CMD -t $STIME -d -s $(pwd)/$WORK_DIR
+            CMD="$CMD -t $STIME -d -s $(pwd)/$WORK_DIR"
 
         fi
 
     else
 
         # run the following n-th block
-        $CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR
+        CMD="$CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR"
 
     fi
+    echo "$CMD"
+    eval "$CMD"
     
     # store block
     tag=$(date +%Y%m%d%H%M%S) 
