@@ -381,18 +381,11 @@ class Robot(object) :
             self.gs.goal_window_counter += 1
             
             # End of trial
-            
-            #--------------------------------------------------------- 
-            #--------------------------------------------------------- 
-            # NO LEARNING
-            self.match_value = 0
-            #--------------------------------------------------------- 
-            #--------------------------------------------------------- 
 
-            # self.match_value = match(
-            #         self.gm.goalrep_layer, 
-            #         self.gs.goal_win
-            #         ) 
+            self.match_value = match(
+                    self.gm.goalrep_layer, 
+                    self.gs.goal_win
+                    ) 
             
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                

@@ -35,7 +35,7 @@ class PerceptionManager(object) :
         self.pixels = np.array(pixels)
         self.lims = np.vstack(lims) 
         self.touch_th = touch_th
-        self.num_touch_sensors = num_touch_sensors 
+        self.num_touch_sensors = num_touch_sensors - 2 
         self.touch_sigma =  touch_sigma 
 
         # get the width and height of the visual field
