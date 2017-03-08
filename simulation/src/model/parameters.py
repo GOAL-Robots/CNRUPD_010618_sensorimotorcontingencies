@@ -17,7 +17,7 @@ pm_image_resolution = 12
 ka_num_joints = controller_actuator_NUMBER_OF_JOINTS 
 ka_left_origin = [-1.5, 0.0]
 ka_left_lims = [ 
-        [0, np.pi*0.9],    # first joint limits
+        [0, np.pi],    # first joint limits
         [0, np.pi*0.6],    # second joint limits
         [0, np.pi*0.6]     # third joint limits
         ] 
@@ -25,7 +25,7 @@ assert(len(ka_left_lims) == controller_actuator_NUMBER_OF_JOINTS )
 
 ka_right_origin = [1.5, 0.0]
 ka_right_lims = [ 
-        [0, np.pi*0.9],    # first joint limits
+        [0, np.pi],    # first joint limits
         [0, np.pi*0.6],    # second joint limits
         [0, np.pi*0.6]     # third joint limits
         ] 
@@ -45,7 +45,7 @@ gs_n_echo_units = 200
 gs_n_rout_units = controller_actuator_NUMBER_OF_JOINTS*2
 gs_im_decay = 0.2
 gs_match_decay = 0.1
-gs_noise = 0.5
+gs_noise = 1.0
 gs_noise_scale = 30.0
 gs_sm_temp = 0.2
 gs_g2e_spars = 0.01

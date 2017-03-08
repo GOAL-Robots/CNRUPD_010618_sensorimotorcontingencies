@@ -254,19 +254,16 @@ class Polychain(object) :
                 ( rel_ln*np.cos( sum(self.seg_angles[:(l+1)]) ), \
                     rel_ln*np.sin( sum(self.seg_angles[:(l+1)]) ) )
 
-        return -1
-
     def get_dense_chain(self, density) :
 
         tot_len = self.get_length()
         curr_len = 0
         dense_chain = []
-        points = density
+        seg_num = density - 1 
         dense_chain.append(self.get_point( 0 ))
-        for x in xrange( density ) :
-            dense_chain.append(self.get_point( (1+x)/float(density+1) ))
-
-        dense_chain.append(self.get_point( 1 ))
+        
+        for x in xrange( seg_num ) :
+            dense_chain.append(self.get_point( (1+x)/float(seg_num) ))
 
         return np.vstack(dense_chain)
 
@@ -367,7 +364,7 @@ class Arm(object):
         # initialize limits   
         if joint_lims is None:
             joint_lims = vstack([-np.ones(number_of_joint)*
-                pi,ones(number_of_joint)*pi]).T
+                np.pi,ones(number_of_joint)*np.pi]).T
         self.joint_lims = np.array(joint_lims)
        
         # set origin coords   

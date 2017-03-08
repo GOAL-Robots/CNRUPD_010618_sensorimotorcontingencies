@@ -342,26 +342,28 @@ class Robot(object) :
         # Movement
         self.gs.step( self.static_inp )
 
-        larm_angles=np.pi*self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles=np.pi*self.gs.out[(self.gs.N_ROUT_UNITS/2):]
-        larm_angles_theoric=np.pi*self.gs.tout[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles_theoric=np.pi*self.gs.tout[(self.gs.N_ROUT_UNITS/2):]
-        larm_angles_target=np.pi*self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles_target=np.pi*self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
+        larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
+        rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS/2):]
+        larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS/2)]
+        rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS/2):]
+        larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
+        rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
 
         collision = self.controller.step_kinematic(
-                larm_angles=larm_angles,
-                rarm_angles=rarm_angles,
-                larm_angles_theoric=larm_angles_theoric,
-                rarm_angles_theoric=rarm_angles_theoric,
-                larm_angles_target=larm_angles_target,
-                rarm_angles_target=rarm_angles_target,
-                active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
+                larm_angles_unscaled = larm_angles,
+                rarm_angles_unscaled = rarm_angles,
+                larm_angles_theoric_unscaled = larm_angles_theoric,
+                rarm_angles_theoric_unscaled = rarm_angles_theoric,
+                larm_angles_target_unscaled = larm_angles_target,
+                rarm_angles_target_unscaled = rarm_angles_target,
+                active = (self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
                 )
-
+        
         if collision == True:
             self.save_cont_logs()
-
+        
+        self.save_cont_logs() # Debug
+         
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
@@ -381,11 +383,15 @@ class Robot(object) :
             self.gs.goal_window_counter += 1
             
             # End of trial
+ 
+            self.match_value = 0 # TODO Debug
 
-            self.match_value = match(
-                    self.gm.goalrep_layer, 
-                    self.gs.goal_win
-                    ) 
+            # TODO Debug 
+            # self.match_value = match(
+            #         self.gm.goalrep_layer, 
+            #         self.gs.goal_win
+            #         ) 
+            # TODO Debug 
             
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                

@@ -33,7 +33,9 @@ def oscillator(x, scale, params) :
 
     x = np.outer(x, np.ones(pfreq.shape))
 
-    return np.pi*pamp*np.cos(np.pi*(pfreq*x/scale-10*pph))
+    x0 = (scale/pfreq)*(10*pph+1)
+
+    return (np.cos(np.pi*(pfreq*(x+x0)/scale-10*pph)) + 1.0)*0.5
 
 class GoalSelector(object) :
 
@@ -262,7 +264,10 @@ class GoalSelector(object) :
             self.goal_window_counter = 0
             self.reset_window_counter = 0
             self.pid.reset()
-   
+
+            self.out *= 0 
+
+
     def getCurrMatch(self) :
         res = self.match_mean[self.goal_win>0]
         if len(res) == 1:
@@ -300,11 +305,20 @@ class GoalSelector(object) :
         
         if np.all(self.goal_win==0):
             curr_match = 0.0
-
-        added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]
-        #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
         
-        self.out = self.read_out + (1.0 - curr_match)*added_signal
+        # TODO Debug
+
+        # OSCILLATOR NOISE
+        added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
+        self.out = curr_match*self.read_out + (1.0 - curr_match)*added_signal
+
+        # RANDOM WALK NOISE
+        # added_signal = 0.3*( 2.0*np.random.rand(self.N_ROUT_UNITS)-1.0 )
+        # self.out += added_signal
+        # self.out = np.maximum(np.minimum(self.out,-1),1.0 )
+        
+        # TODO Debug
+
         self.tout = self.read_out 
 
         self.t += 1
@@ -324,4 +338,5 @@ class GoalSelector(object) :
                 w += eta*np.outer(target-y,x)
         #------------------------------------------------
         
+
 
