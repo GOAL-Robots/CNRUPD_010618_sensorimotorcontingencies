@@ -108,7 +108,7 @@ class Robot(object) :
             for target in np.arange(self.gs.N_GOAL_UNITS) ])
         targets = self.gp.w
         esn_data = self.gs.curr_echonet.data[self.gs.curr_echonet.out_lab]
- 
+        
         return gmask, gv, gw, gr,matched_targets, targets, self.gs.target_position, \
                 esn_data 
         
@@ -341,13 +341,16 @@ class Robot(object) :
         
         # Movement
         self.gs.step( self.static_inp )
-
+        
+        # convert the vector of readout units from the selector into two
+        # vectors (left arm , right arm)
         larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
         rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS/2):]
         larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS/2)]
         rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS/2):]
         larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
         rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
+        
 
         collision = self.controller.step_kinematic(
                 larm_angles_unscaled = larm_angles,
@@ -361,9 +364,8 @@ class Robot(object) :
         
         if collision == True:
             self.save_cont_logs()
-        
-        self.save_cont_logs() # Debug
-         
+
+
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
@@ -384,15 +386,13 @@ class Robot(object) :
             
             # End of trial
  
-            self.match_value = 0 # TODO Debug
+            #self.match_value = 0 # TODO Debug
 
-            # TODO Debug 
-            # self.match_value = match(
-            #         self.gm.goalrep_layer, 
-            #         self.gs.goal_win
-            #         ) 
-            # TODO Debug 
-            
+            self.match_value = match(
+                    self.gm.goalrep_layer, 
+                    self.gs.goal_win
+                    ) 
+
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                
                 # log matches
@@ -402,10 +402,17 @@ class Robot(object) :
                 # learn
                 self.gp.learn(self.match_value) 
                 if self.match_value == 1:
+                    
+                    unscaled_larm_angles, unscaled_rarm_angles = \
+                            self.controller.unscale_angles(
+                                    self.controller.actuator,
+                                    self.controller.larm_angles,
+                                    self.controller.rarm_angles )
+                    
                     self.gs.update_target( 
                             np.hstack((
-                                self.controller.larm_angles[::-1],
-                                self.controller.rarm_angles))/np.pi )
+                                unscaled_larm_angles,
+                                unscaled_rarm_angles)) )
               
                 # log weight metrics
                 self.save_weight_logs()

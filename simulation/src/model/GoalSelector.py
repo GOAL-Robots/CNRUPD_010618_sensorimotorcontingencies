@@ -17,25 +17,21 @@ def my_argwhere(x) :
 
     return res
 
-def oscillator(x, scale, params) :
+def oscillator(x, scale, freqs) :
     '''
     :param  x       list of timesteps
     :param  scale   scaling factor for the frequency 
-    :param  params  list parameters' triples (amplitude, phase and frequency). 
-                    For each triple a trajectory is produced.
+    :param  freqs   list of frequencies 
     '''
     
     x = np.array(x) # timeseries
-    params= np.array(params)
-    pfreq = params[:int(params.size*(1/3.))]
-    pph = params[int(params.size*(2/3.)):]
-    pamp = params[int(params.size*(1/3.)):int(params.size*(2/3.))]
+    trajectories_num = freqs.size
+    freqs = np.array(freqs)
+    x = np.outer(x, np.ones(trajectories_num))
 
-    x = np.outer(x, np.ones(pfreq.shape))
+    return (np.cos(2.0*np.pi*freqs*x/scale + np.pi) + 1.0)*0.5
 
-    x0 = (scale/pfreq)*(10*pph+1)
 
-    return (np.cos(np.pi*(pfreq*(x+x0)/scale-10*pph)) + 1.0)*0.5
 
 class GoalSelector(object) :
 
@@ -149,7 +145,7 @@ class GoalSelector(object) :
         self.curr_noise = 0.0
 
         self.goal_selected = False
-        self.random_oscil = np.random.rand(3*self.N_ROUT_UNITS)
+        self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
         self.t = 0
 
 
@@ -212,7 +208,7 @@ class GoalSelector(object) :
             self.goal_win[goal_win_idx] = True 
 
             self.t = 0
-            self.random_oscil = np.random.rand(3*self.N_ROUT_UNITS)
+            self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
 
             self.goal_selected = True
             
@@ -310,7 +306,7 @@ class GoalSelector(object) :
 
         # OSCILLATOR NOISE
         added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
-        self.out = curr_match*self.read_out + (1.0 - curr_match)*added_signal
+        self.out = self.read_out + (1.0 - curr_match)*added_signal
 
         # RANDOM WALK NOISE
         # added_signal = 0.3*( 2.0*np.random.rand(self.N_ROUT_UNITS)-1.0 )
@@ -338,5 +334,7 @@ class GoalSelector(object) :
                 w += eta*np.outer(target-y,x)
         #------------------------------------------------
         
+
+
 
 

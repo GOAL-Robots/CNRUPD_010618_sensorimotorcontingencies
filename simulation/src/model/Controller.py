@@ -430,6 +430,20 @@ class SensorimotorController(object) :
 
         return l_angles, r_angles
 
+    def unscale_angles(self, actuator, l_angles, r_angles):
+
+        l_mins = actuator.arm_l.joint_lims[:,0]
+        l_maxs = actuator.arm_l.joint_lims[:,1]
+        l_ranges = l_maxs - l_mins
+        l_angles = (l_angles - l_mins)/l_ranges 
+
+        r_mins = actuator.arm_r.joint_lims[:,0]
+        r_maxs = actuator.arm_r.joint_lims[:,1]
+        r_ranges = r_maxs - r_mins
+        r_angles = (r_angles - r_mins)/r_ranges 
+
+        return l_angles, r_angles
+
 
     def step_kinematic(self, 
             larm_angles_unscaled, rarm_angles_unscaled, 
@@ -505,7 +519,8 @@ class SensorimotorController(object) :
         rarm_angles = self.rarm_angles
         
         count_collisions = 1
-        c_scale = 30
+        c_scale = 3
+        post_th = 3
 
         while autocollision : 
             if count_collisions <  c_scale : 
@@ -514,8 +529,8 @@ class SensorimotorController(object) :
                 # from those producing collision
                 
                 # go back of a fraction of angle  
-                larm_angles = self.larm_angles - self.larm_delta_angles/float(c_scale-count_collisions)
-                rarm_angles = self.rarm_angles - self.rarm_delta_angles/float(c_scale-count_collisions)
+                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale)
+                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale)
 
                 # compute actual positions given the current angles 
                 self.get_positions( larm_angles, rarm_angles,
@@ -526,6 +541,7 @@ class SensorimotorController(object) :
                 autocollision = self.get_collision()
 
                 count_collisions += 1
+                
 
             else:
 
@@ -534,7 +550,14 @@ class SensorimotorController(object) :
 
                 larm_angles = self.larm_angles - self.larm_delta_angles 
                 rarm_angles = self.rarm_angles - self.rarm_delta_angles
+
+                # compute actual positions given the current angles 
+                self.get_positions( larm_angles, rarm_angles,
+                        self.larm_angles_theoric, self.rarm_angles_theoric,
+                        self.larm_angles_target, self.rarm_angles_target  )
+                
                 autocollision = False
+
 
         self.larm_angles = larm_angles 
         self.rarm_angles = rarm_angles

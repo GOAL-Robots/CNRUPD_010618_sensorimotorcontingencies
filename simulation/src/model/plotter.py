@@ -502,15 +502,19 @@ class GoalSelectionMaps(pg.GraphicsView):
         for goal in target_position.keys() :
              row, col = np.squeeze(np.nonzero(goal_idcs==goal))
              trj_angles = target_position[goal]
-             larm_angles = np.pi*trj_angles[:(self.robot.gs.N_ROUT_UNITS/2)]
-             larm_angles = larm_angles[::-1]
-             rarm_angles = np.pi*trj_angles[(self.robot.gs.N_ROUT_UNITS/2):]
+            
+             larm_angles = trj_angles[:(self.robot.gs.N_ROUT_UNITS/2)]
+             rarm_angles = trj_angles[(self.robot.gs.N_ROUT_UNITS/2):]
+             larm_angles, rarm_angles = self.robot.controller.unscale_angles(
+                     act, larm_angles, rarm_angles)
   
              act.set_angles(larm_angles, rarm_angles)
+
              lp = (act.position_l-mins)/rngs + [row, col] 
              rp = (act.position_r-mins)/rngs + [row, col] 
              ps.append(lp)
              ps.append(rp)
+
        
         pos=None
         adj=None

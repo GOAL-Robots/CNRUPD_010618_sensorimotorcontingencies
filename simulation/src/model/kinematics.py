@@ -199,7 +199,6 @@ class Polychain(object) :
                         # segments intersect  
                         if 0 <= t <= 1 and 0 <= u <= 1: 
                             self.intersect = int1
-                            print p,rp,q,sq,int1,int2,"intersect"
                             return (True,p,rp,int1,q,sq,int2) if debug else True
 
         return (False,[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]) if debug else False
