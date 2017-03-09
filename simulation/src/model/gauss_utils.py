@@ -172,7 +172,7 @@ class MultidimensionalGaussianMaker(object) :
         idcs = grid(lims[:,2])
         
         self.X = scaled_grid(idcs, lims[:,:2])
-        self.ln = self.X.shape[0]
+        self.vertices_number = self.X.shape[0]
         self.nDim = self.X.shape[1] 
 
     def __call__(self, mu, sigma) :

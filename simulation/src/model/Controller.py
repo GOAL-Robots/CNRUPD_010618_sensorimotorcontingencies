@@ -205,7 +205,7 @@ class PerceptionManager(object) :
         # init the vector of touch measures
         sensors_n = len(self.sensors)
         touches = np.zeros(sensors_n)
-
+            
         # read contact of the two edges (hands) with the rest of the points 
         for x,sensor  in zip( [0, sensors_n-1], [ self.sensors[0], self.sensors[-1] ] ):
 
@@ -408,7 +408,7 @@ class SensorimotorController(object) :
         self.curr_body_tokens = (self.actuator.position_l[::-1], 
             self.actuator.position_r) 
             
-        ####################################################################################
+        ###############################################################
         # calculate collisions 
     
         autocollision = self.perc.calc_collision(
@@ -498,14 +498,15 @@ class SensorimotorController(object) :
         
         # compute collisions
         autocollision = self.get_collision()
-        autocollision = False # Debug
-
-        res_autocollision =  autocollision
+        res_autocollision = autocollision
+        
         # control collision resolution
-        count_collisions = 1
         larm_angles = self.larm_angles 
         rarm_angles = self.rarm_angles
-        c_scale = 10
+        
+        count_collisions = 1
+        c_scale = 30
+
         while autocollision : 
             if count_collisions <  c_scale : 
                 
@@ -550,7 +551,7 @@ class SensorimotorController(object) :
                 angles_tokens=angles_tokens)
         #TOUCH
         self.touch, self.touches = self.perc.get_touch(body_tokens=self.curr_body_tokens)
-   
+        
         delta_angles_tokens = (self.larm_delta_angles,
             self.rarm_delta_angles) 
 
@@ -561,7 +562,7 @@ class SensorimotorController(object) :
         self.prop_delta = self.perc.get_proprioception(
                 angles_tokens=delta_angles_tokens)
         self.touch_delta = self.touch - self.touch_old
-            
+
         return  active and res_autocollision 
 
     def reset(self):
