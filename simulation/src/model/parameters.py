@@ -1,11 +1,11 @@
 import numpy as np
 
-controller_pixels = [20, 20]
-controller_lims = [[-5, 5], [-2, 4.]]
-controller_touch_th = 0.1
-controller_num_touch_sensors = 30
-controller_touch_sigma = 0.1
-controller_actuator_NUMBER_OF_JOINTS = 3
+body_simulator_pixels = [20, 20]
+body_simulator_lims = [[-5, 5], [-2, 4.]]
+body_simulator_touch_th = 0.1
+body_simulator_num_touch_sensors = 30
+body_simulator_touch_sigma = 0.1
+body_simulator_actuator_NUMBER_OF_JOINTS = 3
 
 pm_proprioceptive_retina_sigma = 0.1
 pm_touch_retina_sigma = 0.1
@@ -14,22 +14,22 @@ pm_proprioceptive_retina_sigma_width_scale = 0.2
 pm_proprioceptive_angle_threshold = 1e-5
 pm_image_resolution = 12
 
-ka_num_joints = controller_actuator_NUMBER_OF_JOINTS 
+ka_num_joints = body_simulator_actuator_NUMBER_OF_JOINTS 
 ka_left_origin = [-1.5, 0.0]
 ka_left_lims = [ 
-        [0, np.pi*0.9],    # first joint limits
+        [0, np.pi],    # first joint limits
         [0, np.pi*0.6],    # second joint limits
         [0, np.pi*0.6]     # third joint limits
         ] 
-assert(len(ka_left_lims) == controller_actuator_NUMBER_OF_JOINTS )
+assert(len(ka_left_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
 ka_right_origin = [1.5, 0.0]
 ka_right_lims = [ 
-        [0, np.pi*0.9],    # first joint limits
+        [0, np.pi],    # first joint limits
         [0, np.pi*0.6],    # second joint limits
         [0, np.pi*0.6]     # third joint limits
         ] 
-assert(len(ka_right_lims) == controller_actuator_NUMBER_OF_JOINTS )
+assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
  
 
 GOAL_NUMBER = 4 
@@ -39,13 +39,13 @@ gs_tau = 0.04
 gs_alpha = 0.04
 gs_epsilon = 1.0e-10
 gs_eta = 0.06
-gs_n_input = controller_pixels[0]*controller_pixels[1]
+gs_n_input = body_simulator_pixels[0]*body_simulator_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 200
-gs_n_rout_units = controller_actuator_NUMBER_OF_JOINTS*2
-gs_im_decay = 0.2
+gs_n_rout_units = body_simulator_actuator_NUMBER_OF_JOINTS*2
+gs_im_decay = 0.1
 gs_match_decay = 0.1
-gs_noise = 0.5
+gs_noise = 1.0
 gs_noise_scale = 30.0
 gs_sm_temp = 0.2
 gs_g2e_spars = 0.01

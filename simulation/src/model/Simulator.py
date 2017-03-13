@@ -35,7 +35,7 @@ class PerceptionManager(object) :
         self.pixels = np.array(pixels)
         self.lims = np.vstack(lims) 
         self.touch_th = touch_th
-        self.num_touch_sensors = num_touch_sensors - 2 
+        self.num_touch_sensors = num_touch_sensors 
         self.touch_sigma =  touch_sigma 
 
         # get the width and height of the visual field
@@ -205,19 +205,19 @@ class PerceptionManager(object) :
         # init the vector of touch measures
         sensors_n = len(self.sensors)
         touches = np.zeros(sensors_n)
-
+            
         # read contact of the two edges (hands) with the rest of the points 
-        for x,sensor  in zip( [0,sensors_n-1], [ self.sensors[0], self.sensors[-1] ] ):
+        for x,sensor  in zip( [0, sensors_n-1], [ self.sensors[0], self.sensors[-1] ] ):
 
             # for each edge iterate over the other points
             for y,point in enumerate(self.sensors):        
+
                 # do not count the edge with itself (it would be autotouch!!)
-                if x != y and abs(y-x)>self.num_touch_sensors/4:
-                    
+                if x != y and abs(y-x)>(self.num_touch_sensors/4.0):
+
                     # touch is measured as a radial basis of the distance from the sensor
-                    stouch = \
-                    np.exp(-((np.linalg.norm(point - sensor))**2)/ \
-                            (2*self.touch_sigma**2)  )
+                    stouch = np.exp(-((np.linalg.norm(point - sensor))**2)/ \
+                            (2*self.touch_sigma**2)  ) 
 
                     touches[y] += stouch 
 
@@ -232,11 +232,11 @@ class PerceptionManager(object) :
         # compute the center of joint gaussians within the retina
         abs_body_tokens = np.vstack([ 
             np.linspace(*lims), # x-positions are uniformly distributed within the retinal x-limits
-            self.ycenter*np.ones(sensors_n) # y-positions are all alligned at the middel of the retinal y-limits 
+            self.ycenter*np.ones(sensors_n) # y-positions are all alligned at the middle of the retinal y-limits 
             ]).T
 
         # for each joint compute the gaussian 
-        for touch,point in  zip(touches, abs_body_tokens[1:-1]) :
+        for touch,point in  zip(touches, abs_body_tokens) :
             # the standard deviation on the x and y axis depends on the touch
             sigma = 1e-5+touch*self.touch_retina_sigma
             # build the 2d_gaussian on the retina-grid
@@ -280,6 +280,7 @@ class KinematicActuator(object) :
             origin = self.R_ORIGIN, # origin at (1.0 , 0.5)
             joint_lims = ka_right_lims
             )
+
         # init angles
         self.angles_l = np.zeros(self.NUMBER_OF_JOINTS)
         self.angles_r = np.zeros(self.NUMBER_OF_JOINTS)
@@ -288,7 +289,7 @@ class KinematicActuator(object) :
         self.position_l, _ = self.arm_l.get_joint_positions(self.angles_l)
         self.position_r, _ = self.arm_r.get_joint_positions(self.angles_r)
 
-
+    
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
@@ -323,7 +324,7 @@ class KinematicActuator(object) :
 #-----------------------------------------------------------------------------
 
 
-class SensorimotorController(object) :
+class BodySimulator(object) :
     '''
     Control sensory inputs and motor actuators
     '''
@@ -407,7 +408,7 @@ class SensorimotorController(object) :
         self.curr_body_tokens = (self.actuator.position_l[::-1], 
             self.actuator.position_r) 
             
-        ####################################################################################
+        ###############################################################
         # calculate collisions 
     
         autocollision = self.perc.calc_collision(
@@ -415,22 +416,65 @@ class SensorimotorController(object) :
 
         return autocollision
 
+    def rescale_angles(self, actuator, l_angles, r_angles):
+
+        l_mins = actuator.arm_l.joint_lims[:,0]
+        l_maxs = actuator.arm_l.joint_lims[:,1]
+        l_ranges = l_maxs - l_mins
+        l_angles = l_angles*l_ranges + l_mins 
+
+        r_mins = actuator.arm_r.joint_lims[:,0]
+        r_maxs = actuator.arm_r.joint_lims[:,1]
+        r_ranges = r_maxs - r_mins
+        r_angles = r_angles*r_ranges + r_mins 
+
+        return l_angles, r_angles
+
+    def unscale_angles(self, actuator, l_angles, r_angles):
+
+        l_mins = actuator.arm_l.joint_lims[:,0]
+        l_maxs = actuator.arm_l.joint_lims[:,1]
+        l_ranges = l_maxs - l_mins
+        l_angles = (l_angles - l_mins)/l_ranges 
+
+        r_mins = actuator.arm_r.joint_lims[:,0]
+        r_maxs = actuator.arm_r.joint_lims[:,1]
+        r_ranges = r_maxs - r_mins
+        r_angles = (r_angles - r_mins)/r_ranges 
+
+        return l_angles, r_angles
+
 
     def step_kinematic(self, 
-            larm_angles, rarm_angles, 
-            larm_angles_theoric, rarm_angles_theoric, 
-            larm_angles_target, rarm_angles_target, 
+            larm_angles_unscaled, rarm_angles_unscaled, 
+            larm_angles_theoric_unscaled, rarm_angles_theoric_unscaled, 
+            larm_angles_target_unscaled, rarm_angles_target_unscaled, 
             active=True ):
         '''
-        :param  larm_angles             actual angles of the joints of the left arm
-        :param  rarm_angles             actual angles of the joints of the right arm
-        :param  larm_angles_theoric     motor commands to the left arm
-        :param  rarm_angles_theoric     motor commands to the right arm
-        :param  larm_angles_target      desired angle end-point positions the left arm
-        :param  rarm_angles_target      desired angle end-point positions the right arm 
-        :param  active                  if the controller is currently activa
+        :param  larm_angles_unscaled             actual angles of the joints of the left arm
+        :param  rarm_angles_unscaled             actual angles of the joints of the right arm
+        :param  larm_angles_theoric_unscaled     motor commands to the left arm
+        :param  rarm_angles_theoric_unscaled     motor commands to the right arm
+        :param  larm_angles_target_unscaled      desired angle end-point positions the left arm
+        :param  rarm_angles_target_unscaled      desired angle end-point positions the right arm 
+        :param  active                           if the body_simulator is currently activa
 
         '''
+
+        larm_angles, rarm_angles = self.rescale_angles( 
+                self.actuator,
+                larm_angles_unscaled, 
+                rarm_angles_unscaled ) 
+        
+        larm_angles_theoric, rarm_angles_theoric = self.rescale_angles( 
+                self.actuator,
+                larm_angles_theoric_unscaled, 
+                rarm_angles_theoric_unscaled ) 
+ 
+        larm_angles_target, rarm_angles_target = self.rescale_angles( 
+                self.actuator,
+                larm_angles_target_unscaled, 
+                rarm_angles_target_unscaled ) 
 
         # update previous data
         self.larm_delta_angles_prev  = self.larm_delta_angles 
@@ -446,13 +490,13 @@ class SensorimotorController(object) :
         self.touch_old = self.touch 
 
         # update current data
-        self.larm_delta_angles =  larm_angles[::-1] - self.larm_angles
+        self.larm_delta_angles =  larm_angles - self.larm_angles
         self.rarm_delta_angles =  rarm_angles - self.rarm_angles 
-        self.larm_angles = larm_angles[::-1]
+        self.larm_angles = larm_angles
         self.rarm_angles = rarm_angles
-        self.larm_angles_theoric = larm_angles_theoric[::-1]
+        self.larm_angles_theoric = larm_angles_theoric
         self.rarm_angles_theoric = rarm_angles_theoric
-        self.larm_angles_target = larm_angles_target[::-1]
+        self.larm_angles_target = larm_angles_target
         self.rarm_angles_target = rarm_angles_target
 
         # compute actual angles 
@@ -468,12 +512,15 @@ class SensorimotorController(object) :
         
         # compute collisions
         autocollision = self.get_collision()
-        res_autocollision =  autocollision
+        res_autocollision = autocollision
+        
         # control collision resolution
-        count_collisions = 1
         larm_angles = self.larm_angles 
         rarm_angles = self.rarm_angles
-        c_scale = 2
+        
+        count_collisions = 1
+        c_scale = 50
+   
         while autocollision : 
             if count_collisions <  c_scale : 
                 
@@ -481,8 +528,8 @@ class SensorimotorController(object) :
                 # from those producing collision
                 
                 # go back of a fraction of angle  
-                larm_angles = self.larm_angles - self.larm_delta_angles/float(c_scale-count_collisions)
-                rarm_angles = self.rarm_angles - self.rarm_delta_angles/float(c_scale-count_collisions)
+                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale*10)
+                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale*10)
 
                 # compute actual positions given the current angles 
                 self.get_positions( larm_angles, rarm_angles,
@@ -493,6 +540,7 @@ class SensorimotorController(object) :
                 autocollision = self.get_collision()
 
                 count_collisions += 1
+                
 
             else:
 
@@ -501,7 +549,14 @@ class SensorimotorController(object) :
 
                 larm_angles = self.larm_angles - self.larm_delta_angles 
                 rarm_angles = self.rarm_angles - self.rarm_delta_angles
+
+                # compute actual positions given the current angles 
+                self.get_positions( larm_angles, rarm_angles,
+                        self.larm_angles_theoric, self.rarm_angles_theoric,
+                        self.larm_angles_target, self.rarm_angles_target  )
+                
                 autocollision = False
+
 
         self.larm_angles = larm_angles 
         self.rarm_angles = rarm_angles
@@ -518,7 +573,7 @@ class SensorimotorController(object) :
                 angles_tokens=angles_tokens)
         #TOUCH
         self.touch, self.touches = self.perc.get_touch(body_tokens=self.curr_body_tokens)
-   
+        
         delta_angles_tokens = (self.larm_delta_angles,
             self.rarm_delta_angles) 
 
@@ -529,7 +584,7 @@ class SensorimotorController(object) :
         self.prop_delta = self.perc.get_proprioception(
                 angles_tokens=delta_angles_tokens)
         self.touch_delta = self.touch - self.touch_old
-            
+
         return  active and res_autocollision 
 
     def reset(self):

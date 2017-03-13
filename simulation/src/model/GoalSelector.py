@@ -17,23 +17,21 @@ def my_argwhere(x) :
 
     return res
 
-def oscillator(x, scale, params) :
+def oscillator(x, scale, freqs) :
     '''
     :param  x       list of timesteps
     :param  scale   scaling factor for the frequency 
-    :param  params  list parameters' triples (amplitude, phase and frequency). 
-                    For each triple a trajectory is produced.
+    :param  freqs   list of frequencies 
     '''
     
     x = np.array(x) # timeseries
-    params= np.array(params)
-    pfreq = params[:int(params.size*(1/3.))]
-    pph = params[int(params.size*(2/3.)):]
-    pamp = params[int(params.size*(1/3.)):int(params.size*(2/3.))]
+    trajectories_num = freqs.size
+    freqs = np.array(freqs)
+    x = np.outer(x, np.ones(trajectories_num))
 
-    x = np.outer(x, np.ones(pfreq.shape))
+    return (np.cos(2.0*np.pi*freqs*x/scale + np.pi) + 1.0)*0.5
 
-    return np.pi*pamp*np.cos(np.pi*(pfreq*x/scale-10*pph))
+
 
 class GoalSelector(object) :
 
@@ -147,7 +145,7 @@ class GoalSelector(object) :
         self.curr_noise = 0.0
 
         self.goal_selected = False
-        self.random_oscil = np.random.rand(3*self.N_ROUT_UNITS)
+        self.reset_oscillator()
         self.t = 0
 
 
@@ -155,16 +153,16 @@ class GoalSelector(object) :
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
 
+    def reset_oscillator(self):
+        self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
 
     def goal_index(self):
 
-        if  np.sum(self.goal_win)>0:
-            
+        if  np.sum(self.goal_win)>0:   
             idx = np.nonzero(self.goal_win>0)[0][0]
-            return idx 
+            return idx
 
-    def get_goal_from_index(self,idx):
-        return idx
+        return None
         
     def goal_update(self, im_value ):
         
@@ -210,7 +208,7 @@ class GoalSelector(object) :
             self.goal_win[goal_win_idx] = True 
 
             self.t = 0
-            self.random_oscil = np.random.rand(3*self.N_ROUT_UNITS)
+            self.reset_oscillator()
 
             self.goal_selected = True
             
@@ -262,7 +260,10 @@ class GoalSelector(object) :
             self.goal_window_counter = 0
             self.reset_window_counter = 0
             self.pid.reset()
-   
+
+            self.out *= 0 
+
+
     def getCurrMatch(self) :
         res = self.match_mean[self.goal_win>0]
         if len(res) == 1:
@@ -300,11 +301,20 @@ class GoalSelector(object) :
         
         if np.all(self.goal_win==0):
             curr_match = 0.0
-
-        added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]
-        #self.out = self.pid.step(self.out, self.read_out + (1.0 - curr_match)*added_signal)
         
+        # TODO Debug
+
+        # OSCILLATOR NOISE
+        added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
         self.out = self.read_out + (1.0 - curr_match)*added_signal
+
+        # RANDOM WALK NOISE
+        # added_signal = 0.3*( 2.0*np.random.rand(self.N_ROUT_UNITS)-1.0 )
+        # self.out += added_signal
+        # self.out = np.maximum(np.minimum(self.out,-1),1.0 )
+        
+        # TODO Debug
+
         self.tout = self.read_out 
 
         self.t += 1
@@ -324,4 +334,7 @@ class GoalSelector(object) :
                 w += eta*np.outer(target-y,x)
         #------------------------------------------------
         
+
+
+
 

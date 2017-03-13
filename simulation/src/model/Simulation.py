@@ -2,18 +2,18 @@ import numpy as np
 from model import *
 from model.GoalPredictor import match
 
-class Robot(object) :
+class Simulation(object) :
 
     def __init__(self) :
 
         self.GOAL_NUMBER = GOAL_NUMBER
-
-        self.controller = SensorimotorController(       
-                pixels = controller_pixels,
-                lims = controller_lims,
-                touch_th = controller_touch_th,
-                num_touch_sensors = controller_num_touch_sensors,
-                touch_sigma = controller_touch_sigma
+ 
+        self.body_simulator = BodySimulator(       
+                pixels = body_simulator_pixels,
+                lims = body_simulator_lims,
+                touch_th = body_simulator_touch_th,
+                num_touch_sensors = body_simulator_num_touch_sensors,
+                touch_sigma = body_simulator_touch_sigma
                 )
 
         self.gs = GoalSelector(
@@ -101,14 +101,18 @@ class Robot(object) :
         gr = self.gm.goalrep_layer
         
         goal_keys = self.gs.target_position.keys()
+        
         acquired_targets = []
         if len(goal_keys) != 0:
-            acquired_targets = self.gs.get_goal_from_index(self.gs.target_position.keys()) 
-        matched_targets = np.array([ 1.0*(target in acquired_targets) 
+            acquired_targets = self.gs.target_position.keys() 
+        
+        matched_targets = np.array([ 1.0*(target in acquired_targets)
             for target in np.arange(self.gs.N_GOAL_UNITS) ])
+        
         targets = self.gp.w
+        
         esn_data = self.gs.curr_echonet.data[self.gs.curr_echonet.out_lab]
- 
+        
         return gmask, gv, gw, gr,matched_targets, targets, self.gs.target_position, \
                 esn_data 
         
@@ -133,15 +137,15 @@ class Robot(object) :
         
         sel = self.gs.goal_selected
         
-        real_l_pos = self.controller.actuator.position_l
-        real_r_pos = self.controller.actuator.position_r
+        real_l_pos = self.body_simulator.actuator.position_l
+        real_r_pos = self.body_simulator.actuator.position_r
         
         real_l_pos *= sel
         real_r_pos *= sel
 
         goalwin_idx =  self.gs.goal_index()
-        target_l_pos = self.controller.target_actuator.position_l
-        target_r_pos = self.controller.target_actuator.position_r
+        target_l_pos = self.body_simulator.target_actuator.position_l
+        target_r_pos = self.body_simulator.target_actuator.position_r
         if  not self.gs.target_position.has_key(goalwin_idx) :
             target_l_pos *= 0
             target_r_pos *= 0
@@ -149,10 +153,10 @@ class Robot(object) :
         target_l_pos *= sel
         target_r_pos *= sel
 
-        theor_l_pos = self.controller.theoric_actuator.position_l
-        theor_r_pos = self.controller.theoric_actuator.position_r
+        theor_l_pos = self.body_simulator.theoric_actuator.position_l
+        theor_r_pos = self.body_simulator.theoric_actuator.position_r
 
-        sensors = self.controller.perc.sensors * sel
+        sensors = self.body_simulator.perc.sensors * sel
 
         return (real_l_pos, real_r_pos, target_l_pos,
                 target_r_pos, theor_l_pos, theor_r_pos, sensors )
@@ -204,7 +208,7 @@ class Robot(object) :
             # add timing
             log_string += "{:8d} ".format(self.timestep)
             # add touch info
-            for touch in  self.controller.touches :
+            for touch in  self.body_simulator.touches :
                 log_string += "{:6.4f} ".format(touch)
             # add goal index
             log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
@@ -223,7 +227,7 @@ class Robot(object) :
             # add timing
             log_string += "{:8d} ".format(self.timestep)
             # add touch info
-            for touch in  self.controller.touches :
+            for touch in  self.body_simulator.touches :
                 log_string += "{:6.4f} ".format(touch)
             # add goal index
             log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
@@ -240,7 +244,7 @@ class Robot(object) :
             # add timing
             log_string += "{:8d} ".format(self.timestep)
             # add position info
-            curr_position =  np.vstack(self.controller.curr_body_tokens).ravel() 
+            curr_position =  np.vstack(self.body_simulator.curr_body_tokens).ravel() 
             for pos in  curr_position:
                 log_string += "{:6.4f} ".format(pos)
             # add goal index
@@ -328,9 +332,9 @@ class Robot(object) :
 
 
             self.gm_input = [
-                self.controller.pos_delta.ravel()*500.0 *0.0,
-                self.controller.prop_delta.ravel()*500.0*0.0,
-                self.controller.touch_delta.ravel()*5000.0]
+                self.body_simulator.pos_delta.ravel()*500.0 *0.0,
+                self.body_simulator.prop_delta.ravel()*500.0*0.0,
+                self.body_simulator.touch_delta.ravel()*5000.0]
             self.static_inp *= 0
             for inp in self.gm_input :
                 self.static_inp += 0.0001*np.array(inp)
@@ -339,39 +343,57 @@ class Robot(object) :
             if self.gs.reset_window_counter == 0:
                 self.static_inp = np.random.rand(*self.static_inp.shape)
         
-        # Movement
+        # movement body_simulator step
         self.gs.step( self.static_inp )
+        
+        # convert the vector of readout units from the selector into two
+        # vectors (left arm , right arm)
+        larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
+        rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS/2):]
+        larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS/2)]
+        rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS/2):]
+        larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
+        rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
+       
+        ##############################################################################
+        ##############################################################################
 
-        larm_angles=np.pi*self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles=np.pi*self.gs.out[(self.gs.N_ROUT_UNITS/2):]
-        larm_angles_theoric=np.pi*self.gs.tout[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles_theoric=np.pi*self.gs.tout[(self.gs.N_ROUT_UNITS/2):]
-        larm_angles_target=np.pi*self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles_target=np.pi*self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
-
-        collision = self.controller.step_kinematic(
-                larm_angles=larm_angles,
-                rarm_angles=rarm_angles,
-                larm_angles_theoric=larm_angles_theoric,
-                rarm_angles_theoric=rarm_angles_theoric,
-                larm_angles_target=larm_angles_target,
-                rarm_angles_target=rarm_angles_target,
-                active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
+        # Simulation step
+        collision = self.body_simulator.step_kinematic(
+                larm_angles_unscaled = larm_angles,
+                rarm_angles_unscaled = rarm_angles,
+                larm_angles_theoric_unscaled = larm_angles_theoric,
+                rarm_angles_theoric_unscaled = rarm_angles_theoric,
+                larm_angles_target_unscaled = larm_angles_target,
+                rarm_angles_target_unscaled = rarm_angles_target,
+                active = (self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
                 )
-
+        
         if collision == True:
             self.save_cont_logs()
+        
+        ##############################################################################
+        ##############################################################################
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
             self.gm.step( self.gm_input )
+            
+            ##############################################################################################################
+            ##############################################################################################################
+            
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()), pred = (1.0 - self.gp.w) ) # MIXED
             self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred = (1.0 - self.gp.w) ) # MIXED-2
             # self.gm.learn(eta_scale=(1 - self.gp.getCurrMatch()), pred = (1.0 - self.gs.match_mean) ) # MIXED-3
             # self.gm.learn(pred = (1.0 - self.gp.w) ) # PRED
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()) ) # MATCH
             # self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()) ) # MATCH-2
+            
+            ##############################################################################################################
+            ##############################################################################################################
+            
+             
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
                 self.gs.learn()
@@ -381,12 +403,14 @@ class Robot(object) :
             self.gs.goal_window_counter += 1
             
             # End of trial
+ 
+            #self.match_value = 0 # TODO Debug
 
             self.match_value = match(
                     self.gm.goalrep_layer, 
                     self.gs.goal_win
                     ) 
-            
+
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
                
                 # log matches
@@ -395,15 +419,23 @@ class Robot(object) :
 
                 # learn
                 self.gp.learn(self.match_value) 
+                
+                # set current target in case of match
                 if self.match_value == 1:
+                    
+                    unscaled_larm_angles, unscaled_rarm_angles = \
+                            self.body_simulator.unscale_angles(
+                                    self.body_simulator.actuator,
+                                    self.body_simulator.larm_angles,
+                                    self.body_simulator.rarm_angles )
+                    
                     self.gs.update_target( 
                             np.hstack((
-                                self.controller.larm_angles[::-1],
-                                self.controller.rarm_angles))/np.pi )
-              
+                                unscaled_larm_angles,
+                                unscaled_rarm_angles)) )
+
                 # log weight metrics
                 self.save_weight_logs()
-
 
                 # update variables
 
@@ -412,7 +444,7 @@ class Robot(object) :
                 
                 self.gs.goal_selected = False
                 self.gs.reset(match = self.match_value)
-                self.controller.reset()
+                self.body_simulator.reset()
                 
         else:
             

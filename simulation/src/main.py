@@ -53,22 +53,22 @@ def main(args):
     if LOAD :
         print "loading ..."
         with gzip.open(dumpfile, 'rb') as f:
-            robot = pickle.load(f)
+            simulation = pickle.load(f)
     else :
-        robot = model.Robot()
+        simulation = model.Simulation()
 
-    robot.log_sensors = log_sensors
-    robot.log_cont_sensors = log_cont_sensors
-    robot.log_position = log_position
-    robot.log_predictions = log_predictions
-    robot.log_targets = log_targets
-    robot.log_weights = log_weights
+    simulation.log_sensors = log_sensors
+    simulation.log_cont_sensors = log_cont_sensors
+    simulation.log_position = log_position
+    simulation.log_predictions = log_predictions
+    simulation.log_targets = log_targets
+    simulation.log_weights = log_weights
     
     print "simulating ..."
     if GRAPHICS :
 
         from model import plotter 
-        plotter.graph_main(robot)
+        plotter.graph_main(simulation)
         
     else:
         bar = progressbar.ProgressBar( 
@@ -79,7 +79,7 @@ def main(args):
         
         bar.start()
         for t in range(STIME):
-            robot.step()
+            simulation.step()
             bar.update(t+1)
         bar.finish()
 
@@ -87,8 +87,8 @@ def main(args):
         
         print "dumping ..."
         with gzip.open(dumpfile, 'wb') as f:
-            robot.init_streams()
-            robot = pickle.dump(robot, f)
+            simulation.init_streams()
+            simulation = pickle.dump(simulation, f)
 
 
 if __name__ == "__main__" :
@@ -100,10 +100,10 @@ if __name__ == "__main__" :
             help="Graphics on",
             action="store_true", default=False) 
     parser.add_argument('-d','--dump',
-            help="dump the robot object",
+            help="dump the simulation object",
             action="store_true", default=False) 
     parser.add_argument('-l','--load',
-            help="load the robot object",
+            help="load the simulation object",
             action="store_true", default=False) 
     parser.add_argument('-s','--save_dir',
             help="storage directory",
