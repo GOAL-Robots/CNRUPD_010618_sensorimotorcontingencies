@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import GoalSelector
 import GoalPredictor
 import GoalMaker
-import Controller
+import Simulator
 import kinematics as KM
 
 if __name__ == "__main__":
 
 
-    controller = Controller.SensorimotorController()
+    body_simulator = Simulator.BodySimulator()
 
     gs = GoalSelector.GoalSelector(
             dt = 0.001,
@@ -21,10 +21,10 @@ if __name__ == "__main__":
             alpha = 0.1,
             epsilon = 1.0e-10,
             eta = 0.01,
-            n_input = controller.pixels[0]*controller.pixels[0],
+            n_input = body_simulator.pixels[0]*body_simulator.pixels[0],
             n_goal_units = 10,
             n_echo_units = 100,
-            n_rout_units = controller.actuator.NUMBER_OF_JOINTS*2,
+            n_rout_units = body_simulator.actuator.NUMBER_OF_JOINTS*2,
             im_decay = 0.2,
             noise = .5,
             sm_temp = 0.2,
@@ -38,7 +38,7 @@ if __name__ == "__main__":
             eta = 0.01
             )
 
-    inp_dim = controller.pixels[0]*controller.pixels[1]
+    inp_dim = body_simulator.pixels[0]*body_simulator.pixels[1]
     gm = GoalMaker.GoalMaker(
             n_input_layers=[inp_dim, inp_dim, inp_dim],
             n_singlemod_layers= [64, 64, 64],
@@ -65,17 +65,17 @@ if __name__ == "__main__":
 
     fig = plt.figure()
     ax = fig.add_subplot(111,aspect="equal")
-    larm, = ax.plot(*controller.actuator.position_l.T,
+    larm, = ax.plot(*body_simulator.actuator.position_l.T,
             lw=10, color="blue",zorder=2)
-    rarm, = ax.plot(*controller.actuator.position_r.T, 
+    rarm, = ax.plot(*body_simulator.actuator.position_r.T, 
             lw=10, color="blue",zorder=2)
-    larm_target, = ax.plot(*(controller.actuator.position_l.T*1e10),
+    larm_target, = ax.plot(*(body_simulator.actuator.position_l.T*1e10),
             lw=5, color="black",zorder=1)
-    rarm_target, = ax.plot(*(controller.actuator.position_r.T*1e10), 
+    rarm_target, = ax.plot(*(body_simulator.actuator.position_r.T*1e10), 
             lw=5, color="black",zorder=1)
-    larm_theor, = ax.plot(*controller.actuator.position_l.T, lw=4, 
+    larm_theor, = ax.plot(*body_simulator.actuator.position_l.T, lw=4, 
             color="green",zorder=3, alpha=.5)
-    rarm_theor, = ax.plot(*controller.actuator.position_r.T, lw=4, 
+    rarm_theor, = ax.plot(*body_simulator.actuator.position_r.T, lw=4, 
             color="green",zorder=3, alpha=.5)
     
     tl_lt = 2.0
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
         gs.step( static_inp )
 
-        controller.step_kinematic(
+        body_simulator.step_kinematic(
                 larm_angles=np.pi*gs.out[:(gs.N_ROUT_UNITS/2)],
                 rarm_angles=np.pi*gs.out[(gs.N_ROUT_UNITS/2):]
                 )
@@ -206,9 +206,9 @@ if __name__ == "__main__":
         if gs.reset_window_counter>=gs.RESET_WINDOW:
 
             gm.step([
-                controller.pos_delta.ravel()*500.0,
-                controller.prop_delta.ravel()*5000.0,
-                controller.touch_delta.ravel()*5000.0])
+                body_simulator.pos_delta.ravel()*500.0,
+                body_simulator.prop_delta.ravel()*5000.0,
+                body_simulator.touch_delta.ravel()*5000.0])
 
             gm.learn()
 
@@ -217,8 +217,8 @@ if __name__ == "__main__":
             # # Detect touch
             # 
             # body = np.vstack([
-            #     controller.actuator.position_l[::-1],
-            #     controller.actuator.position_r[1:]])
+            #     body_simulator.actuator.position_l[::-1],
+            #     body_simulator.actuator.position_r[1:]])
             # chain.set_chain(body)
             # 
             # finger = chain.get_point(0.0)
@@ -250,7 +250,7 @@ if __name__ == "__main__":
                 
                 gs.goal_selected = False
                 gs.reset(match = match_value)
-                controller.reset()
+                body_simulator.reset()
                 
         else:
             
@@ -300,33 +300,33 @@ if __name__ == "__main__":
             #skin.set_data(*skin_region)
             #skin.set_markersize(10*gs.curr_noise)
 
-            larm.set_data(*controller.actuator.position_l.T)
-            rarm.set_data(*controller.actuator.position_r.T)
+            larm.set_data(*body_simulator.actuator.position_l.T)
+            rarm.set_data(*body_simulator.actuator.position_r.T)
             try:
                 goalwin_idx = gs.goal_index()
                 target_angles = gs.target_position[goalwin_idx]
-                controller.actuator.set_angles(
+                body_simulator.actuator.set_angles(
                         np.pi*target_angles[:(gs.N_ROUT_UNITS/2)],
                         np.pi*target_angles[(gs.N_ROUT_UNITS/2):],
                         )
-                larm_target.set_data(*controller.actuator.position_l.T)
-                rarm_target.set_data(*controller.actuator.position_r.T)
+                larm_target.set_data(*body_simulator.actuator.position_l.T)
+                rarm_target.set_data(*body_simulator.actuator.position_r.T)
             except KeyError: pass
         else:
             tl_point.set_data(tl_start + ts*gs.reset_window_counter, tl_height )
             #skin.set_data(*((np.array(skin_region)+1)*9999))
             #skin.set_markersize(10*gs.curr_noise)
-            larm.set_data(*((controller.actuator.position_l+1)*9999).T)
-            rarm.set_data(*((controller.actuator.position_r+1)*9999).T)
-            larm_target.set_data(*((controller.actuator.position_l+1)*9999).T)
-            rarm_target.set_data(*((controller.actuator.position_r+1)*9999).T)
+            larm.set_data(*((body_simulator.actuator.position_l+1)*9999).T)
+            rarm.set_data(*((body_simulator.actuator.position_r+1)*9999).T)
+            larm_target.set_data(*((body_simulator.actuator.position_l+1)*9999).T)
+            rarm_target.set_data(*((body_simulator.actuator.position_r+1)*9999).T)
         
-        controller.actuator.set_angles(
+        body_simulator.actuator.set_angles(
                 np.pi*gs.tout[:(gs.N_ROUT_UNITS/2)],
                 np.pi*gs.tout[(gs.N_ROUT_UNITS/2):]
             )
-        larm_theor.set_data(*controller.actuator.position_l.T)
-        rarm_theor.set_data(*controller.actuator.position_r.T)
+        larm_theor.set_data(*body_simulator.actuator.position_l.T)
+        rarm_theor.set_data(*body_simulator.actuator.position_r.T)
 
         plt.pause(.1)
 

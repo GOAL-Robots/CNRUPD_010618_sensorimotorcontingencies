@@ -145,7 +145,7 @@ class GoalSelector(object) :
         self.curr_noise = 0.0
 
         self.goal_selected = False
-        self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
+        self.reset_oscillator()
         self.t = 0
 
 
@@ -153,16 +153,16 @@ class GoalSelector(object) :
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
 
+    def reset_oscillator(self):
+        self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
 
     def goal_index(self):
 
-        if  np.sum(self.goal_win)>0:
-            
+        if  np.sum(self.goal_win)>0:   
             idx = np.nonzero(self.goal_win>0)[0][0]
-            return idx 
+            return idx
 
-    def get_goal_from_index(self,idx):
-        return idx
+        return None
         
     def goal_update(self, im_value ):
         
@@ -208,7 +208,7 @@ class GoalSelector(object) :
             self.goal_win[goal_win_idx] = True 
 
             self.t = 0
-            self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
+            self.reset_oscillator()
 
             self.goal_selected = True
             

@@ -324,7 +324,7 @@ class KinematicActuator(object) :
 #-----------------------------------------------------------------------------
 
 
-class SensorimotorController(object) :
+class BodySimulator(object) :
     '''
     Control sensory inputs and motor actuators
     '''
@@ -457,7 +457,7 @@ class SensorimotorController(object) :
         :param  rarm_angles_theoric_unscaled     motor commands to the right arm
         :param  larm_angles_target_unscaled      desired angle end-point positions the left arm
         :param  rarm_angles_target_unscaled      desired angle end-point positions the right arm 
-        :param  active                           if the controller is currently activa
+        :param  active                           if the body_simulator is currently activa
 
         '''
 
@@ -519,9 +519,8 @@ class SensorimotorController(object) :
         rarm_angles = self.rarm_angles
         
         count_collisions = 1
-        c_scale = 3
-        post_th = 3
-
+        c_scale = 50
+   
         while autocollision : 
             if count_collisions <  c_scale : 
                 
@@ -529,8 +528,8 @@ class SensorimotorController(object) :
                 # from those producing collision
                 
                 # go back of a fraction of angle  
-                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale)
-                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale)
+                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale*10)
+                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale*10)
 
                 # compute actual positions given the current angles 
                 self.get_positions( larm_angles, rarm_angles,

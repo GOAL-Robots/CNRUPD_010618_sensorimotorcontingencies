@@ -279,7 +279,7 @@ class GoalTesterSim(object):
         )
 
         self.stime = 100000
-        self.controller = Controller.SensorimotorController()
+        self.body_simulator = Simulator.BodySimulator()
 
     def step(self,t):
         '''
@@ -288,21 +288,21 @@ class GoalTesterSim(object):
         '''
 
         period = 10.0
-        if np.mean(self.controller.actuator.angles_l) < np.pi*0.2 :
-            ldelta = np.ones(self.controller.actuator.NUMBER_OF_JOINTS)*0.3+np.sin(t/period)*0.2
+        if np.mean(self.body_simulator.actuator.angles_l) < np.pi*0.2 :
+            ldelta = np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.3+np.sin(t/period)*0.2
         else :
-            ldelta = -np.ones(self.controller.actuator.NUMBER_OF_JOINTS)*0.3+np.sin(t/period)*0.2
+            ldelta = -np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.3+np.sin(t/period)*0.2
 
-        if np.mean(self.controller.actuator.angles_r) < np.pi*0.2 :
-            rdelta = np.ones(self.controller.actuator.NUMBER_OF_JOINTS)*0.2+np.sin(t/period)*0.2
+        if np.mean(self.body_simulator.actuator.angles_r) < np.pi*0.2 :
+            rdelta = np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.2+np.sin(t/period)*0.2
         else :
-            rdelta = -np.ones(self.controller.actuator.NUMBER_OF_JOINTS)*0.2+np.sin(t/period)*0.2
+            rdelta = -np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.2+np.sin(t/period)*0.2
 
-        self.controller.step(larm_delta_angles=ldelta, rarm_delta_angles=rdelta)
+        self.body_simulator.step(larm_delta_angles=ldelta, rarm_delta_angles=rdelta)
 
-        self.goalmaker.step([self.controller.pos_delta.ravel(),
-                             self.controller.prop_delta.ravel()*50.0,
-                             self.controller.touch_delta.ravel()*50.0])
+        self.goalmaker.step([self.body_simulator.pos_delta.ravel(),
+                             self.body_simulator.prop_delta.ravel()*50.0,
+                             self.body_simulator.touch_delta.ravel()*50.0])
 
         self.goalmaker.learn()
 
