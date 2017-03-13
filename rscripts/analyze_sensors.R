@@ -18,7 +18,7 @@ sem<-function(x) sd(x)/sqrt(length(x))
 
 ###############################################################################################################################
 
-LASTIMESTEPS = 100000
+LASTIMESTEPS = 000
 AMP_TH = 0.1
 
 predictions <- fread("all_predictions")
@@ -43,21 +43,20 @@ names(sensors) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", sens_labels, "CURR_GOA
 sensors = sensors[with(sensors, order(LEARNING_TYPE,INDEX,TIMESTEPS)),]
 sensors$prediction =  gpredictions$prediction
 
-TH_PREDICTION = 1.0
-sensors = subset(sensors, prediction >= TH_PREDICTION)
-
+# TH_PREDICTION = 0.5
+# sensors = subset(sensors, prediction >= TH_PREDICTION)
+# 
 sensors = melt(sensors, 
              id.vars = c("LEARNING_TYPE", "INDEX", "TIMESTEPS", "CURR_GOAL"), 
              measure.vars = sens_labels, 
              variable.name="sensor", 
              value.name="amp" )
 
-sensors_last = sensors #subset(sensors, TIMESTEPS > (max(TIMESTEPS)-LASTIMESTEPS))
-
-means = sensors_last[,.(a_mean = mean(amp), 
+means = sensors[,.(a_mean = mean(amp), 
                          a_count = sum(amp>AMP_TH),  
                          a_sd = sd(amp),  
                          a_err = sem(amp)), by=.(LEARNING_TYPE, INDEX, sensor)]
+
 
 
 count_tot = sum(means$a_count)

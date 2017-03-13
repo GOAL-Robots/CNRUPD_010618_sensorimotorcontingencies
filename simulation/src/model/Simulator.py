@@ -519,7 +519,7 @@ class BodySimulator(object) :
         rarm_angles = self.rarm_angles
         
         count_collisions = 1
-        c_scale = 50
+        c_scale = 5
    
         while autocollision : 
             if count_collisions <  c_scale : 
@@ -528,8 +528,8 @@ class BodySimulator(object) :
                 # from those producing collision
                 
                 # go back of a fraction of angle  
-                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale*10)
-                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale*10)
+                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale*2)
+                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale*2)
 
                 # compute actual positions given the current angles 
                 self.get_positions( larm_angles, rarm_angles,
