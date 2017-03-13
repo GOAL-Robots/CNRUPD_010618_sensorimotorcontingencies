@@ -64,7 +64,7 @@ count_tot = sum(means$a_count)
 
 for(idx in unique(means$INDEX)) 
 { 
-    pdf(paste("g_means",format(idx),".pdf",sep=""))
+    pdf(paste("gs_means",format(idx),".pdf",sep=""))
     gp = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
     gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
     gp = gp + geom_line(size = 1.5, colour = "#000000")
