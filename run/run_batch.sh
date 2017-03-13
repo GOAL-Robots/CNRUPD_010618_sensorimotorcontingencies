@@ -4,7 +4,7 @@ set -e
 
 # first of all detect if we are executing ithin the right folder
 CURR_DIR=$(pwd)
-[ ! -f src/model/Simulator.py ] && echo "you must execute within the project folder" && exit
+[ ! -f src/model/Simulation.py ] && echo "you must execute within the project folder" && exit
 
 
 
