@@ -317,11 +317,7 @@ class Simulation(object) :
             self.goal_mask = np.logical_or(self.goal_mask, (self.gm.goalrep_layer > 0) )
             
             # Selection
-            if any(self.goal_mask==True):
-                self.gs.goal_selection(
-                        self.goal_mask)
-            else:
-                self.gs.goal_selection(self.intrinsic_motivation_value)
+            self.gs.goal_selection( self.goal_mask )
 
             # Prediction
             if self.gs.goal_window_counter == 0:
