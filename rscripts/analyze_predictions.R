@@ -90,6 +90,7 @@ g_means = g_means[,
                      TIMESTEPS )]
 
 g_means$th = 1
+TS = max(g_means$TIMESTEPS)
 
 pdf("g_means.pdf")
 gp = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
@@ -97,9 +98,10 @@ gp = gp + geom_point(data=all_predictions,
                      aes(x = TIMESTEPS, y = 1.05 + 0.4*(CURR_GOAL)/25.0 ), 
                      size=0.4,
                      inherit.aes=FALSE)
-gp = gp + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1))
 gp = gp + geom_line(size = 1)
 gp = gp + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
+gp = gp + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1))
+gp = gp + scale_x_continuous(limits=c(0, TS))
 gp = gp + theme_bw() 
 gp = gp + facet_grid(LEARNING_TYPE~.)
 
