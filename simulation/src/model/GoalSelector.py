@@ -88,7 +88,7 @@ class GoalSelector(object) :
         self.MULTIPLE_ECHO = multiple_echo
         
 
-        self.goalvec = np.zeros(self.N_GOAL_UNITS)
+        self.goalvec = np.ones(self.N_GOAL_UNITS)
         self.goal_win = np.zeros(self.N_GOAL_UNITS)
         self.goal_window_counter = 0
         self.reset_window_counter = 0
