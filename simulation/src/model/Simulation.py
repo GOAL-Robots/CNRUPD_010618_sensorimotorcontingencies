@@ -82,9 +82,6 @@ class Simulation(object) :
         self.kohonen_weights = None
         self.echo_weights = None
 
-
-        self.fid = None
-
     def init_streams(self):
 
         self.log_sensors = None
@@ -194,9 +191,6 @@ class Simulation(object) :
             res["echo_weights"] = np.linalg.norm(w-self.echo_weights)
         
         self.echo_weights = w.copy()
-
-
-        
 
         return res  
     
@@ -441,28 +435,7 @@ class Simulation(object) :
                 self.save_weight_logs()
 
                 # update variables
-         
                 self.intrinsic_motivation_value = self.gp.prediction_error 
-                goal = self.gs.goal_index()
-                if goal is not None:
-
-                    if self.fid is None :
-                        self.fid = open("/tmp/data","w")
-
-                    line = (" goal: {:3d}     error: {:6.3f} "+
-                            "      sm: " +("{:6.3f} "*len(self.gs.sm)) +
-                            "       g: " +("{:6.3f} "*len(self.gs.goalvec)) +
-                            "       p: " +("{:6.3f} "*len(self.gp.w)) + 
-                            "\n").format( 
-                                self.gs.goal_index(), 
-                                self.intrinsic_motivation_value, 
-                                *np.hstack((
-                                    self.gs.sm,
-                                    self.gs.goalvec,
-                                    self.gp.w ))) 
-                    self.fid.write(line)
-                    self.fid.flush()
-
                 self.gs.goal_update(self.intrinsic_motivation_value)
                 
                 
