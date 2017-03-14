@@ -82,6 +82,9 @@ class Simulation(object) :
         self.kohonen_weights = None
         self.echo_weights = None
 
+
+        self.fid = None
+
     def init_streams(self):
 
         self.log_sensors = None
@@ -345,7 +348,7 @@ class Simulation(object) :
         
         # movement body_simulator step
         self.gs.step( self.static_inp )
-        
+         
         # convert the vector of readout units from the selector into two
         # vectors (left arm , right arm)
         larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
@@ -438,9 +441,30 @@ class Simulation(object) :
                 self.save_weight_logs()
 
                 # update variables
-
+         
                 self.intrinsic_motivation_value = self.gp.prediction_error 
+                goal = self.gs.goal_index()
+                if goal is not None:
+
+                    if self.fid is None :
+                        self.fid = open("/tmp/data","w")
+
+                    line = (" goal: {:3d}     error: {:6.3f} "+
+                            "      sm: " +("{:6.3f} "*len(self.gs.sm)) +
+                            "       g: " +("{:6.3f} "*len(self.gs.goalvec)) +
+                            "       p: " +("{:6.3f} "*len(self.gp.w)) + 
+                            "\n").format( 
+                                self.gs.goal_index(), 
+                                self.intrinsic_motivation_value, 
+                                *np.hstack((
+                                    self.gs.sm,
+                                    self.gs.goalvec,
+                                    self.gp.w ))) 
+                    self.fid.write(line)
+                    self.fid.flush()
+
                 self.gs.goal_update(self.intrinsic_motivation_value)
+                
                 
                 self.gs.goal_selected = False
                 self.gs.reset(match = self.match_value)

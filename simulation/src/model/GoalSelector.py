@@ -21,7 +21,7 @@ def oscillator(x, scale, freqs) :
     '''
     :param  x       list of timesteps
     :param  scale   scaling factor for the frequency 
-    :param  freqs   list of frequencies 
+    :param  freqs   list of frequencies (one for each trjectory) 
     '''
     
     x = np.array(x) # timeseries
@@ -153,6 +153,7 @@ class GoalSelector(object) :
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
 
+
     def reset_oscillator(self):
         self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
 
@@ -193,9 +194,9 @@ class GoalSelector(object) :
             # avaliable goals 
             curr_goals = self.goalvec[curr_goal_idcs]
             # compute softmax between the currently avaliable goals
-            sm = softmax(curr_goals, self.SM_TEMP )
+            self.sm = softmax(curr_goals, self.SM_TEMP )
             # cumulate probabilities between them
-            cum_prob = np.hstack((0,np.cumsum(sm)))
+            cum_prob = np.hstack((0,np.cumsum(self.sm)))
             # flip the coin 
             coin = np.random.rand()
             # the winner between avaliable goals based on the flipped coin
