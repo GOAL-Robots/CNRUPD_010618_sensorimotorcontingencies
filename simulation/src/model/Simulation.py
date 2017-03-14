@@ -67,6 +67,8 @@ class Simulation(object) :
         
         self.goal_mask = np.zeros(self.gs.N_GOAL_UNITS).astype("bool")
         
+        self.novelty_mask = np.zeros(self.gs.N_GOAL_UNITS)        
+        
         self.match_value = False
 
         self.intrinsic_motivation_value = 0.0
@@ -316,6 +318,10 @@ class Simulation(object) :
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask, (self.gm.goalrep_layer > 0) )
             
+            self.novelty_mask = np.minimum(1.0,  self.novelty_mask + self.goal_mask)
+
+            print 1 - self.novelty_mask
+
             # Selection
             self.gs.goal_selection( self.goal_mask )
 
