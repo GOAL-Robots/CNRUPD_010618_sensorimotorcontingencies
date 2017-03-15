@@ -99,6 +99,9 @@ if __name__ == "__main__" :
     parser.add_argument('-g','--graphics',
             help="Graphics on",
             action="store_true", default=False) 
+    parser.add_argument('-f','--prof',
+            help="profiling",
+            action="store_true", default=False) 
     parser.add_argument('-d','--dump',
             help="dump the simulation object",
             action="store_true", default=False) 
@@ -114,19 +117,22 @@ if __name__ == "__main__" :
     args = parser.parse_args()
 
     import cProfile, pstats, StringIO
-    
-    main(args)
-    
-    #### profiling
-    # pr = cProfile.Profile()
-    # pr.enable()
-    # 
-    # main(args)
-    # 
-    # pr.disable()
-    # s = StringIO.StringIO()
-    # sortby = 'cumulative'
-    # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    # ps.print_stats()
-    # print s.getvalue()
+     
+
+    if args.prof == True:
+
+        #### profiling
+        pr = cProfile.Profile()
+        pr.enable()
+        
+        main(args)
+        
+        pr.disable()
+        s = StringIO.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print s.getvalue()
+    else: 
+        main(args)
 

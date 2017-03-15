@@ -88,7 +88,7 @@ class GoalSelector(object) :
         self.MULTIPLE_ECHO = multiple_echo
         
 
-        self.goalvec = np.ones(self.N_GOAL_UNITS)
+        self.goalvec = np.zeros(self.N_GOAL_UNITS)
         self.goal_win = np.zeros(self.N_GOAL_UNITS)
         self.goal_window_counter = 0
         self.reset_window_counter = 0
@@ -174,10 +174,11 @@ class GoalSelector(object) :
         self.goalvec[win_indx] += self.IM_DECAY*(
                 -self.goalvec[win_indx] +self.IM_AMP*im_value)
 
-    def goal_selection(self, goal_mask = None, eye_pos=[-99,-99] ):
+    def goal_selection(self, goal_mask = None, novelty = None ):
         '''
         :param im_value: current intrinsic motivational value
         :param goal_mask: which goals can be selected
+        :param novelty: which goals are more novel to the controller
         '''
          
         # in case we do not have a mask create one 
@@ -193,6 +194,9 @@ class GoalSelector(object) :
             # get values of the averages of the currently 
             # avaliable goals 
             curr_goals = self.goalvec[curr_goal_idcs]
+            # add novelty
+            if novelty is not None:
+                curr_goals += novelty[curr_goal_idcs]
             # compute softmax between the currently avaliable goals
             self.sm = softmax(curr_goals, self.SM_TEMP )
             # cumulate probabilities between them
@@ -273,10 +277,7 @@ class GoalSelector(object) :
     
     def step(self, inp):
         '''
-        :param im_value: current intrinsic motivational value
-        :param match_value: current reward value
         :param inp: external input
-        :param eye_pos: fovea center coordinates
         '''
 
         goal2echo_inp = np.dot(

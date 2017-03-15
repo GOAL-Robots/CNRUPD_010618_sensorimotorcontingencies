@@ -506,8 +506,7 @@ class GoalSelectionMaps(pg.GraphicsView):
             
              larm_angles = trj_angles[:(self.simulation.gs.N_ROUT_UNITS/2)]
              rarm_angles = trj_angles[(self.simulation.gs.N_ROUT_UNITS/2):]
-             larm_angles, rarm_angles = self.simulation.body_simulator.rescale_angles(
-                      act, larm_angles, rarm_angles)
+             larm_angles, rarm_angles = act.rescale_angles(larm_angles, rarm_angles)
   
              act.set_angles(larm_angles, rarm_angles)
 

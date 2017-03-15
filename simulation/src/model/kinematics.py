@@ -425,7 +425,7 @@ class Arm(object):
                         for j in range(self.number_of_joint) 
                   ])
         
-        # trabslate to the x origin 
+        # translate to the x origin 
         x = np.hstack([self.origin[0], x+self.origin[0]])
 
         # calculate y coords of arm edges.

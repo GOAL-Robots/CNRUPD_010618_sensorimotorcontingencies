@@ -215,28 +215,40 @@ def test_touches():
     # init plot 
     fig = plt.figure("arm")
     ax = fig.add_subplot(111,aspect="equal")
-    vertices = ax.scatter(0,0, alpha=0.1) 
 
+    ax.set_xlim([-5,5])
+    ax.set_ylim([-4,5])
     trals = 100
     stime = 100
-
+    
+    poly = Polychain()
     actuator = KinematicActuator()
+    body = None
+    colors = np.vstack((
+            plt.cm.jet(np.arange(15)/15.)[::-1],
+            plt.cm.jet(np.arange(15)/15.) ))
 
     for k in xrange(trals):
         for t in xrange(stime):
+            
             angles = oscillator(t, 30, 
                     np.random.rand(actuator.NUMBER_OF_JOINTS*2) )
-            l_angles = angles[:actuator.NUMBER_OF_JOINTS] 
-            r_angles = angles[actuator.NUMBER_OF_JOINTS:] 
             
-            l_angles, r_angles = BodySimulator.rescale_angles(l_angles, r_angles) 
-            actuator.set_angles(self.larm_angles, self.rarm_angles)
+            l_angles = angles[0][:actuator.NUMBER_OF_JOINTS] 
+            r_angles = angles[0][actuator.NUMBER_OF_JOINTS:] 
+           
+            l_angles, r_angles = actuator.rescale_angles(l_angles, r_angles) 
+            actuator.set_angles(l_angles, r_angles)
 
-            body = np.vstack((actuator.l_position, actuator.r_position))
-            
-            vertices.set_offset(body)
+            body = np.vstack((actuator.position_l, actuator.position_r[::-1]))
+            poly.set_chain(body)
+            body = poly.get_dense_chain(30)
 
-            fig1.canvas.draw()
+
+            vertices = ax.scatter(*body.T, alpha = 0.1, s= 4, 
+                    color = colors )
+
+            fig.canvas.draw()
             plt.pause(0.01)
 
 

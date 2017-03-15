@@ -317,7 +317,7 @@ class Simulation(object) :
             self.goal_mask = np.logical_or(self.goal_mask, (self.gm.goalrep_layer > 0) )
 
             # Selection
-            self.gs.goal_selection( self.goal_mask )
+            self.gs.goal_selection( self.goal_mask, novelty = 0.25*(1.0 - self.gp.w) )
 
             # Prediction
             if self.gs.goal_window_counter == 0:
@@ -417,11 +417,10 @@ class Simulation(object) :
                 if self.match_value == 1:
                     
                     unscaled_larm_angles, unscaled_rarm_angles = \
-                            self.body_simulator.unscale_angles(
-                                    self.body_simulator.actuator,
+                            self.body_simulator.actuator.unscale_angles(
                                     self.body_simulator.larm_angles,
                                     self.body_simulator.rarm_angles )
-                    
+
                     self.gs.update_target( 
                             np.hstack((
                                 unscaled_larm_angles,

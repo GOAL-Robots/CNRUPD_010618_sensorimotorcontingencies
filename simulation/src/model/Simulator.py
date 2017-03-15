@@ -55,7 +55,7 @@ class PerceptionManager(object) :
         # scale width of the gaussians in touch retina 
         self.touch_retina_sigma[0] *=  pm_touch_retina_sigma_width_scale
 
-        # init the gaussian make to build the 2d gaussians for the retinas
+        # init the gaussian maker to build the 2d gaussians for the retinas
         self.gm = GM(lims = np.hstack([self.lims,self.pixels.reshape(2,1)]))
 
         # the resolution of each body part in the visual retina (number of points)
@@ -289,7 +289,41 @@ class KinematicActuator(object) :
         self.position_l, _ = self.arm_l.get_joint_positions(self.angles_l)
         self.position_r, _ = self.arm_r.get_joint_positions(self.angles_r)
 
-    
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    def rescale_angles(self, l_angles, r_angles):
+        
+        l_mins = self.arm_l.joint_lims[:,0]
+        l_maxs = self.arm_l.joint_lims[:,1]
+        l_ranges = l_maxs - l_mins
+        l_angles = l_angles*l_ranges + l_mins 
+
+        r_mins = self.arm_r.joint_lims[:,0]
+        r_maxs = self.arm_r.joint_lims[:,1]
+        r_ranges = r_maxs - r_mins
+        r_angles = r_angles*r_ranges + r_mins 
+
+        return l_angles, r_angles
+
+
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    def unscale_angles(self, l_angles, r_angles):
+
+        l_mins = self.arm_l.joint_lims[:,0]
+        l_maxs = self.arm_l.joint_lims[:,1]
+        l_ranges = l_maxs - l_mins
+        l_angles = (l_angles - l_mins)/l_ranges 
+
+        r_mins = self.arm_r.joint_lims[:,0]
+        r_maxs = self.arm_r.joint_lims[:,1]
+        r_ranges = r_maxs - r_mins
+        r_angles = (r_angles - r_mins)/r_ranges 
+
+        return l_angles, r_angles 
+
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
@@ -416,33 +450,6 @@ class BodySimulator(object) :
 
         return autocollision
 
-    def rescale_angles(self, actuator, l_angles, r_angles):
-
-        l_mins = actuator.arm_l.joint_lims[:,0]
-        l_maxs = actuator.arm_l.joint_lims[:,1]
-        l_ranges = l_maxs - l_mins
-        l_angles = l_angles*l_ranges + l_mins 
-
-        r_mins = actuator.arm_r.joint_lims[:,0]
-        r_maxs = actuator.arm_r.joint_lims[:,1]
-        r_ranges = r_maxs - r_mins
-        r_angles = r_angles*r_ranges + r_mins 
-
-        return l_angles, r_angles
-
-    def unscale_angles(self, actuator, l_angles, r_angles):
-
-        l_mins = actuator.arm_l.joint_lims[:,0]
-        l_maxs = actuator.arm_l.joint_lims[:,1]
-        l_ranges = l_maxs - l_mins
-        l_angles = (l_angles - l_mins)/l_ranges 
-
-        r_mins = actuator.arm_r.joint_lims[:,0]
-        r_maxs = actuator.arm_r.joint_lims[:,1]
-        r_ranges = r_maxs - r_mins
-        r_angles = (r_angles - r_mins)/r_ranges 
-
-        return l_angles, r_angles
 
 
     def step_kinematic(self, 
@@ -461,18 +468,15 @@ class BodySimulator(object) :
 
         '''
 
-        larm_angles, rarm_angles = self.rescale_angles( 
-                self.actuator,
+        larm_angles, rarm_angles = self.actuator.rescale_angles( 
                 larm_angles_unscaled, 
                 rarm_angles_unscaled ) 
         
-        larm_angles_theoric, rarm_angles_theoric = self.rescale_angles( 
-                self.actuator,
+        larm_angles_theoric, rarm_angles_theoric = self.actuator.rescale_angles( 
                 larm_angles_theoric_unscaled, 
                 rarm_angles_theoric_unscaled ) 
  
-        larm_angles_target, rarm_angles_target = self.rescale_angles( 
-                self.actuator,
+        larm_angles_target, rarm_angles_target = self.actuator.rescale_angles( 
                 larm_angles_target_unscaled, 
                 rarm_angles_target_unscaled ) 
 
