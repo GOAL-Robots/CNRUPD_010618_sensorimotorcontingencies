@@ -311,7 +311,7 @@ class GoalSelector(object) :
         # OSCILLATOR NOISE
         added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
         self.out = self.read_out + (1.0 - curr_match)*added_signal
-
+        
         # RANDOM WALK NOISE
         # added_signal = 0.3*( 2.0*np.random.rand(self.N_ROUT_UNITS)-1.0 )
         # self.out += added_signal
@@ -320,6 +320,7 @@ class GoalSelector(object) :
         # TODO Debug
 
         self.tout = self.read_out 
+        print self.tout 
 
         self.t += 1
 
