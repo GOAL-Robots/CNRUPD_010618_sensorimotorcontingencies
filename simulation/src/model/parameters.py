@@ -1,5 +1,9 @@
 import numpy as np
 
+simulation_im_amp = 1.0
+simulation_im_decay = 0.2 
+
+
 body_simulator_pixels = [20, 20]
 body_simulator_lims = [[-5, 5], [-2, 4.]]
 body_simulator_touch_th = 0.1
@@ -43,7 +47,6 @@ gs_n_input = body_simulator_pixels[0]*body_simulator_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 200
 gs_n_rout_units = body_simulator_actuator_NUMBER_OF_JOINTS*2
-gs_im_decay = 0.2
 gs_match_decay = 0.2
 gs_noise = 1.0
 gs_noise_scale = 30.0
@@ -54,12 +57,12 @@ gs_goal_window = 100
 gs_goal_learn_start = 20
 gs_reset_window = 10
 gs_multiple_echo = True
-gs_im_amp = 1.0
+
 
 gp_eta = 0.2
         
 robot_stime = 10000
-        
+
 gm_n_input_layers = [gs_n_input, gs_n_input, gs_n_input]
 gm_n_singlemod_layers = [64, 64, 64]
 gm_n_hidden_layers = [16, 16]

@@ -37,7 +37,7 @@ class GoalSelector(object) :
 
     def __init__(self, dt, tau, alpha, epsilon, eta, n_input,
             n_goal_units, n_echo_units, n_rout_units,
-            im_amp, im_decay, match_decay, noise, scale, sm_temp, g2e_spars,
+            match_decay, noise, scale, sm_temp, g2e_spars,
             goal_window, goal_learn_start, reset_window, echo_ampl=1000,
             multiple_echo=True):
         '''
@@ -50,8 +50,6 @@ class GoalSelector(object) :
         :param n_goal_units: number of units in the goal layer
         :param n_echo_units: number of units in the ESN
         :param n_rout_units: number of actuators
-        :param im_amp: amplification of the intrinsic trace
-        :param im_decay: decay of the intrinsic trace
         :param match_decay: decay of the matching trace
         :param noise: standard deviation of white noise in the actuators
         :param scale: scale of the noise oscillator periods
@@ -69,8 +67,6 @@ class GoalSelector(object) :
         self.ALPHA = alpha
         self.EPSILON = epsilon
         self.ETA = eta
-        self.IM_AMP = im_amp
-        self.IM_DECAY = im_decay
         self.MATCH_DECAY = match_decay
         self.NOISE = noise
         self.scale = scale
@@ -87,8 +83,6 @@ class GoalSelector(object) :
         self.ECHO_AMPL = echo_ampl
         self.MULTIPLE_ECHO = multiple_echo
         
-
-        self.competence_improvement_vec = np.zeros(self.N_GOAL_UNITS)
         self.goal_selection_vec = np.zeros(self.N_GOAL_UNITS)
         self.goal_window_counter = 0
         self.reset_window_counter = 0
@@ -164,17 +158,8 @@ class GoalSelector(object) :
             return idx
 
         return None
-        
-    def goal_update(self, im_value ):
-        
-        # the index of the current highest goal
-        win_indx = np.argmax(self.goal_selection_vec)
 
-        # update the movin' average for that goal
-        self.competence_improvement_vec[win_indx] += self.IM_DECAY*(
-                -self.competence_improvement_vec[win_indx] +self.IM_AMP*im_value)
-
-    def goal_selection(self, goal_mask = None, incompetence_vec = None ):
+    def goal_selection(self, goal_mask = None, competence_improvement_vec = None, incompetence_vec = None ):
         '''
         :param im_value: current intrinsic motivational value
         :param goal_mask: which goals can be selected
@@ -194,10 +179,13 @@ class GoalSelector(object) :
             
             #------------------------------------------------------------
             # compose motivations
+            
+            motivation = np.zeros(curr_goal_idcs.shape)
 
             # get values of the averages competence improovements
             # of the currently avaliable goals 
-            motivation = self.competence_improvement_vec[curr_goal_idcs]
+            if competence_improvement_vec is not None:
+                motivation = competence_improvement_vec[curr_goal_idcs]
   
             # add incompetence
             if incompetence_vec is not None:

@@ -13,7 +13,7 @@ class Simulation(object) :
                 lims = body_simulator_lims,
                 touch_th = body_simulator_touch_th,
                 num_touch_sensors = body_simulator_num_touch_sensors,
-                touch_sigma = body_simulator_touch_sigma
+                touch_sigma = body_simulator_touch_sigma,
                 )
 
         self.gs = GoalSelector(
@@ -26,8 +26,6 @@ class Simulation(object) :
                 n_goal_units = gs_n_goal_units,
                 n_echo_units = gs_n_echo_units,
                 n_rout_units = gs_n_rout_units,
-                im_amp = gs_im_amp,
-                im_decay = gs_im_decay,
                 match_decay = gs_match_decay,
                 noise = gs_noise,
                 scale = gs_noise_scale,
@@ -60,13 +58,18 @@ class Simulation(object) :
                 single_kohonen = gm_single_kohonen
             )
 
+        self.IM_AMP = simulation_im_amp
+
+        self.IM_DECAY = simulation_im_decay
 
         self.stime = robot_stime
         
         self.trial_window = self.gs.RESET_WINDOW + self.gs.GOAL_WINDOW
         
         self.goal_mask = np.zeros(self.gs.N_GOAL_UNITS).astype("bool")
-          
+        
+        self.competence_improvement_vec = np.zeros(self.gs.N_GOAL_UNITS)
+
         self.match_value = False
 
         self.intrinsic_motivation_value = 0.0
@@ -96,7 +99,7 @@ class Simulation(object) :
         sel = self.gs.is_goal_selected
         
         gmask = self.goal_mask.astype("float")
-        gv = self.gs.competence_improvement_vec
+        gv = self.competence_improvement_vec
         gw = self.gs.goal_selection_vec
         gr = self.gm.goalrep_layer
         
@@ -306,6 +309,15 @@ class Simulation(object) :
             self.log_weights.write( log_string + "\n")
             self.log_weights.flush()
 
+    def competence_improvement_update(self, im_value ):
+        
+        # the index of the current highest goal
+        win_indx = np.argmax(self.goal_selection_vec)
+
+        # update the movin' average for that goal
+        self.competence_improvement_vec[win_indx] += self.IM_DECAY*(
+                -self.competence_improvement_vec[win_indx] +self.IM_AMP*im_value)
+
     def step(self) :
 
         self.timestep += 1 
@@ -432,7 +444,7 @@ class Simulation(object) :
 
                 # update variables
                 self.intrinsic_motivation_value = self.gp.prediction_error 
-                self.gs.goal_update(self.intrinsic_motivation_value)
+                self.gs.competence_improvement_update(self.intrinsic_motivation_value)
                 
                 
                 self.gs.is_goal_selected = False
