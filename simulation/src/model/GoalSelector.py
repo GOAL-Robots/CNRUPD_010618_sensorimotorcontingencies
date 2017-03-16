@@ -88,8 +88,8 @@ class GoalSelector(object) :
         self.MULTIPLE_ECHO = multiple_echo
         
 
-        self.goalvec = np.zeros(self.N_GOAL_UNITS)
-        self.goal_win = np.zeros(self.N_GOAL_UNITS)
+        self.competence_improvement_vec = np.zeros(self.N_GOAL_UNITS)
+        self.goal_selection_vec = np.zeros(self.N_GOAL_UNITS)
         self.goal_window_counter = 0
         self.reset_window_counter = 0
 
@@ -144,7 +144,7 @@ class GoalSelector(object) :
         self.match_mean = np.zeros(self.N_GOAL_UNITS)
         self.curr_noise = 0.0
 
-        self.goal_selected = False
+        self.is_goal_selected = False
         self.reset_oscillator()
         self.t = 0
 
@@ -159,8 +159,8 @@ class GoalSelector(object) :
 
     def goal_index(self):
 
-        if  np.sum(self.goal_win)>0:   
-            idx = np.nonzero(self.goal_win>0)[0][0]
+        if  np.sum(self.goal_selection_vec)>0:   
+            idx = np.nonzero(self.goal_selection_vec>0)[0][0]
             return idx
 
         return None
@@ -168,17 +168,17 @@ class GoalSelector(object) :
     def goal_update(self, im_value ):
         
         # the index of the current highest goal
-        win_indx = np.argmax(self.goal_win)
+        win_indx = np.argmax(self.goal_selection_vec)
 
         # update the movin' average for that goal
-        self.goalvec[win_indx] += self.IM_DECAY*(
-                -self.goalvec[win_indx] +self.IM_AMP*im_value)
+        self.competence_improvement_vec[win_indx] += self.IM_DECAY*(
+                -self.competence_improvement_vec[win_indx] +self.IM_AMP*im_value)
 
-    def goal_selection(self, goal_mask = None, novelty = None ):
+    def goal_selection(self, goal_mask = None, incompetence_vec = None ):
         '''
         :param im_value: current intrinsic motivational value
         :param goal_mask: which goals can be selected
-        :param novelty: which goals are more novel to the controller
+        :param incompetence_vec: which goals are more novel to the controller
         '''
          
         # in case we do not have a mask create one 
@@ -187,35 +187,49 @@ class GoalSelector(object) :
             goal_mask = np.ones(self.N_GOAL_UNITS)
 
         # if no goal has been selected
-        if self.goal_selected == False :
+        if self.is_goal_selected == False :
             
             # get indices of the currently avaliable goals
             curr_goal_idcs = my_argwhere(goal_mask>0)
-            # get values of the averages of the currently 
-            # avaliable goals 
-            curr_goals = self.goalvec[curr_goal_idcs]
-            # add novelty
-            if novelty is not None:
-                curr_goals += novelty[curr_goal_idcs]
+            
+            #------------------------------------------------------------
+            # compose motivations
+
+            # get values of the averages competence improovements
+            # of the currently avaliable goals 
+            motivation = self.competence_improvement_vec[curr_goal_idcs]
+  
+            # add incompetence
+            if incompetence_vec is not None:
+                motivation += incompetence_vec[curr_goal_idcs]
+
+            #------------------------------------------------------------
+            
             # compute softmax between the currently avaliable goals
-            self.sm = softmax(curr_goals, self.SM_TEMP )
+            self.sm = softmax(motivation, self.SM_TEMP )
+            
             # cumulate probabilities between them
             cum_prob = np.hstack((0,np.cumsum(self.sm)))
+            
             # flip the coin 
             coin = np.random.rand()
+            
             # the winner between avaliable goals based on the flipped coin
             cur_goal_win = np.logical_and(cum_prob[:-1] < coin, cum_prob[1:] >= coin)
+            
             # index of the winner in the vector of all goals
             goal_win_idx = curr_goal_idcs[my_argwhere(cur_goal_win==True)]
-            # reset goal_win to all False values
-            self.goal_win *= False
+            
+            # reset goal_selection_vec to all False values
+            self.goal_selection_vec *= False
+            
             # set the winner to True
-            self.goal_win[goal_win_idx] = True 
+            self.goal_selection_vec[goal_win_idx] = True 
 
             self.t = 0
             self.reset_oscillator()
 
-            self.goal_selected = True
+            self.is_goal_selected = True
             
             goalwin_idx = self.goal_index()
 
@@ -249,19 +263,19 @@ class GoalSelector(object) :
             self.target_position.setdefault(goalwin_idx,  pos)   
             pos_mean =  self.target_position[goalwin_idx]
             n =  self.target_counter[goalwin_idx] 
-            pos_mean += (1.0 - self.match_mean[self.goal_win>0])* (-pos_mean + pos)
+            pos_mean += (1.0 - self.match_mean[self.goal_selection_vec>0])* (-pos_mean + pos)
             self.target_position[goalwin_idx] = pos_mean
 
 
 
     def reset(self, match):
             self.match_mean += self.MATCH_DECAY*(
-                    -self.match_mean + match)*self.goal_win
+                    -self.match_mean + match)*self.goal_selection_vec
            
             self.curr_echonet.reset()
             self.curr_echonet.reset_data()
  
-            self.goal_win *= 0
+            self.goal_selection_vec *= 0
             self.goal_window_counter = 0
             self.reset_window_counter = 0
             self.pid.reset()
@@ -270,7 +284,7 @@ class GoalSelector(object) :
 
 
     def getCurrMatch(self) :
-        res = self.match_mean[self.goal_win>0]
+        res = self.match_mean[self.goal_selection_vec>0]
         if len(res) == 1:
             return np.asscalar(res)
         return 0
@@ -282,13 +296,13 @@ class GoalSelector(object) :
 
         goal2echo_inp = np.dot(
                 self.GOAL2ECHO_W,
-                self.goal_win*self.goal_selected)
+                self.goal_selection_vec*self.is_goal_selected)
 
         inp2echo_inp = np.dot(
                 self.INP2ECHO_W,
                 np.hstack((
                     inp,
-                    self.goal_win*self.goal_selected
+                    self.goal_selection_vec*self.is_goal_selected
                     )) )
 
         goalwin_idx = self.goal_index()
@@ -301,7 +315,7 @@ class GoalSelector(object) :
         self.read_out = np.dot(self.curr_echo2out_w, self.curr_echonet.out)
         curr_match = self.getCurrMatch()
         
-        if np.all(self.goal_win==0):
+        if np.all(self.goal_selection_vec==0):
             curr_match = 0.0
         
         # TODO Debug

@@ -671,7 +671,7 @@ class KinematicsView(QtGui.QWidget):
         curr_color = QtCore.Qt.black
         curr_width = 1
   
-        if self.simulation.gs.goal_selected :
+        if self.simulation.gs.is_goal_selected :
             curr_pos = real_l_pos
             paint_arm(curr_pos, curr_color, curr_width)
             

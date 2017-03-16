@@ -28,25 +28,25 @@ class GoalPredictor(object) :
 
         self.inp_layer = np.zeros(self.N_GOAL_UNITS)
         self.w = np.zeros(self.N_GOAL_UNITS)
-        self.goal_win = np.zeros(self.N_GOAL_UNITS)
+        self.goal_selection_vec = np.zeros(self.N_GOAL_UNITS)
 
         self.prediction_error = 0.0
         self.out = 0.0
         
 
-    def step(self, goal_win):
+    def step(self, goal_selection_vec):
 
-        self.goal_win = goal_win
-        self.out = np.dot(self.w,self.goal_win)
+        self.goal_selection_vec = goal_selection_vec
+        self.out = np.dot(self.w,self.goal_selection_vec)
     
     def getCurrPred(self) :
-        res = self.w[self.goal_win>0]
+        res = self.w[self.goal_selection_vec>0]
         if len(res) == 1:
             return np.asscalar(res)
         return 0
 
     def learn(self, match):
         
-        self.w += self.ETA*self.goal_win*(match - self.out)
+        self.w += self.ETA*self.goal_selection_vec*(match - self.out)
         self.prediction_error = np.maximum(0.0, match - self.out)
 

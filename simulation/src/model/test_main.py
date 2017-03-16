@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
             # Prediction
             if gs.goal_window_counter == 0:
-                gp.step(gs.goal_win) 
+                gp.step(gs.goal_selection_vec) 
 
             static_inp *= 0.0
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
             # chain.set_chain(body)
             # 
             # finger = chain.get_point(0.0)
-            # skin_region = chain.get_point(target[np.arange(len(target))[gs.goal_win][0]])
+            # skin_region = chain.get_point(target[np.arange(len(target))[gs.goal_selection_vec][0]])
             # 
             # touch = np.linalg.norm(finger - skin_region) < 0.5
              
@@ -238,7 +238,7 @@ if __name__ == "__main__":
             
             match_value = GoalPredictor.match(
                     gm.goalrep_layer, 
-                    gs.goal_win
+                    gs.goal_selection_vec
                     )
             
             if match_value ==1 or gs.goal_window_counter >= gs.GOAL_WINDOW:
@@ -248,7 +248,7 @@ if __name__ == "__main__":
                 
                 im_value = gp.prediction_error 
                 
-                gs.goal_selected = False
+                gs.is_goal_selected = False
                 gs.reset(match = match_value)
                 body_simulator.reset()
                 
@@ -259,7 +259,7 @@ if __name__ == "__main__":
 
         #----------------------------------------------------------
         # Plot
-        idcs = np.squeeze(np.argwhere(gs.goal_win==True))
+        idcs = np.squeeze(np.argwhere(gs.goal_selection_vec==True))
         if idcs.size==1  :
             gs_one.set_data(
                     [gs_start+gs_ts*(idcs),

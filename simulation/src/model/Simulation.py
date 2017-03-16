@@ -93,11 +93,11 @@ class Simulation(object) :
 
     def get_selection_arrays(self) :
 
-        sel = self.gs.goal_selected
+        sel = self.gs.is_goal_selected
         
         gmask = self.goal_mask.astype("float")
-        gv = self.gs.goalvec
-        gw = self.gs.goal_win
+        gv = self.gs.competence_improvement_vec
+        gw = self.gs.goal_selection_vec
         gr = self.gm.goalrep_layer
         
         goal_keys = self.gs.target_position.keys()
@@ -135,7 +135,7 @@ class Simulation(object) :
 
     def get_arm_positions(self) :
         
-        sel = self.gs.goal_selected
+        sel = self.gs.is_goal_selected
         
         real_l_pos = self.body_simulator.actuator.position_l
         real_r_pos = self.body_simulator.actuator.position_r
@@ -208,7 +208,7 @@ class Simulation(object) :
             for touch in  self.body_simulator.touches :
                 log_string += "{:6.4f} ".format(touch)
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
             # save to file
             self.log_cont_sensors.write( log_string + "\n")
             self.log_cont_sensors.flush()
@@ -227,7 +227,7 @@ class Simulation(object) :
             for touch in  self.body_simulator.touches :
                 log_string += "{:6.4f} ".format(touch)
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
             # save to file
             self.log_sensors.write( log_string + "\n")
             self.log_sensors.flush()
@@ -245,7 +245,7 @@ class Simulation(object) :
             for pos in  curr_position:
                 log_string += "{:6.4f} ".format(pos)
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
             # save to file
             self.log_position.write( log_string + "\n")
             self.log_position.flush()
@@ -263,7 +263,7 @@ class Simulation(object) :
             for pre in  curr_predictions:
                 log_string += "{:6.4f} ".format(pre)
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
             # save to file
             self.log_predictions.write( log_string + "\n")
             self.log_predictions.flush()
@@ -287,7 +287,7 @@ class Simulation(object) :
                     log_string += "{:6.4f} ".format(angle)
 
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_win)) 
+            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
             # save to file
             self.log_targets.write( log_string + "\n")
             self.log_targets.flush()
@@ -317,11 +317,12 @@ class Simulation(object) :
             self.goal_mask = np.logical_or(self.goal_mask, (self.gm.goalrep_layer > 0) )
 
             # Selection
-            self.gs.goal_selection( self.goal_mask, novelty = 0.25*(1.0 - self.gp.w) )
+            self.gs.goal_selection( self.goal_mask, 
+                    incompetence_vec = (1.0 - self.gp.w) )
 
             # Prediction
             if self.gs.goal_window_counter == 0:
-                self.gp.step(self.gs.goal_win) 
+                self.gp.step(self.gs.goal_selection_vec) 
 
 
             self.gm_input = [
@@ -401,7 +402,7 @@ class Simulation(object) :
 
             self.match_value = match(
                     self.gm.goalrep_layer, 
-                    self.gs.goal_win
+                    self.gs.goal_selection_vec
                     ) 
 
             if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
@@ -434,7 +435,7 @@ class Simulation(object) :
                 self.gs.goal_update(self.intrinsic_motivation_value)
                 
                 
-                self.gs.goal_selected = False
+                self.gs.is_goal_selected = False
                 self.gs.reset(match = self.match_value)
                 self.body_simulator.reset()
                 
