@@ -2,6 +2,8 @@ import numpy as np
 
 simulation_im_amp = 1.0
 simulation_im_decay = 0.2 
+simulation_competence_improvement_prop = 0.0 
+simulation_incompetence_prop = 1.0 
 
 
 body_simulator_pixels = [20, 20]

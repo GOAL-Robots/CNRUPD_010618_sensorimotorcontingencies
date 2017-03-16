@@ -61,6 +61,10 @@ class Simulation(object) :
         self.IM_AMP = simulation_im_amp
 
         self.IM_DECAY = simulation_im_decay
+        
+        self.COMPETENCE_IMPROVEMENT_PROP = simulation_competence_improvement_prop
+        
+        self.INCOMPETENCE_PROP = simulation_incompetence_prop
 
         self.stime = robot_stime
         
@@ -309,10 +313,11 @@ class Simulation(object) :
             self.log_weights.write( log_string + "\n")
             self.log_weights.flush()
 
-    def competence_improvement_update(self, im_value ):
+    def competence_improvement_update(self, im_value, goal_selection_vec):
+
         
         # the index of the current highest goal
-        win_indx = np.argmax(self.goal_selection_vec)
+        win_indx = np.argmax(goal_selection_vec)
 
         # update the movin' average for that goal
         self.competence_improvement_vec[win_indx] += self.IM_DECAY*(
@@ -323,14 +328,16 @@ class Simulation(object) :
         self.timestep += 1 
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
-        
 
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask, (self.gm.goalrep_layer > 0) )
 
             # Selection
-            self.gs.goal_selection( self.goal_mask, 
-                    incompetence_vec = (1.0 - self.gp.w) )
+            self.gs.goal_selection( self.goal_mask,
+                    competence_improvement_vec = \
+                            self.COMPETENCE_IMPROVEMENT_PROP*self.competence_improvement_vec,
+                    incompetence_vec = \
+                            self.INCOMPETENCE_PROP*(1.0 - self.gp.w) )
 
             # Prediction
             if self.gs.goal_window_counter == 0:
@@ -444,7 +451,7 @@ class Simulation(object) :
 
                 # update variables
                 self.intrinsic_motivation_value = self.gp.prediction_error 
-                self.gs.competence_improvement_update(self.intrinsic_motivation_value)
+                self.competence_improvement_update(self.intrinsic_motivation_value, self.gs.goal_selection_vec)
                 
                 
                 self.gs.is_goal_selected = False
