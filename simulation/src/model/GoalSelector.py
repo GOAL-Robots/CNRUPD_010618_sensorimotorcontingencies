@@ -300,7 +300,7 @@ class GoalSelector(object) :
         self.curr_echonet.store(self.goal_window_counter)
 
         self.inp = self.curr_echonet.out
-        self.read_out = np.dot(self.curr_echo2out_w, self.curr_echonet.out)
+        self.read_out = np.tanh(np.dot(self.curr_echo2out_w, self.curr_echonet.out))
         curr_match = self.getCurrMatch()
         
         if np.all(self.goal_selection_vec==0):
@@ -335,7 +335,7 @@ class GoalSelector(object) :
                 y = self.tout
                 eta = self.ETA
                 w = self.curr_echo2out_w
-                w += eta*np.outer(target-y,x)
+                w += eta*np.outer((1-y**2)*(target-y),x)
         #------------------------------------------------
         
 
