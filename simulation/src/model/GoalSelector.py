@@ -255,7 +255,6 @@ class GoalSelector(object) :
             self.target_position[goalwin_idx] = pos_mean
 
 
-
     def reset(self, match):
             self.match_mean += self.MATCH_DECAY*(
                     -self.match_mean + match)*self.goal_selection_vec
@@ -306,21 +305,11 @@ class GoalSelector(object) :
         if np.all(self.goal_selection_vec==0):
             curr_match = 0.0
         
-        # TODO Debug
-
         # OSCILLATOR NOISE
         added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
         self.out = self.read_out + (1.0 - curr_match)*added_signal
         
-        # RANDOM WALK NOISE
-        # added_signal = 0.3*( 2.0*np.random.rand(self.N_ROUT_UNITS)-1.0 )
-        # self.out += added_signal
-        # self.out = np.maximum(np.minimum(self.out,-1),1.0 )
-        
-        # TODO Debug
-
         self.tout = self.read_out 
-        print self.tout 
 
         self.t += 1
 
