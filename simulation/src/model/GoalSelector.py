@@ -307,7 +307,7 @@ class GoalSelector(object) :
         
         # OSCILLATOR NOISE
         added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
-        self.out = self.read_out + (1.0 - curr_match)*added_signal
+        self.out = curr_match*self.read_out + (1.0 - curr_match)*added_signal
         
         self.tout = self.read_out 
 
