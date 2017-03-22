@@ -1,27 +1,27 @@
 #!/bin/bash
 
-# IFS=$'\n'
-# N_MACHINES=3
-# MIN_CORES=10
-# MIN_RAM=32
-# 
-# RES="$(${HOME}/g5kutils/avaliable_resources.sh 2>/dev/null)"
-# 
-# cluster=$(
-# for res in $(echo "$RES"); do 
-#     n_nodes=$(echo $res | awk '{print $3}')
-#     n_cores=$(echo $res | awk '{print $5}')
-#     ram=$(echo $res | awk '{print $7}')
-# 
-#     if [ $n_nodes -ge $N_MACHINES ] && [ $n_cores -ge $MIN_CORES ] && [ $ram -ge $MIN_RAM ]; then
-#         echo $res
-#     fi
-# done | head -n 1 | awk '{print $2}'
-# )
-# 
-# [ -z "$cluster" ] && echo "no reservation avaliable" && exit 1 
-# 
-# ${HOME}/g5kutils/deploy.sh -t 4:0:0 -u $cluster -n $N_MACHINES -f
+IFS=$'\n'
+N_MACHINES=3
+MIN_CORES=10
+MIN_RAM=32
+
+RES="$(${HOME}/g5kutils/avaliable_resources.sh 2>/dev/null)"
+
+cluster=$(
+for res in $(echo "$RES"); do 
+    n_nodes=$(echo $res | awk '{print $3}')
+    n_cores=$(echo $res | awk '{print $5}')
+    ram=$(echo $res | awk '{print $7}')
+
+    if [ $n_nodes -ge $N_MACHINES ] && [ $n_cores -ge $MIN_CORES ] && [ $ram -ge $MIN_RAM ]; then
+        echo $res
+    fi
+done | head -n 1 | awk '{print $2}'
+)
+
+[ -z "$cluster" ] && echo "no reservation avaliable" && exit 1 
+
+${HOME}/g5kutils/deploy.sh -t 4:0:0 -u $cluster -n $N_MACHINES -f
 
 if [ -z "$(ls ~/.G_*)" ]; then
     echo "no reservation avaliable"
