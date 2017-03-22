@@ -3,6 +3,7 @@
 #!/bin/bash
 
 set -e
+IFS=$'\n'
 
 # Manage arguments
 # -------------------------------------------------------------------------------------------
@@ -28,6 +29,7 @@ OPTIONS:
    -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
    -b --dumped      start from a dumped file
    -p --params      set initial parameters interactivelly
+   -P --paramfile   set initial parameters from file
    -h --help        show this help
 
 EOF
@@ -40,12 +42,13 @@ ITER=1
 START=0
 DUMPED=false
 PARAMS=false
+PARAMFILE=
 LEARN=all
 CUMULATIVE=false
 GRAPH=false
 
 # getopt
-GOTEMP="$(getopt -o "t:cn:gs:d:l:bph" -l "stime:,cum,num:,graph,start:,template:,learn:,dumped,params,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:cn:gs:d:l:bpP:h" -l "stime:,cum,num:,graph,start:,template:,learn:,dumped,params,paramfile,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -83,6 +86,9 @@ do
         -p | --params) 
             PARAMS=true
             shift;;
+        -P | --paramfile) 
+            PARAMFILE="$2"
+            shift 2;;
         -h | --help)
             echo "on help"
             usage; exit;
@@ -104,9 +110,23 @@ mkdir $TMP_TEMPLATE/test
 TEMPLATE=$TMP_TEMPLATE
 
 # prepare parameters
-if [ $PARAMS == true ]; then
+if [ $PARAMS == true ] && [ -z "$PARAMFILE" ]; then
     vim $TEMPLATE/src/model/parameters.py
     echo "done parameter setting"
+elif [ ! -z "$PARAMFILE" ]; then 
+    if [ ! -e ${CURR_DIR}/$PARAMFILE ]; then
+        echo $PARAMFILE
+        
+        echo "must give a file with parameters"
+        exit 1
+    fi
+    for line in $(cat ${CURR_DIR}/$PARAMFILE); do
+        KEY=$(echo $line | sed -e"s/^\s*\(.*\+\)\s\+=\s*\(.*\)\s*$/\1/")
+        VALUE=$(echo $line | sed -e"s/^\s*\(.*\+\)\s\+=\s*\(.*\)\s*$/\2/")
+        
+        perl -pi -e "s/${KEY}\s*=.*$/${KEY} = ${VALUE}/" $TEMPLATE/src/model/parameters.py
+
+    done
 fi
 
 # :param $1 type of siimulation
@@ -133,7 +153,6 @@ run()
             DUMP_OPT="-s $(pwd)/$DUMPED_FILE"
             echo "starting from $DUMPED_FILE"  
         fi
-
     else
         # there are no previous data, create from template
         cp -r $TEMPLATE $sim_dir
@@ -204,3 +223,5 @@ do
     sleep 1
 done 
 echo "all done"
+
+rm -fr $TEMPLATE 
