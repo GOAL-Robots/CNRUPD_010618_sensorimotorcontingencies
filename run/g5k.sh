@@ -21,7 +21,7 @@ done | head -n 1 | awk '{print $2}'
 
 [ -z "$cluster" ] && echo "no reservation avaliable" && exit 1 
 
-${HOME}/g5kutils/deploy.sh -t 4:0:0 -u $cluster -n $N_MACHINES -f
+${HOME}/g5kutils/deploy.sh -t 9:0:0 -u $cluster -n $N_MACHINES -f
 
 if [ -z "$(ls ~/.G_*)" ]; then
     echo "no reservation avaliable"
