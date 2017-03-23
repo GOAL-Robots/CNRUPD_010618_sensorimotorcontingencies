@@ -158,8 +158,12 @@ run()
         cp -r $TEMPLATE $sim_dir
         echo "populating $sim_dir"
     fi
+    cp $TEMPLATE/src/model/parameters.py $sim_dir/src/model/parameters.py
 
     cd $sim_dir
+
+
+
     perl -pi -e "s/^(\s*)([^#]+)( # MIXED)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
     perl -pi -e "s/^(\s*)([^#]+)( # PRED)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
     perl -pi -e "s/^(\s*)([^#]+)( # MATCH)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 

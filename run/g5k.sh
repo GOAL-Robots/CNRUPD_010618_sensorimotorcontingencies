@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IFS=$'\n'
-N_MACHINES=3
+N_MACHINES=2
 MIN_CORES=10
 MIN_RAM=32
 
