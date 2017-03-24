@@ -29,23 +29,16 @@ if [ -z "$(ls ~/.G_*)" ]; then
 fi
 
 declare -a nodes=($(cat ~/.G_*/NODES|uniq))
-declare -a dirs=(sm_c0i1 sm_c1i0p2 sm_c1i0p5)
+declare -a dirs=(sm_c1i0_n sm_c1i0p2_n)
 
 params[0]=$(cat<<HERE_PARAMS
-simulation_competence_improvement_prop = 0.0 
-simulation_incompetence_prop = 1.0 
-GOAL_NUMBER = 9 
-HERE_PARAMS
-)
-
-params[2]=$(cat<<HERE_PARAMS
 simulation_competence_improvement_prop = 1.0 
-simulation_incompetence_prop = 0.5 
+simulation_incompetence_prop = 0.0 
 GOAL_NUMBER = 9 
 HERE_PARAMS
 )
 
-params[3]=$(cat<<HERE_PARAMS
+params[1]=$(cat<<HERE_PARAMS
 simulation_competence_improvement_prop = 1.0 
 simulation_incompetence_prop = 0.2 
 GOAL_NUMBER = 9 
@@ -61,6 +54,10 @@ for i in $(seq 0 2); do
     echo "using node $node"
     echo "storing in ${HOME}/working/$wdir"    
     echo
+    
+    if [ ! -d ${HOME}/working/$wdir ]; then
+        mkdir ${HOME}/working/$wdir 
+    fi
 
     echo "${params[i]}" > ${HOME}/working/${wdir}/params
     
