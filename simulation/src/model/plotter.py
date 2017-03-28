@@ -356,9 +356,11 @@ class GoalAbstractionMaps(pg.GraphicsView):
         gr1 = gr1.reshape(raw_gr1,raw_gr1, order="F")
 
         if self.simulation.gm.SINGLE_KOHONEN :
+
             self.imgs[0].setImage( i3 , levels=(0,10) )
             self.imgs[1].setImage( wi3_gr , levels=(0,1) )
             self.imgs[2].setImage( gr1 , levels=(0,1) )
+        
         else:
 
             self.imgs[0].setImage( i1 , levels=(-1,1) )
@@ -480,11 +482,11 @@ class GoalSelectionMaps(pg.GraphicsView):
     
         goals = len(gw)
         raw_gw = int(np.sqrt(goals))
-        self.plot1.setImage( 0.6*gw.reshape(raw_gw, raw_gw) 
-            +0.4*gr.reshape(raw_gw, raw_gw) , levels=(0,1) )
-        self.plot3.setImage( (gmask).reshape(raw_gw, raw_gw), levels=(0,1) ) 
+        self.plot1.setImage( 0.8*gw.reshape(raw_gw, raw_gw).T 
+            +0.3*gr.reshape(raw_gw, raw_gw).T , levels=(0,1) )
+        self.plot3.setImage( gmask.reshape(raw_gw, raw_gw).T, levels=(0,1) ) 
         
-        targets = (targets).reshape(raw_gw, raw_gw)
+        targets = (targets).reshape(raw_gw, raw_gw).T
         self.plot4.setImage( targets, levels=(0,1) ) 
         points = np.vstack(np.where(targets>0)) +0.5
         self.plot6.setData(*points)
@@ -497,7 +499,7 @@ class GoalSelectionMaps(pg.GraphicsView):
         self.plot5view.setXRange(0,raw_gw)
         self.plot5view.setYRange(0,raw_gw)
         act = KinematicActuator() 
-        goal_idcs = np.arange(goals).reshape(raw_gw,raw_gw)
+        goal_idcs = np.arange(goals).reshape(raw_gw,raw_gw).T
         
         ps = []
         for goal in target_position.keys() :
@@ -534,7 +536,6 @@ class GoalSelectionMaps(pg.GraphicsView):
           
         gr.setData(pos=pos, adj=adj,  size=2 )
 
-        # if self.simulation.gs.goal_window_counter > self.simulation.gs.GOAL_WINDOW*(98/100.) :
         for g in range(self.simulation.gs.N_ECHO_UNITS):
             self.curves[g].setData(esn_data[g])
         

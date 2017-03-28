@@ -67,7 +67,6 @@ class PerceptionManager(object) :
         # compute the initial sensors' positions
         self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)        
 
-        # compute the initial values of of storage of previous sensors' positions 
         self.sensors_prev = self.chain.get_dense_chain(self.num_touch_sensors)        
     
     def get_image(self, body_tokens ):
@@ -152,7 +151,6 @@ class PerceptionManager(object) :
                 # add the current gaussian to the retina
                 image += g.reshape(*self.pixels)*angle
         
-        #TODO: control all rotations  (it works, but why we transpose this?)
         return image.T
     
     def calc_collision(self, body_tokens):
@@ -245,7 +243,6 @@ class PerceptionManager(object) :
             if touch>self.touch_th:
                 image += g.reshape(*self.pixels)
          
-        #TODO: control all rotations  (it works, but why we transpose this?)
         return image.T, touches
 
 #-----------------------------------------------------------------------------
