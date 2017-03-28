@@ -43,8 +43,8 @@ names(sensors) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", sens_labels, "CURR_GOA
 sensors = sensors[with(sensors, order(LEARNING_TYPE,INDEX,TIMESTEPS)),]
 sensors$prediction =  gpredictions$prediction
 
-TH_PREDICTION = 0.5
-TH_TIMESTEPS = max(sensors$TIMESTEPS)*(3/4)
+TH_PREDICTION = 0.8
+TH_TIMESTEPS = max(sensors$TIMESTEPS)*(7/8)
 sensors = subset(sensors, prediction >= TH_PREDICTION)
 sensors = subset(sensors, TIMESTEPS > TH_TIMESTEPS)
  
@@ -53,18 +53,6 @@ sensors = melt(sensors,
              measure.vars = sens_labels, 
              variable.name="sensor", 
              value.name="amp" )
-
-#---------------------------------------------------------------------
-# find the sensor with maximum touch for each goal
-maxes = sensors[,.(mx=max(amp)), by=.(CURR_GOAL) ]
-idcs = c()
-for(mx in maxes$mx)  idcs = c(idcs, which(sensors$amp==mx)[1])
-maxes$sensor = sensors$sensor[idcs]
-maxes = maxes[order(maxes$CURR_GOAL)]
-
-# add it to sensors
-sensors$GOAL_SENSOR = maxes[sensors$CURR_GOAL+1,3,with=FALSE]
-#---------------------------------------------------------------------
 
 
 means = sensors[,.(a_mean = mean(amp), 
@@ -76,9 +64,19 @@ means = sensors[,.(a_mean = mean(amp),
 means_goal = sensors[,.(a_mean = mean(amp), 
                          a_count = sum(amp>AMP_TH),  
                          a_sd = sd(amp),  
-                         a_err = sem(amp),
-                         GOAL_SENSOR=unique(GOAL_SENSOR)), by=.(LEARNING_TYPE, INDEX, sensor, CURR_GOAL)]
+                         a_err = sem(amp)), by=.(LEARNING_TYPE, INDEX, sensor, CURR_GOAL)]
 
+
+#---------------------------------------------------------------------
+# find the sensor with maximum touch for each goal
+maxes = means_goal[,.(mx=max(a_mean)), by=.(CURR_GOAL) ]
+idcs = c()
+for(mx in maxes$mx)  idcs = c(idcs, which(means_goal$a_mean==mx)[1])
+maxes$sensor = means_goal[idcs]$sensor
+maxes = maxes[order(maxes$sensor)]
+
+means_goal$CURR_GOAL_ORDERED=factor(means_goal$CURR_GOAL, levels=maxes$CURR_GOAL)
+#---------------------------------------------------------------------
 
 count_tot = sum(means$a_count)
 
@@ -101,13 +99,11 @@ for(idx in unique(means$INDEX))
     print(gp)
     dev.off()
   
-    sensor_to_goal=function(sensor)  maxes[maxes$sensor==sensor]$CURR_GOAL
     pdf(paste("gs_means_goal",format(idx),".pdf",sep=""))
     gp = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="mixed-2"), aes(x = sensor, y = a_mean))
     gp = gp + geom_bar(aes(y=a_count/count_tot),stat="identity", alpha=.3)    
+    gp = gp + facet_grid(CURR_GOAL_ORDERED~.)
     gp = gp + theme_bw() 
-    #gp = gp + facet_grid(GOAL_SENSOR~., labeller=as_labeller(sensor_to_goal) )
-    gp = gp + facet_grid(GOAL_SENSOR~. )
     gp = gp + theme( 
                     text=element_text(size=14, family="Verdana"), 
                     panel.border=element_blank(),
