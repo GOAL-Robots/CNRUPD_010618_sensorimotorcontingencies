@@ -4,22 +4,17 @@ IFS=$'\n'
 N_MACHINES=2
 MIN_CORES=10
 MIN_RAM=32
+WALLTIME=9:0:0
 
-RES="$(${HOME}/g5kutils/avaliable_resources.sh 2>/dev/null)"
 
-cluster=$(
-for res in $(echo "$RES"); do 
-    n_nodes=$(echo $res | awk '{print $3}')
-    n_cores=$(echo $res | awk '{print $5}')
-    ram=$(echo $res | awk '{print $7}')
-
-    if [ $n_nodes -ge $N_MACHINES ] && [ $n_cores -ge $MIN_CORES ] && [ $ram -ge $MIN_RAM ]; then
-        echo $res
-    fi
-done | head -n 1 | awk '{print $2}'
-)
+cluster=$(${HOME}/g5kutils/select_res.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -t $WALLTIME | grep resource: |  head -n 1 | awk '{print $3}') 
 
 [ -z "$cluster" ] && echo "no reservation avaliable" && exit 1 
+
+echo 
+echo "deployng $N_MACHINES machines on $cluster:"
+echo
+echo
 
 ${HOME}/g5kutils/deploy.sh -t 9:0:0 -u $cluster -n $N_MACHINES -f
 
@@ -44,6 +39,8 @@ simulation_incompetence_prop = 0.2
 GOAL_NUMBER = 9 
 HERE_PARAMS
 )
+
+echo $params
 
 for i in $(seq 0 2); do
    
