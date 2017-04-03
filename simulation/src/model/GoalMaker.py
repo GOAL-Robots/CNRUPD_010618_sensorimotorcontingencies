@@ -184,7 +184,8 @@ class GoalMaker(object):
 
         n_hidden_inp = []
         for n_hidden in xrange(self.TOT_SINGLEMOD_LAYERS):
-            n_hidden_inp.append(np.hstack(self.singlemod_layers[n_hidden:(n_hidden + 2)]))
+            n_hidden_inp.append(np.hstack(
+                self.singlemod_layers[n_hidden:(n_hidden + 2)]))
 
         # output
 
@@ -192,7 +193,7 @@ class GoalMaker(object):
 
         # goal representation
         if self.SINGLE_KOHONEN :
-            goalrep_inp = np.hstack(self.input_layers[-1])   # last layer is touch
+            goalrep_inp = np.hstack(self.input_layers[-1]) # last layer is touch
         else:
             goalrep_inp = np.hstack([
                 np.hstack(self.singlemod_layers),
@@ -258,7 +259,7 @@ class GoalMaker(object):
             som.learn(eta_scale=eta_scale)
         self.out_som.learn(eta_scale=eta_scale)
         self.goalrep_som.learn(eta_scale=eta_scale, pred=pred)
-        
+
 #----------------------------------------------------------------
 
 class GoalTesterSim(object):
@@ -289,16 +290,21 @@ class GoalTesterSim(object):
 
         period = 10.0
         if np.mean(self.body_simulator.actuator.angles_l) < np.pi*0.2 :
-            ldelta = np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.3+np.sin(t/period)*0.2
+            ldelta = ( np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS) *
+                      0.3+np.sin(t/period)*0.2 )
         else :
-            ldelta = -np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.3+np.sin(t/period)*0.2
+            ldelta = ( -np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS) *
+                      0.3+np.sin(t/period)*0.2 )
 
         if np.mean(self.body_simulator.actuator.angles_r) < np.pi*0.2 :
-            rdelta = np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.2+np.sin(t/period)*0.2
+            rdelta = ( np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS) *
+                      0.2+np.sin(t/period)*0.2 )
         else :
-            rdelta = -np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS)*0.2+np.sin(t/period)*0.2
+            rdelta = (-np.ones(self.body_simulator.actuator.NUMBER_OF_JOINTS) *
+                      0.2+np.sin(t/period)*0.2 )
 
-        self.body_simulator.step(larm_delta_angles=ldelta, rarm_delta_angles=rdelta)
+        self.body_simulator.step(larm_delta_angles=ldelta,
+                                 rarm_delta_angles=rdelta)
 
         self.goalmaker.step([self.body_simulator.pos_delta.ravel(),
                              self.body_simulator.prop_delta.ravel()*50.0,
@@ -310,7 +316,8 @@ class GoalTesterSim(object):
         i1, i2, i3 = self.goalmaker.input_layers
         sm1, sm2, sm3 = self.goalmaker.singlemod_layers
         h1, h2 = self.goalmaker.hidden_layers
-        wsm1, wsm2, wsm3 = (som.inp2out_w for som in self.goalmaker.singlemod_soms)
+        wsm1, wsm2, wsm3 = (som.inp2out_w for som in
+                            self.goalmaker.singlemod_soms)
         wh1, wh2 = (som.inp2out_w for som in self.goalmaker.hidden_soms)
         wo1 = self.goalmaker.out_som.inp2out_w
         o1 = self.goalmaker.output_layer

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+
 IFS=$'\n'
 
 # Manage arguments
@@ -19,7 +19,6 @@ This script builds the online plots
 
 OPTIONS:
    -d --dir         where to find data
-   -v --visualize   visualize on html
    -l --loop        run recursivelly to follow online course
    -h --help        show this help
 
@@ -32,7 +31,7 @@ LOOP=false
 VISUALIZE=false
 
 # getopt
-GOTEMP="$(getopt -o "d:lvh" -l "dir:,loop,visualize,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "d:lh" -l "dir:,loop,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -46,9 +45,6 @@ do
         -d | --dir) 
             DIR="$2"
             shift 2;;
-        -v | --visualize) 
-            VISUALIZE=true
-            shift;;
         -l | --loop) 
             LOOP=true
             shift;;
@@ -69,7 +65,7 @@ fi
 BASE=$(echo $0|sed -e"s/\/run\/$(basename $0)//")
 
 CURR=$(pwd)
-TMP_DIR=/tmp/$(basename $DIR)
+TMP_DIR=/tmp/$(basename $DIR)_plots
 
 [ ! -d "$TMP_DIR" ] && mkdir $TMP_DIR
 rm -fr $TMP_DIR/*
@@ -77,7 +73,6 @@ rm -fr $TMP_DIR/*
 echo "data dir: $DIR"
 echo "source dir: $BASE"
 
-if [ $VISUALIZE == true ]; then
 
 cat << EOF > $TMP_DIR/plots.html
 <!DOCTYPE html>
@@ -98,6 +93,10 @@ cat << EOF > $TMP_DIR/plots.html
     <td><img src="gs_means1.png"   width="100%"></td>
     <td><img src="touches.png"  width="100%"></td>
   </tr>
+  <tr>
+    <td><img src="gs_means_goal1.png"   width="100%"></td>
+    <td></td>
+  </tr>
 </table>
 
 </body>
@@ -105,34 +104,34 @@ cat << EOF > $TMP_DIR/plots.html
 </html>
 EOF
 
+
+
 x-www-browser $TMP_DIR/plots.html & 
-
-fi
-
+sleep 2
 
 run()
 {
     cd $TMP_DIR
-    
-    cat $(find $DIR |grep -v test| grep cont) > $TMP_DIR/log_cont_sensors
-    cat $(find $DIR |grep -v test| grep predictions) | sort -k 1 -n | sed -e "s/^/mixed-2 1 /" > $TMP_DIR/all_predictions
-    cat $(find $DIR |grep -v test| grep log_sensors) | sort -k 1 -n | sed -e "s/^/mixed-2 1 /" > $TMP_DIR/all_sensors
+   
+    echo "collect data..."     
+    cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
+    cat $(find $DIR | grep predictions) | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_predictions
+    cat $(find $DIR | grep log_sensors) | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_sensors
 
-
+    echo "run R scripts..."
     R CMD BATCH ${BASE}/rscripts/analyze_touches.R
     R CMD BATCH ${BASE}/rscripts/analyze_predictions.R 
     R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
+    
+    echo "convert images to png..."
+    for f in *.pdf; do
+        convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
+    done
+    echo "done"
 
-    if [ $VISUALIZE == true ]; then
-        for f in *.pdf; do
-            convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
-        done
-    fi
-    sleep 1
 }
 
+run
 if [ $LOOP == true ]; then
     for((;;)); do run; done
-else
-    run
 fi

@@ -21,12 +21,10 @@ This script runs batteries of robot simulations
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
-   -c --cum         cumulative simulations
    -n --num         number of simulations
    -g --graph       graphics on
    -s --start       start index of simulation
    -d --template    template folder containing the exec environment
-   -l --learn       learning type [match, match-2,  pred, mixed, mixed-2, mixed-3, all] 
    -b --dumped      start from a dumped file
    -p --params      set initial parameters interactivelly
    -P --paramfile   set initial parameters from file
@@ -43,12 +41,10 @@ START=0
 DUMPED=false
 PARAMS=false
 PARAMFILE=
-LEARN=all
-CUMULATIVE=false
 GRAPH=false
 
 # getopt
-GOTEMP="$(getopt -o "t:cn:gs:d:l:bpP:h" -l "stime:,cum,num:,graph,start:,template:,learn:,dumped,params,paramfile,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:gs:d:bpP:h" -l "stime:,num:,graph,start:,template:,dumped,params,paramfile,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -62,9 +58,6 @@ do
         -t | --stime) 
             TIMESTEPS="$2"
             shift 2;;
-        -c | --cum) 
-            CUMULATIVE=true
-            shift;;
         -n | --num) 
             ITER="$2"
             shift 2;;
@@ -76,9 +69,6 @@ do
             shift 2;;
         -d | --template) 
             TEMPLATE="$2"
-            shift 2;;
-        -l | --learn) 
-            LEARN="$2"
             shift 2;;
         -b | --dumped) 
             DUMPED=true
@@ -125,18 +115,13 @@ elif [ ! -z "$PARAMFILE" ]; then
         VALUE=$(echo $line | sed -e"s/^\s*\(.*\+\)\s\+=\s*\(.*\)\s*$/\2/")
         
         perl -pi -e "s/${KEY}\s*=.*$/${KEY} = ${VALUE}/" $TEMPLATE/src/model/parameters.py
-
     done
 fi
 
-# :param $1 type of siimulation
-# :param $2 number oof simulation 
+# :param $1 name of simulation 
 run()
 {
-    local CURR=$1
-    local NUM=$(printf "%06d" $2)
-    local curr=$( echo $CURR| sed -e"s/\(.*\)/\L\1\E/")
-    local sim_dir=${curr}_$NUM
+    local sim_dir=$1
 
     cd ${CURR_DIR}
    
@@ -164,19 +149,10 @@ run()
 
 
 
-    perl -pi -e "s/^(\s*)([^#]+)( # MIXED)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
-    perl -pi -e "s/^(\s*)([^#]+)( # PRED)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
-    perl -pi -e "s/^(\s*)([^#]+)( # MATCH)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
-    perl -pi -e "s/^(\s*)([^#]+)( # MATCH-2)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
-    perl -pi -e "s/^(\s*)([^#]+)( # MIXED-2)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
-    perl -pi -e "s/^(\s*)([^#]+)( # MIXED-3)(\s*)$/\1# \2\3\n/" src/model/Simulation.py 
-
-    perl -pi -e "s/^(\s*)# ([^#]+)( # $CURR)(\s*)\n$/\1\2\3\n/" src/model/Simulation.py 
-
     local wdir=test
     echo "starting the simulation..."
 
-    CUM_OPT=; [ $CUMULATIVE == true ] &&  CUM_OPT="-n $ITER"   
+    CUM_OPT="-n $ITER"   
     GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
     MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
     
@@ -184,48 +160,21 @@ run()
 
     echo "simulation ended"    
 
-    echo "plotting ..."
-    R CMD BATCH plot.R  
-    if [ -f plot.pdf ]; then
-        mv plot.pdf ${wdir}/${curr}.pdf
-        echo "plotting ended"  
-    else
-        echo "plotting failed"
-        [ -f plot.Rout ] && cat plot.Rout
-    fi
-
     cd ${CURR_DIR}
 }
 
 echo start
 
-if [ $CUMULATIVE == false ]; then
-    iterations=$ITER
-else
-    iterations=1
-fi
+#--------------------------------------------------
+echo "Simulating...."
 
-for n in $(seq $iterations); 
-do
-    nn=$[n + START - 1]
-    num=$(printf "%06d" $nn)
-    echo "iter: $nn"
-    
-    cd ${CURR_DIR}
+cd ${CURR_DIR}
 
-    cnum=$num
-    in=$nn
-    
-    [ $LEARN == mixed    ] || [ $LEARN == all  ] &&  run MIXED $n &> log_mixed_$num &
-    [ $LEARN == mixed-2  ] || [ $LEARN == all  ] &&  run MIXED-2 $n &> log_mixed_2_$num &
-    [ $LEARN == pred     ] || [ $LEARN == all  ] &&  run PRED $n &> log_pred_$num &
-    wait
-    [ $LEARN == match    ] || [ $LEARN == all  ] &&  run MATCH $n &> log_match_$num &
-    [ $LEARN == match-2  ] || [ $LEARN == all  ] &&  run MIXED-3 $n &> log_mixed_3_$num &
-    [ $LEARN == match-3  ] || [ $LEARN == all  ] &&  run MATCH-2 $n &> log_match_2_$num &
-    wait
-    sleep 1
-done 
+name=main_data
+
+run $name &> log_$name 
+
 echo "all done"
 
-rm -fr $TEMPLATE 
+rm -fr $TEMPLATE
+#--------------------------------------------------

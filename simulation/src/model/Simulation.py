@@ -62,7 +62,8 @@ class Simulation(object) :
 
         self.IM_DECAY = simulation_im_decay
         
-        self.COMPETENCE_IMPROVEMENT_PROP = simulation_competence_improvement_prop
+        self.COMPETENCE_IMPROVEMENT_PROP = (
+            simulation_competence_improvement_prop )
         
         self.INCOMPETENCE_PROP = simulation_incompetence_prop
 
@@ -120,8 +121,8 @@ class Simulation(object) :
         
         esn_data = self.gs.curr_echonet.data[self.gs.curr_echonet.out_lab]
         
-        return gmask, gv, gw, gr,matched_targets, targets, self.gs.target_position, \
-                esn_data 
+        return (gmask, gv, gw, gr,matched_targets,
+                targets, self.gs.target_position, esn_data)
         
 
     def get_sensory_arrays(self) :
@@ -248,11 +249,13 @@ class Simulation(object) :
             # add timing
             log_string += "{:8d} ".format(self.timestep)
             # add position info
-            curr_position =  np.vstack(self.body_simulator.curr_body_tokens).ravel() 
+            curr_position =  np.vstack(
+                self.body_simulator.curr_body_tokens).ravel()
             for pos in  curr_position:
                 log_string += "{:6.4f} ".format(pos)
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
+            log_string += "{:6d}".format(np.argmax(
+                self.gs.goal_selection_vec))
             # save to file
             self.log_position.write( log_string + "\n")
             self.log_position.flush()
@@ -270,7 +273,8 @@ class Simulation(object) :
             for pre in  curr_predictions:
                 log_string += "{:6.4f} ".format(pre)
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
+            log_string += "{:6d}".format(np.argmax(
+                self.gs.goal_selection_vec))
             # save to file
             self.log_predictions.write( log_string + "\n")
             self.log_predictions.flush()
@@ -285,7 +289,8 @@ class Simulation(object) :
             log_string += "{:8d} ".format(self.timestep)
             # add targets info
             keys = sorted(self.gs.target_position.keys())
-            all_goals = np.NaN*np.ones( [self.gs.N_GOAL_UNITS, self.gs.N_ROUT_UNITS] )
+            all_goals = np.NaN*np.ones( [self.gs.N_GOAL_UNITS,
+                                         self.gs.N_ROUT_UNITS] )
             
             for key in sorted(self.gs.target_position.keys()):
                 all_goals[key,:] = self.gs.target_position[key] 
@@ -294,7 +299,8 @@ class Simulation(object) :
                     log_string += "{:6.4f} ".format(angle)
 
             # add goal index
-            log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec)) 
+            log_string += "{:6d}".format(
+                np.argmax(self.gs.goal_selection_vec))
             # save to file
             self.log_targets.write( log_string + "\n")
             self.log_targets.flush()
@@ -314,14 +320,14 @@ class Simulation(object) :
             self.log_weights.flush()
 
     def competence_improvement_update(self, im_value, goal_selection_vec):
-
         
         # the index of the current highest goal
         win_indx = np.argmax(goal_selection_vec)
 
         # update the movin' average for that goal
         self.competence_improvement_vec[win_indx] += self.IM_DECAY*(
-                -self.competence_improvement_vec[win_indx] +self.IM_AMP*im_value)
+                - self.competence_improvement_vec[win_indx]
+                + self.IM_AMP*im_value)
 
     def step(self) :
 
@@ -329,34 +335,43 @@ class Simulation(object) :
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
+
+
             # update the subset of goals to be selected
-            self.goal_mask = np.logical_or(self.goal_mask, (self.gm.goalrep_layer > 0) )
+            self.goal_mask = np.logical_or(self.goal_mask,
+                                           (self.gm.goalrep_layer > 0) )
 
             # Selection
             self.gs.goal_selection( self.goal_mask,
-                    competence_improvement_vec = \
-                            self.COMPETENCE_IMPROVEMENT_PROP*self.competence_improvement_vec,
-                    incompetence_vec = \
-                            self.INCOMPETENCE_PROP*(1.0 - self.gp.w) )
+                    competence_improvement_vec = 
+                            self.COMPETENCE_IMPROVEMENT_PROP * 
+                            self.competence_improvement_vec,
+                    incompetence_vec = ( self.INCOMPETENCE_PROP *
+                                         (1.0 - self.gp.w) ) )
 
             # Prediction
             if self.gs.goal_window_counter == 0:
                 self.gp.step(self.gs.goal_selection_vec) 
 
+            #todo CHANGED - 
+            ## add vision
+            self.gm_input[0] = self.body_simulator.pos_delta.ravel()*0
+            ## add proprioception
+            self.gm_input[1] = self.body_simulator.prop_delta.ravel()*0
+            # add touch
+            self.gm_input[2] = 5000.0*self.body_simulator.touch_delta.ravel()
 
-            self.gm_input = [
-                self.body_simulator.pos_delta.ravel()*500.0 *0.0,
-                self.body_simulator.prop_delta.ravel()*500.0*0.0,
-                self.body_simulator.touch_delta.ravel()*5000.0]
             self.static_inp *= 0
             for inp in self.gm_input :
-                self.static_inp += 0.0001*np.array(inp)
+                self.static_inp += ( 0.0001*np.array(inp) /
+                                    float(len(self.gm_input)) )
 
         else:
             if self.gs.reset_window_counter == 0:
                 self.static_inp = np.random.rand(*self.static_inp.shape)
         
         # movement body_simulator step
+
         self.gs.step( self.static_inp )
          
         # convert the vector of readout units from the selector into two
@@ -368,8 +383,8 @@ class Simulation(object) :
         larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
         rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
        
-        ##############################################################################
-        ##############################################################################
+        ########################################################################
+        ########################################################################
 
         # Simulation step
         collision = self.body_simulator.step_kinematic(
@@ -385,16 +400,19 @@ class Simulation(object) :
         if collision == True:
             self.save_cont_logs()
         
-        ##############################################################################
-        ##############################################################################
+
+
+
+        ########################################################################
+        ########################################################################
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
             self.gm.step( self.gm_input )
             
-            ##############################################################################################################
-            ##############################################################################################################
+            ####################################################################
+            ####################################################################
             
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()), pred = (1.0 - self.gp.w) ) # MIXED
             self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred = (1.0 - self.gp.w) ) # MIXED-2
@@ -403,8 +421,8 @@ class Simulation(object) :
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()) ) # MATCH
             # self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()) ) # MATCH-2
             
-            ##############################################################################################################
-            ##############################################################################################################
+            ####################################################################
+            ####################################################################
             
              
             # Train experts
@@ -424,7 +442,8 @@ class Simulation(object) :
                     self.gs.goal_selection_vec
                     ) 
 
-            if self.match_value ==1 or self.gs.goal_window_counter >= self.gs.GOAL_WINDOW:
+            if (self.match_value == 1 or
+                self.gs.goal_window_counter >= self.gs.GOAL_WINDOW) :
                
                 # log matches
                 if self.match_value == 1:
@@ -451,7 +470,9 @@ class Simulation(object) :
 
                 # update variables
                 self.intrinsic_motivation_value = self.gp.prediction_error 
-                self.competence_improvement_update(self.intrinsic_motivation_value, self.gs.goal_selection_vec)
+                self.competence_improvement_update(
+                    self.intrinsic_motivation_value,
+                    self.gs.goal_selection_vec)
                 
                 
                 self.gs.is_goal_selected = False
@@ -459,5 +480,8 @@ class Simulation(object) :
                 self.body_simulator.reset()
                 
         else:
+
+            # Train goal maker (empty input)
+            self.gm.step( self.gm_input )
             
             self.gs.reset_window_counter += 1      

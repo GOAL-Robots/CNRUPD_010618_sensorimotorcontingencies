@@ -44,7 +44,7 @@ sensors = sensors[with(sensors, order(LEARNING_TYPE,INDEX,TIMESTEPS)),]
 sensors$prediction =  gpredictions$prediction
 
 TH_PREDICTION = 0.8
-TH_TIMESTEPS = max(sensors$TIMESTEPS)*(7/8)
+TH_TIMESTEPS = max(sensors$TIMESTEPS)-50000
 sensors = subset(sensors, prediction >= TH_PREDICTION)
 sensors = subset(sensors, TIMESTEPS > TH_TIMESTEPS)
  
@@ -100,7 +100,7 @@ for(idx in unique(means$INDEX))
     dev.off()
   
     pdf(paste("gs_means_goal",format(idx),".pdf",sep=""))
-    gp = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="mixed-2"), aes(x = sensor, y = a_mean))
+    gp = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="SIM"), aes(x = sensor, y = a_mean))
     gp = gp + geom_bar(aes(y=a_count/count_tot),stat="identity", alpha=.3)    
     gp = gp + facet_grid(CURR_GOAL_ORDERED~.)
     gp = gp + theme_bw() 

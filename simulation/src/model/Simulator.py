@@ -46,7 +46,8 @@ class PerceptionManager(object) :
         self.chain = KM.Polychain()
 
         # compute the witdh and height magnitudes of the gaussians in proprioception retina 
-        self.proprioceptive_retina_sigma =  self.size*pm_proprioceptive_retina_sigma
+        self.proprioceptive_retina_sigma =  (self.size *
+                                             pm_proprioceptive_retina_sigma )
         # compute the witdh and height magnitudes of the gaussians in touch retina 
         self.touch_retina_sigma =  self.size*pm_touch_retina_sigma
 
@@ -347,8 +348,8 @@ class KinematicActuator(object) :
         Reset all angles to initial position
         '''
         self.set_angles(self.angles_l*0.0,self.angles_r*0.0)
-
-
+        self.position_l,_  = self.arm_l.get_joint_positions(self.angles_l)
+        self.position_r,_  = self.arm_r.get_joint_positions(self.angles_r)
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -478,14 +479,7 @@ class BodySimulator(object) :
                 rarm_angles_target_unscaled ) 
 
         # update previous data
-        self.larm_delta_angles_prev  = self.larm_delta_angles 
-        self.rarm_delta_angles_prev  = self.rarm_delta_angles 
-        self.larm_angles_prev  = self.larm_angles 
-        self.rarm_angles_prev  = self.rarm_angles 
-        self.larm_angles_theoric_prev  = self.larm_angles_theoric 
-        self.rarm_angles_theoric_prev  = self.rarm_angles_theoric 
-        self.larm_angles_target_prev  = self.larm_angles_target 
-        self.rarm_angles_target_prev  = self.rarm_angles_target 
+
         self.pos_old = self.pos
         self.prop_old = self.prop
         self.touch_old = self.touch 
@@ -502,8 +496,10 @@ class BodySimulator(object) :
 
         # compute actual angles 
         self.actuator.set_angles(self.larm_angles, self.rarm_angles)
-        self.theoric_actuator.set_angles(self.larm_angles_theoric, self.rarm_angles_theoric)
-        self.target_actuator.set_angles(self.larm_angles_target, self.rarm_angles_target)
+        self.theoric_actuator.set_angles(self.larm_angles_theoric,
+                                         self.rarm_angles_theoric)
+        self.target_actuator.set_angles(self.larm_angles_target,
+                                        self.rarm_angles_target)
         
 
         # compute actual positions given the current angles 
@@ -520,7 +516,8 @@ class BodySimulator(object) :
         rarm_angles = self.rarm_angles
         
         count_collisions = 1
-        c_scale = 5
+        c_scale = 20
+        delta = np.pi*(1.0/15.0)
    
         while autocollision : 
             if count_collisions <  c_scale : 
@@ -529,8 +526,18 @@ class BodySimulator(object) :
                 # from those producing collision
                 
                 # go back of a fraction of angle  
-                larm_angles = self.larm_angles - count_collisions*self.larm_delta_angles/float(c_scale*2)
-                rarm_angles = self.rarm_angles - count_collisions*self.rarm_delta_angles/float(c_scale*2)
+                larm_angles = (self.larm_angles
+                               - count_collisions
+                               * delta*(count_collisions**0.5)
+                               * self.larm_delta_angles
+                               / np.abs(self.larm_delta_angles)
+                               / float(c_scale*2) )
+                rarm_angles = (self.rarm_angles
+                               - count_collisions
+                               * delta*(count_collisions**0.5)
+                               * self.rarm_delta_angles
+                               / np.abs(self.rarm_delta_angles)
+                               / float(c_scale*2) )
 
                 # compute actual positions given the current angles 
                 self.get_positions( larm_angles, rarm_angles,
@@ -548,8 +555,8 @@ class BodySimulator(object) :
                 # if still colliding after 10 trials
                 # give up and reset to the angles before colliding
 
-                larm_angles = self.larm_angles - self.larm_delta_angles 
-                rarm_angles = self.rarm_angles - self.rarm_delta_angles
+                larm_angles = self.larm_angles - self.larm_delta_angles/2.0
+                rarm_angles = self.rarm_angles - self.rarm_delta_angles/2.0
 
                 # compute actual positions given the current angles 
                 self.get_positions( larm_angles, rarm_angles,
@@ -557,13 +564,13 @@ class BodySimulator(object) :
                         self.larm_angles_target, self.rarm_angles_target  )
                 
                 autocollision = False
-
+                res_autocollision = False
 
         self.larm_angles = larm_angles 
         self.rarm_angles = rarm_angles
        
       
-        ####################################################################################
+        #######################################################################
 
         # VISUAL POSITION
         self.pos = self.perc.get_image(body_tokens=self.curr_body_tokens)
@@ -573,7 +580,8 @@ class BodySimulator(object) :
         self.prop = self.perc.get_proprioception(
                 angles_tokens=angles_tokens)
         #TOUCH
-        self.touch, self.touches = self.perc.get_touch(body_tokens=self.curr_body_tokens)
+        self.touch, self.touches = self.perc.get_touch(
+            body_tokens = self.curr_body_tokens)
         
         delta_angles_tokens = (self.larm_delta_angles,
             self.rarm_delta_angles) 

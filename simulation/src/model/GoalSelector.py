@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 from model.esn import ESN
 import model.kinematics as KM 
@@ -12,7 +14,7 @@ def softmax(x, t=0.1):
     return e/np.sum(e)
 
 def my_argwhere(x) :
-    
+
     res = np.nonzero(x)[0]
 
     return res
@@ -20,10 +22,10 @@ def my_argwhere(x) :
 def oscillator(x, scale, freqs) :
     '''
     :param  x       list of timesteps
-    :param  scale   scaling factor for the frequency 
-    :param  freqs   list of frequencies (one for each trjectory) 
+    :param  scale   scaling factor for the frequency
+    :param  freqs   list of frequencies (one for each trjectory)
     '''
-    
+
     x = np.array(x) # timeseries
     trajectories_num = freqs.size
     freqs = np.array(freqs)
@@ -56,7 +58,7 @@ class GoalSelector(object) :
         :param sm_temp: temperature of the softmax
         :param g2e_spars: sparseness of weights form goals to esn
         :param goal_window: max duration of a goal selection
-        :param goal_learn_start: start of learning during trial 
+        :param goal_learn_start: start of learning during trial
         :param reset_window: duration of reset
         :param echo_ampl: amplitude of the input to the echo-state
         :param multiple_echo: if True each goal calls its own esn
@@ -87,7 +89,7 @@ class GoalSelector(object) :
         self.goal_window_counter = 0
         self.reset_window_counter = 0
 
-        self.echonet = [ 
+        self.echonet = [
                 ESN(
                     N       = self.N_ECHO_UNITS,
                     stime   = self.GOAL_WINDOW,
@@ -98,15 +100,15 @@ class GoalSelector(object) :
                     epsilon = self.EPSILON
                     ) for x in xrange(self.N_GOAL_UNITS + 1) ]
 
-        # input -> ESN   
+        # input -> ESN
         unit_int = self.N_ECHO_UNITS/4
-        self.INP2ECHO_W = np.zeros([self.N_ECHO_UNITS, 
+        self.INP2ECHO_W = np.zeros([self.N_ECHO_UNITS,
             self.N_INPUT+ self.N_GOAL_UNITS])
-        
+
         self.INP2ECHO_W[:(1*unit_int), :] = \
-                np.random.randn((1*unit_int), 
+                np.random.randn((1*unit_int),
                         self.N_INPUT+ self.N_GOAL_UNITS)
-        
+
         self.INP2ECHO_W[:(1*unit_int), :] *= \
                 (np.random.rand((1*unit_int),
                     self.N_INPUT+ self.N_GOAL_UNITS)<self.GOAL2ECHO_SPARSENESS)
@@ -159,7 +161,9 @@ class GoalSelector(object) :
 
         return None
 
-    def goal_selection(self, goal_mask = None, competence_improvement_vec = None, incompetence_vec = None ):
+    def goal_selection(self, goal_mask = None,
+                       competence_improvement_vec = None,
+                        incompetence_vec = None ):
         '''
         :param im_value: current intrinsic motivational value
         :param goal_mask: which goals can be selected
@@ -203,7 +207,8 @@ class GoalSelector(object) :
             coin = np.random.rand()
             
             # the winner between avaliable goals based on the flipped coin
-            cur_goal_win = np.logical_and(cum_prob[:-1] < coin, cum_prob[1:] >= coin)
+            cur_goal_win = np.logical_and(cum_prob[:-1] < coin,
+                                          cum_prob[1:] >= coin)
             
             # index of the winner in the vector of all goals
             goal_win_idx = curr_goal_idcs[my_argwhere(cur_goal_win==True)]
@@ -245,7 +250,8 @@ class GoalSelector(object) :
 
         if goalwin_idx is not None :
 
-            self.target_counter[goalwin_idx] = self.target_counter.setdefault(goalwin_idx,0) + 1
+            self.target_counter[goalwin_idx] = (
+                self.target_counter.setdefault(goalwin_idx,0) + 1 )
             self.target_counter[goalwin_idx] = 1
             pos =  curr_pos
             self.target_position.setdefault(goalwin_idx,  pos)   
@@ -256,6 +262,7 @@ class GoalSelector(object) :
 
 
     def reset(self, match):
+
             self.match_mean += self.MATCH_DECAY*(
                     -self.match_mean + match)*self.goal_selection_vec
            
@@ -271,6 +278,7 @@ class GoalSelector(object) :
 
 
     def getCurrMatch(self) :
+
         res = self.match_mean[self.goal_selection_vec>0]
         if len(res) == 1:
             return np.asscalar(res)
@@ -299,7 +307,9 @@ class GoalSelector(object) :
         self.curr_echonet.store(self.goal_window_counter)
 
         self.inp = self.curr_echonet.out
-        self.read_out = np.tanh(np.dot(self.curr_echo2out_w, self.curr_echonet.out))
+        self.read_out = np.tanh(np.dot(self.curr_echo2out_w,
+				       self.curr_echonet.out))
+        
         curr_match = self.getCurrMatch()
         
         if np.all(self.goal_selection_vec==0):
@@ -307,6 +317,7 @@ class GoalSelector(object) :
         
         # OSCILLATOR NOISE
         added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]  
+        
         self.out = curr_match*self.read_out + (1.0 - curr_match)*added_signal
         
         self.tout = self.read_out 
@@ -318,7 +329,8 @@ class GoalSelector(object) :
         goalwin_idx = self.goal_index()
 
         #------------------------------------------------
-        if goalwin_idx is not None and self.target_position.has_key(goalwin_idx):
+        if (goalwin_idx is not None and
+            self.target_position.has_key(goalwin_idx)) :
             if self.target_position.has_key(goalwin_idx):
                 target = self.target_position[goalwin_idx]
                 x = self.inp
@@ -327,8 +339,3 @@ class GoalSelector(object) :
                 w = self.curr_echo2out_w
                 w += eta*np.outer((1-y**2)*(target-y),x)
         #------------------------------------------------
-        
-
-
-
-
