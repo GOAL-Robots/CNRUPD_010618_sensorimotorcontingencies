@@ -136,7 +136,9 @@ run()
             # we want to continue from previous dumping and accumulate
             DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)" 
             DUMP_OPT="-s $(pwd)/$DUMPED_FILE"
-            echo "starting from $DUMPED_FILE"  
+            echo "starting from $DUMPED_FILE"
+            # we also clear previous dumps to maintain the folder small
+            rm -f ${sim_dir}/store/dumped_*  
         fi
     else
         # there are no previous data, create from template

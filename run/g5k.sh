@@ -3,8 +3,8 @@
 source ${HOME}/g5kutils/setwalltime.sh
 
 IFS=$'\n'
-N_MACHINES=4
-MIN_CORES=20
+N_MACHINES=2
+MIN_CORES=30
 MIN_RAM=100
 WALLTIME=$(max_walltime)
 
@@ -25,36 +25,21 @@ if [ -z "$(ls ~/.G_*)" ]; then
 fi
 
 declare -a nodes=($(cat ~/.G_*/NODES|uniq))
-declare -a dirs=(sm_t0p{50,25,00})
+declare -a dirs=(sm_singleecho_25g)
 
 params[0]=$(cat<<HERE_PARAMS
 simulation_competence_improvement_prop = 1.0
 simulation_incompetence_prop = 0.0
-gs_prediction_temperature = 0.0
-GOAL_NUMBER = 9
+gs_n_echo_units = 800
+gs_multiple_echo = False
+GOAL_NUMBER = 25
 HERE_PARAMS
 )
 
-params[1]=$(cat<<HERE_PARAMS
-simulation_competence_improvement_prop = 1.0
-simulation_incompetence_prop = 0.0
-gs_prediction_temperature = 0.25
-GOAL_NUMBER = 9
-HERE_PARAMS
-)
-
-
-params[1]=$(cat<<HERE_PARAMS
-simulation_competence_improvement_prop = 1.0
-simulation_incompetence_prop = 0.0
-gs_prediction_temperature = 0.5
-GOAL_NUMBER = 9
-HERE_PARAMS
-)
 
 echo $params
 
-for i in $(seq 0 2); do
+for i in $(seq 0 0); do
     individual=1
     for node in ${nodes[@]}; do
         wdir=${dirs[$i]}_$individual
