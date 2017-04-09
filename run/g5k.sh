@@ -23,7 +23,7 @@ HERE_PARAMS
 
 # CLEAR NON RUNNING SIMULATIOMS
 running_jobs="$(basename -a $(find .G_*)|sed -e"s/\.G_//")"
-for job in $(ls ${HOME}/.sensorimotor/*); do
+for job in $(ls ${HOME}/.sensorimotor/* 2>/dev/null); do
     if [ -z "$(echo "$running_jobs" | grep "\<$job\>")" ]; then
         rm -fr ${HOME}/.sensorimotor/$job
     else
