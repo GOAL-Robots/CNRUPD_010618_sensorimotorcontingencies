@@ -50,7 +50,7 @@ echo "deployng $N_MACHINES machines on $cluster:"
 echo
 echo
 
-${HOME}/g5kutils/deploy.sh -t $WALLTIME -u $cluster -n $N_MACHINES -f 2>&1 | tee log_deploy
+${HOME}/g5kutils/deploy.sh -t $WALLTIME -u $cluster -n $N_MACHINES -f | tee log_deploy 2>&1
 
 JOB_ID="$(cat log_deploy|grep JOB_ID| sed  -e"s/.*:\s\+\([0-9]\+\)\s*$/\1/")"
 

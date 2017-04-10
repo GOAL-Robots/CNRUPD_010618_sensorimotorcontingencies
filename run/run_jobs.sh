@@ -10,13 +10,15 @@ screen_session="$(${SCREEN} -ls | grep "\<sm\>"| awk '{print $1}')"
 [ -z "${screen_session}" ] && \
    ${SCREEN} -dmS sm
 
-# control the existence of the requested window
+# clean previous windows
+WINS="$(screen -S sm -Q windows |\
+    sed -e"s/\(\(\s\+\)*\)\([0-9]\+\s\+\)/\n/g; s/^\n//g"|head -n -2)"
+for win_id in $(cat WINS| sed -e"s/^\([0-9]\+\)\s\+.*/\1/"); do
+    ${screen} -S sm -p $win_id -X kill
+done
+
 screen_window="sm_$(date +"%Y%m%d%H%M")"
-declare -a windows_list=($(screen -S ${screen_window} -Q windows |\
-    sed -e"s/\(\(\s\+\)*\)\([0-9]\+\s\+\)/\n/g; s/^\n//g"))
-[[ ! " ${windows_list[@]} " == *" ${screen_window} "* ]] &&
-   ${SCREEN} -S sm -X screen -t ${screen_window}
-${SCREEN} -S sm -p ${screen_window}  -X stuff "\n"
+${SCREEN} -S sm -p ${screen_window}  -X screen
 
 # run command in the current window
 ${SCREEN} -S sm -p ${screen_window} \
