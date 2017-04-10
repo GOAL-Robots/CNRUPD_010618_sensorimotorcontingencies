@@ -106,7 +106,7 @@ do
         
         if [ -f "$START" ]; then  # THERE IS a previous dump from which to start 
             
-            if [ $CLEAN == true]; then
+            if [ $CLEAN == true ]; then
                 mv $START $WORK_DIR/dumped_robot 
             else
                 cp $START $WORK_DIR/dumped_robot 
