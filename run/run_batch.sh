@@ -101,7 +101,7 @@ do
     snum="$(printf "%06d" $n)"
 
     GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
-    CMD="$CMD $GR_OPT"
+    CMD="$CMD $GR_OPT -c"
     # run first block
     if [ $n -eq 0 ]; then
         
