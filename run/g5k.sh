@@ -42,7 +42,7 @@ for job in $(ls ${HOME}/.sensorimotor/ | grep "[0-9]\+"); do
 done
 
 # FIND RESOURCES 
-cluster=$(${HOME}/g5kutils/select_res.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -t $WALLTIME | grep resource: |  head -n 1 | awk '{print $3}')
+cluster=$(${HOME}/g5kutils/select_res.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -t $WALLTIME | grep resource: | tail -n 1 | awk '{print $3}')
 
 [ -z "$cluster" ] && echo "no reservation avaliable" && exit 1
 

@@ -154,7 +154,7 @@ run()
 
     CUM_OPT="-n $ITER"   
     GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
-    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
+    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -c -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
     
     eval "$MAIN_CMD"
 
