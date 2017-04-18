@@ -53,7 +53,10 @@ means$th = 1
 
 pdf("means.pdf")
 gp = ggplot(means, aes(x = TIMESTEPS, y = p_mean, group = LEARNING_TYPE))
-gp = gp + geom_ribbon(aes(ymin = p_min, ymax = p_max), colour = "#666666", fill = "#dddddd")
+gp = gp + geom_ribbon(aes(ymin = p_min, ymax = p_max), 
+                      colour = "#666666", fill = "#dddddd")
+gp = gp + geom_ribbon(aes(ymin = pmax(0, p_mean - p_sd), ymax = pmin(1,p_mean + p_sd)),
+                      colour = "#666666", fill = "#bbbbbb")
 gp = gp + geom_line(size = 1.5, colour = "#000000")
 gp = gp + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
 gp = gp + theme_bw() 

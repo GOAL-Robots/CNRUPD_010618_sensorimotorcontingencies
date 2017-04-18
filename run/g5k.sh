@@ -1,8 +1,8 @@
 #!/bin/bash
 
 source ${HOME}/g5kutils/setwalltime.sh
-
 IFS=$'\n'
+
 N_MACHINES=2
 MIN_CORES=30
 MIN_RAM=100
