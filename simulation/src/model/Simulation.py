@@ -358,7 +358,6 @@ class Simulation(object) :
             if self.gs.goal_window_counter == 0:
                 self.gp.step(self.gs.goal_selection_vec)
 
-            #todo CHANGED -
             ## add vision
             self.gm_input[0] = self.body_simulator.pos_delta.ravel()*0
             ## add proprioception
@@ -370,7 +369,6 @@ class Simulation(object) :
             for inp in self.gm_input :
                 self.static_inp += ( 0.0001*np.array(inp) /
                                     float(len(self.gm_input)) )
-
         else:
             if self.gs.reset_window_counter == 0:
                 self.static_inp = np.random.rand(*self.static_inp.shape)
@@ -405,16 +403,14 @@ class Simulation(object) :
         if collision == True:
             self.save_cont_logs()
 
-
-
-
         ########################################################################
         ########################################################################
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
-            self.gm.step( self.gm_input )
+            self.gm.step(self.gm_input,
+                         neigh_scale = 1 - self.gp.getCurrPred())
 
             ####################################################################
             ####################################################################
@@ -428,7 +424,6 @@ class Simulation(object) :
 
             ####################################################################
             ####################################################################
-
 
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :

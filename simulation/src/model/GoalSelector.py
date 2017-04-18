@@ -3,6 +3,9 @@
 import numpy as np
 from model.esn import ESN
 import model.kinematics as KM
+from gauss_utils import OptimizedGaussianMaker as GaussianMaker
+from gauss_utils import pseudo_diag
+
 
 def softmax(x, t=0.1):
     '''
@@ -10,38 +13,39 @@ def softmax(x, t=0.1):
     :param t: temperature
     :return: softmax of values
     '''
-    e = np.exp(x/t)
-    return e/np.sum(e)
+    e = np.exp(x / t)
+    return e / np.sum(e)
 
-def my_argwhere(x) :
+
+def my_argwhere(x):
 
     res = np.nonzero(x)[0]
 
     return res
 
-def oscillator(x, scale, freqs) :
+
+def oscillator(x, scale, freqs):
     '''
     :param  x       list of timesteps
     :param  scale   scaling factor for the frequency
     :param  freqs   list of frequencies (one for each trjectory)
     '''
 
-    x = np.array(x) # timeseries
+    x = np.array(x)  # timeseries
     trajectories_num = freqs.size
     freqs = np.array(freqs)
     x = np.outer(x, np.ones(trajectories_num))
 
-    return (np.cos(2.0*np.pi*freqs*x/scale + np.pi) + 1.0)*0.5
+    return (np.cos(2.0 * np.pi * freqs * x / scale + np.pi) + 1.0) * 0.5
 
 
-
-class GoalSelector(object) :
+class GoalSelector(object):
 
     def __init__(self, dt, tau, alpha, epsilon, eta, n_input,
-            n_goal_units, n_echo_units, n_rout_units,
-            match_decay, noise, scale, sm_temp, g2e_spars,
-            goal_window, goal_learn_start, reset_window, echo_ampl=1000,
-            multiple_echo=True):
+                 n_goal_units, n_echo_units, n_rout_units,
+                 match_decay, noise, scale, sm_temp, g2e_spars,
+                 goal_window, goal_learn_start, reset_window, echo_ampl=1000,
+                 multiple_echo=True):
         '''
         :param dt: integration time of the ESN
         :param tau: decay of the ESN
@@ -90,46 +94,88 @@ class GoalSelector(object) :
         self.reset_window_counter = 0
 
         self.echonet = [
-                ESN(
-                    N       = self.N_ECHO_UNITS,
-                    stime   = self.GOAL_WINDOW,
-                    dt      = self.DT,
-                    tau     = self.TAU,
-                    alpha   = self.ALPHA,
-                    beta    = 1-self.ALPHA,
-                    epsilon = self.EPSILON
-                    ) for x in xrange(self.N_GOAL_UNITS + 1) ]
+            ESN(
+                N=self.N_ECHO_UNITS,
+                stime=self.GOAL_WINDOW,
+                dt=self.DT,
+                tau=self.TAU,
+                alpha=self.ALPHA,
+                beta=1 - self.ALPHA,
+                epsilon=self.EPSILON
+            ) for x in xrange(self.N_GOAL_UNITS + 1)]
 
+        #----------------------------------------------------
         # input -> ESN
-        unit_int = self.N_ECHO_UNITS/4
-        self.INP2ECHO_W = np.zeros([self.N_ECHO_UNITS,
-            self.N_INPUT+ self.N_GOAL_UNITS])
 
-        self.INP2ECHO_W[:(1*unit_int), :] = \
-                np.random.randn((1*unit_int),
-                        self.N_INPUT+ self.N_GOAL_UNITS)
+        # create weight matrix
+        esn_input_units = self.N_ECHO_UNITS / 4
+        cols = self.N_INPUT + self.N_GOAL_UNITS
+        rows = self.N_ECHO_UNITS
+        self.INP2ECHO_W = np.zeros([rows, cols])
 
-        self.INP2ECHO_W[:(1*unit_int), :] *= \
-                (np.random.rand((1*unit_int),
-                    self.N_INPUT+ self.N_GOAL_UNITS)<self.GOAL2ECHO_SPARSENESS)
+        # set all weights to random values
+        self.INP2ECHO_W[:esn_input_units, :] = \
+            0.0*np.random.randn(esn_input_units,
+                            self.N_INPUT + self.N_GOAL_UNITS)
 
+        # weights are sparse, set all other weights to zero
+        self.INP2ECHO_W[:esn_input_units, :] *= \
+            (np.random.rand(esn_input_units,
+                            self.N_INPUT + self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
 
+        #----------------------------------------------------
         # goal_layer -> ESN
+
+        # create weight matrix
         self.GOAL2ECHO_W = np.zeros([self.N_ECHO_UNITS,
-            self.N_GOAL_UNITS])
+                                     self.N_GOAL_UNITS])
 
-        self.GOAL2ECHO_W[:(self.N_ECHO_UNITS/2), :] = \
-                -np.random.rand(self.N_ECHO_UNITS/2,
-                        self.N_GOAL_UNITS )
+        dim = int(np.sqrt(self.N_GOAL_UNITS))
+        lims = [[0, dim - 1, dim],
+                [0, dim - 1, dim]]
+        gm = GaussianMaker(lims)
+        goal_filter_weights_sigma = 1.5 / float(dim)
+        self.GOAL_FILTER_WEIGHTS = np.vstack([
+            [gm((x, y), goal_filter_weights_sigma)[0]
+             for x in xrange(dim)]
+            for y in xrange(dim)])
 
-        self.GOAL2ECHO_W[:(self.N_ECHO_UNITS/2), :] *= \
-                (np.random.rand((self.N_ECHO_UNITS/2),
-                    self.N_GOAL_UNITS)<self.GOAL2ECHO_SPARSENESS)
+        half_weights = pseudo_diag(self.N_ECHO_UNITS / 2,  self.N_GOAL_UNITS)
+
+        # set first half of weight rows to negative values
+        self.GOAL2ECHO_W[:(self.N_ECHO_UNITS / 2), :] = -half_weights/float(self.N_GOAL_UNITS)
+
+        # set second half of weight rows to positive random values
+        self.GOAL2ECHO_W[(self.N_ECHO_UNITS / 2):, :] = half_weights/float(self.N_GOAL_UNITS)
+
+
+        # # set first half of weight rows to negative random values
+        # self.GOAL2ECHO_W[:(self.N_ECHO_UNITS / 2), :] = \
+        #     -np.random.rand(self.N_ECHO_UNITS / 2,
+        #                     self.N_GOAL_UNITS)
+        #
+        # # weights are sparse, set other weights of the first half to zero
+        # self.GOAL2ECHO_W[:(self.N_ECHO_UNITS / 2), :] *= \
+        #     (np.random.rand(self.N_ECHO_UNITS / 2,
+        #                     self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
+        #
+        # # set second half of weight rows to positive random values
+        # self.GOAL2ECHO_W[(self.N_ECHO_UNITS / 2):, :] = \
+        #     np.random.rand(self.N_ECHO_UNITS / 2,
+        #                    self.N_GOAL_UNITS)
+        #
+        # # weights are sparse, set other weights of the second half to zero
+        # self.GOAL2ECHO_W[(self.N_ECHO_UNITS / 2):, :] *= \
+        #     (np.random.rand(self.N_ECHO_UNITS / 2,
+        #                     self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
+
+        #----------------------------------------------------
+        # ESN readouts
 
         self.echo2out_w = [
-                0.1*np.random.randn(self.N_ROUT_UNITS,
-            self.N_ECHO_UNITS) for x in
-                xrange(self.N_GOAL_UNITS * self.MULTIPLE_ECHO + 1) ]
+            0.1 * np.random.randn(self.N_ROUT_UNITS,
+                                  self.N_ECHO_UNITS) for x in
+            xrange(self.N_GOAL_UNITS * self.MULTIPLE_ECHO + 1)]
 
         self.read_out = np.zeros(self.N_ROUT_UNITS)
         self.out = np.zeros(self.N_ROUT_UNITS)
@@ -144,26 +190,24 @@ class GoalSelector(object) :
         self.reset_oscillator()
         self.t = 0
 
-
-        self.pid = KM.PID(n=self.N_ROUT_UNITS);
+        self.pid = KM.PID(n=self.N_ROUT_UNITS)
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
-
 
     def reset_oscillator(self):
         self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
 
     def goal_index(self):
 
-        if  np.sum(self.goal_selection_vec)>0:
-            idx = np.nonzero(self.goal_selection_vec>0)[0][0]
+        if np.sum(self.goal_selection_vec) > 0:
+            idx = np.nonzero(self.goal_selection_vec > 0)[0][0]
             return idx
 
         return None
 
-    def goal_selection(self, goal_mask = None,
-                       competence_improvement_vec = None,
-                        incompetence_vec = None ):
+    def goal_selection(self, goal_mask=None,
+                       competence_improvement_vec=None,
+                       incompetence_vec=None):
         '''
         :param im_value: current intrinsic motivational value
         :param goal_mask: which goals can be selected
@@ -176,10 +220,10 @@ class GoalSelector(object) :
             goal_mask = np.ones(self.N_GOAL_UNITS)
 
         # if no goal has been selected
-        if self.is_goal_selected == False :
+        if self.is_goal_selected == False:
 
             # get indices of the currently avaliable goals
-            curr_goal_idcs = my_argwhere(goal_mask>0)
+            curr_goal_idcs = my_argwhere(goal_mask > 0)
 
             #------------------------------------------------------------
             # compose motivations
@@ -198,10 +242,10 @@ class GoalSelector(object) :
             #------------------------------------------------------------
 
             # compute softmax between the currently avaliable goals
-            self.sm = softmax(motivation, self.SM_TEMP )
+            self.sm = softmax(motivation, self.SM_TEMP)
 
             # cumulate probabilities between them
-            cum_prob = np.hstack((0,np.cumsum(self.sm)))
+            cum_prob = np.hstack((0, np.cumsum(self.sm)))
 
             # flip the coin
             coin = np.random.rand()
@@ -211,7 +255,7 @@ class GoalSelector(object) :
                                           cum_prob[1:] >= coin)
 
             # index of the winner in the vector of all goals
-            goal_win_idx = curr_goal_idcs[my_argwhere(cur_goal_win==True)]
+            goal_win_idx = curr_goal_idcs[my_argwhere(cur_goal_win == True)]
 
             # reset goal_selection_vec to all False values
             self.goal_selection_vec *= False
@@ -231,55 +275,52 @@ class GoalSelector(object) :
             if MULTIPLE_ECHO == True and goalwin_idx is not None:
                 self.curr_echonet = self.echonet[goalwin_idx]
                 self.curr_echo2out_w = self.echo2out_w[goalwin_idx]
-            else :
+            else:
                 self.curr_echonet = self.echonet[-1]
                 self.curr_echo2out_w = self.echo2out_w[-1]
-
 
             if goalwin_idx is not None:
                 if self.target_position.has_key(goalwin_idx):
                     target = self.target_position[goalwin_idx]
                     self.gout = target
-            else :
+            else:
                 self.gout = np.zeros(self.N_ROUT_UNITS)
-
 
     def update_target(self, curr_pos):
 
         goalwin_idx = self.goal_index()
 
-        if goalwin_idx is not None :
+        if goalwin_idx is not None:
 
             self.target_counter[goalwin_idx] = (
-                self.target_counter.setdefault(goalwin_idx,0) + 1 )
+                self.target_counter.setdefault(goalwin_idx, 0) + 1)
             self.target_counter[goalwin_idx] = 1
-            pos =  curr_pos
+            pos = curr_pos
             self.target_position.setdefault(goalwin_idx,  pos)
-            pos_mean =  self.target_position[goalwin_idx]
-            n =  self.target_counter[goalwin_idx]
-            pos_mean += (1.0 - self.match_mean[self.goal_selection_vec>0])* (-pos_mean + pos)
+            pos_mean = self.target_position[goalwin_idx]
+            n = self.target_counter[goalwin_idx]
+            pos_mean += (1.0 -
+                         self.match_mean[self.goal_selection_vec > 0]) * (-pos_mean + pos)
             self.target_position[goalwin_idx] = pos_mean
-
 
     def reset(self, match):
 
-            self.match_mean += self.MATCH_DECAY*(
-                    -self.match_mean + match)*self.goal_selection_vec
+        self.match_mean += self.MATCH_DECAY * (
+            -self.match_mean + match) * self.goal_selection_vec
 
-            self.curr_echonet.reset()
-            self.curr_echonet.reset_data()
+        self.curr_echonet.reset()
+        self.curr_echonet.reset_data()
 
-            self.goal_selection_vec *= 0
-            self.goal_window_counter = 0
-            self.reset_window_counter = 0
-            self.pid.reset()
+        self.goal_selection_vec *= 0
+        self.goal_window_counter = 0
+        self.reset_window_counter = 0
+        self.pid.reset()
 
-            self.out *= 0
+        self.out *= 0
 
+    def getCurrMatch(self):
 
-    def getCurrMatch(self) :
-
-        res = self.match_mean[self.goal_selection_vec>0]
+        res = self.match_mean[self.goal_selection_vec > 0]
         if len(res) == 1:
             return np.asscalar(res)
         return 0
@@ -290,35 +331,38 @@ class GoalSelector(object) :
         '''
 
         goal2echo_inp = np.dot(
-                self.GOAL2ECHO_W,
-                self.goal_selection_vec*self.is_goal_selected)
+            self.GOAL2ECHO_W,
+            np.dot(self.GOAL_FILTER_WEIGHTS,
+                self.goal_selection_vec) * self.is_goal_selected)
 
         inp2echo_inp = np.dot(
-                self.INP2ECHO_W,
-                np.hstack((
-                    inp,
-                    self.goal_selection_vec*self.is_goal_selected
-                    )) )
+            self.INP2ECHO_W,
+            np.hstack((
+                inp,
+                self.goal_selection_vec * self.is_goal_selected
+            )))
 
         goalwin_idx = self.goal_index()
 
-        echo_inp = inp2echo_inp + goal2echo_inp
-        self.curr_echonet.step(self.ECHO_AMPL*echo_inp)
+        echo_inp = (inp2echo_inp +  goal2echo_inp)
+        self.curr_echonet.step(self.ECHO_AMPL * echo_inp)
         self.curr_echonet.store(self.goal_window_counter)
 
         self.inp = self.curr_echonet.out
         self.read_out = np.tanh(np.dot(self.curr_echo2out_w,
-				       self.curr_echonet.out))
+                                       self.curr_echonet.out))
 
         curr_match = self.getCurrMatch()
 
-        if np.all(self.goal_selection_vec==0):
+        if np.all(self.goal_selection_vec == 0):
             curr_match = 0.0
 
         # OSCILLATOR NOISE
-        added_signal = self.NOISE*oscillator(self.t, self.scale, self.random_oscil)[0]
+        added_signal = self.NOISE * \
+            oscillator(self.t, self.scale, self.random_oscil)[0]
 
-        self.out = curr_match*self.read_out + (1.0 - curr_match)*added_signal
+        self.out = curr_match * self.read_out + \
+            (1.0 - curr_match) * added_signal
 
         self.tout = self.read_out
 
@@ -330,12 +374,12 @@ class GoalSelector(object) :
 
         #------------------------------------------------
         if (goalwin_idx is not None and
-            self.target_position.has_key(goalwin_idx)) :
+                self.target_position.has_key(goalwin_idx)):
             if self.target_position.has_key(goalwin_idx):
                 target = self.target_position[goalwin_idx]
                 x = self.inp
                 y = self.tout
                 eta = self.ETA
                 w = self.curr_echo2out_w
-                w += eta*np.outer((1-y**2)*(target-y),x)
+                w += eta * np.outer((1 - y**2) * (target - y), x)
         #------------------------------------------------

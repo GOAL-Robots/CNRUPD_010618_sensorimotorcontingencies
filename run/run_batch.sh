@@ -20,7 +20,7 @@ cat << EOF
 
 usage: $0 options
 
-This script runs the robot simulation in batch mode and collects data 
+This script runs the robot simulation in batch mode and collects data
 
 OPTIONS:
    -t --stime       number of timesteps of a single simulation block
@@ -56,22 +56,22 @@ eval set -- "$GOTEMP"
 while true ;
 do
     case "$1" in
-        -t | --stime) 
+        -t | --stime)
             STIME="$2"
             shift 2;;
-        -w | --wdir) 
+        -w | --wdir)
             WORK_DIR="$2"
             shift 2;;
-        -c | --clean) 
+        -c | --clean)
             CLEAN=true
             shift;;
-        -n | --n_blocks) 
+        -n | --n_blocks)
             N_BLOCKS="$2"
             shift 2;;
-        -s | --start) 
+        -s | --start)
             START="$2"
             shift 2;;
-        -g | --graph) 
+        -g | --graph)
             GRAPH=true
             shift;;
         -h | --help)
@@ -79,7 +79,7 @@ do
             usage; exit;
             shift;
             break;;
-        --) shift ; 
+        --) shift ;
             break ;;
     esac
 done
@@ -95,27 +95,28 @@ done
 CMD="python $CURR_DIR/src/main.py"
 
 # run  n-th blocks
-for((n=0;n<N_BLOCKS;n++)); 
+for((n=0;n<N_BLOCKS;n++));
 do
-    
+
     snum="$(printf "%06d" $n)"
 
     GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
+    CMD="$CMD $GR_OPT"
     # run first block
     if [ $n -eq 0 ]; then
-        
-        if [ -f "$START" ]; then  # THERE IS a previous dump from which to start 
-            
+
+        if [ -f "$START" ]; then  # THERE IS a previous dump from which to start
+
             if [ $CLEAN == true ]; then
-                mv $START $WORK_DIR/dumped_robot 
+                mv $START $WORK_DIR/dumped_robot
             else
-                cp $START $WORK_DIR/dumped_robot 
+                cp $START $WORK_DIR/dumped_robot
             fi
 
             CMD="$CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR"
 
         else    # NO previous dumps from which to start
-            
+
             CMD="$CMD -t $STIME -d -s $(pwd)/$WORK_DIR"
 
         fi
@@ -128,10 +129,10 @@ do
     fi
     echo "$CMD"
     eval "$CMD"
-    
+
     # store block
-    tag=$(date +%Y%m%d%H%M%S) 
-    for f in $WORK_DIR/*; 
+    tag=$(date +%Y%m%d%H%M%S)
+    for f in $WORK_DIR/*;
     do
         rm -fr $(find store|grep dump|sort|head -n -2)
         cp $f store/"$(basename $f)-$tag"

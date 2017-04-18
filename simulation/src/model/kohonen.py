@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 
 import sys
 
@@ -29,8 +29,8 @@ class Kohonen(object) :
             average_decay       = 0.1,
             normalize           = lambda x : x,
             rng                 = np.random.RandomState(int(time.time()))
-            ) :  
-        """ 
+            ) :
+        """
             :param stime: time of simulation
             :param n_dim_out: number of dimensions of output topology
             :param bins: list of bins for each dimension
@@ -44,24 +44,24 @@ class Kohonen(object) :
             :param average_decay: decat of the raw output moving average
             :param normalize: normalizing function
             :param rng: random number generator
-            :type stime: 
-            :type n_dim_out: 
+            :type stime:
+            :type n_dim_out:
             :type bins : list(int)
-            :type n_output: 
-            :type n_input: 
-            :type neighborhood: 
-            :type neighborhood_decay: 
-            :type neighborhood_bl: 
-            :type eta: 
-            :type eta_decay: 
-            :type average_decay: 
-            :type normalize: 
+            :type n_output:
+            :type n_input:
+            :type neighborhood:
+            :type neighborhood_decay:
+            :type neighborhood_bl:
+            :type eta:
+            :type eta_decay:
+            :type average_decay:
+            :type normalize:
             :type rng: (numpy.random.RandomState)
       """
-        
+
         # time-step counter
         self.t = 0
-        
+
         self.STIME = stime
         self.ETA = eta
         self.ETA_BL = eta_bl
@@ -69,11 +69,11 @@ class Kohonen(object) :
         self.N_DIM_OUT = n_dim_out
         self.normalize = normalize
         self.AVERAGE_DECAY = average_decay
-       
+
         if np.isscalar(bins) :
-            self.BINS = np.ones(self.N_DIM_OUT)*bins 
+            self.BINS = np.ones(self.N_DIM_OUT)*bins
         else :
-            self.BINS = bins 
+            self.BINS = bins
 
         self.N_OUTPUT = n_output
         self.N_INPUT = n_input
@@ -87,17 +87,17 @@ class Kohonen(object) :
         self.inp_min = 0
         self.inp_max = 0
 
-         
+
         lims = [ [0,self.BINS[x]-1,self.BINS[x]]
                 for x in xrange(self.N_DIM_OUT) ]
         self.gmaker = GaussianMaker(lims)
-        
+
         # timing
         self.t = 0
 
-        # initial weights  
+        # initial weights
         self.inp2out_w = weight_bl*rng.randn(self.N_OUTPUT,self.N_INPUT)
-        
+
         # data storage
         self.data = dict()
         self.l_inp = 0
@@ -107,19 +107,18 @@ class Kohonen(object) :
         self.data[self.l_out] = np.zeros([self.N_OUTPUT,self.STIME])
         self.data[self.l_out_raw] = np.zeros([self.N_OUTPUT,self.STIME])
 
-    def step(self, inp) :
-        """ Spreading 
-        
+    def step(self, inp, neigh_scale = None) :
+        """ Spreading
+
         :param inp: cueerent input vector
         :type inp: array(n_input, float)
 
         """
 
         self.t += 1
-        
+
         # Current neighbourhood
-        curr_neighborhood =  self.neighborhood_BL + self.neighborhood * \
-                np.exp(-self.t/float(self.neighborhood_DECAY))     
+        curr_neighborhood = self.updateNeigh(neigh_scale)
 
         # # input
         if not all(inp==0) :
@@ -147,23 +146,46 @@ class Kohonen(object) :
         '''
         Update the learning rate. It allows to manually update current eta value
 
-        :param  value   the current decay (if None it is the negative exponential of 
+        :param  value   the current decay (if None it is the negative exponential of
                         ETA_DECAY in time)
         :type   value   float
 
         '''
-         
+
         eta = None
- 
+
         if value is None:
             eta = self.ETA_BL + self.ETA* np.exp(-self.t/self.ETA_DECAY)
         else:
             eta = self.ETA_BL +value*(self.ETA)
- 
+
         return eta
 
+    def updateNeigh(self, value=None):
+        '''
+        Update the neighborhood radius. It allows to manually update current
+        neighborhood radius value
+
+        :param  value   the current neighborhood radius (if None it is the
+                        negative exponential of neighborhood_DECAY in time)
+        :type   value   float
+
+        '''
+
+        neighborhood = None
+
+        if value is None:
+            neighborhood = self.neighborhood_BL + \
+                self.neighborhood * np.exp(-self.t / self.neighborhood_DECAY)
+        else:
+            neighborhood = self.neighborhood_BL + value * (self.neighborhood)
+
+        return neighborhood
+
+
+
     def learn(self, eta_scale = None, pred = None) :
-        """ 
+        """
         Learning step
 
         :param  eta_scale   the value of current eta decay (see updateEta)
@@ -171,10 +193,10 @@ class Kohonen(object) :
         :type   eta_scale   float
         :type   pred        array(float)
 
-        
+
         """
-        
-        if pred is None: 
+
+        if pred is None:
             pred = np.ones(self.N_OUTPUT)
 
         assert( len(pred) == self.N_OUTPUT )
@@ -185,7 +207,7 @@ class Kohonen(object) :
         x = self.inp
         y = self.out if self.neighborhood > 0 \
                 else self.out*(self.out == self.out.max())
-        w = self.inp2out_w 
+        w = self.inp2out_w
 
         w += eta* (np.outer(y*pred,x) -  np.outer(y*pred, np.ones(self.N_INPUT)) *w )
 
@@ -199,13 +221,9 @@ class Kohonen(object) :
         out = self.out_raw*2
         datax = self.data[self.l_out_raw]
         win = self.idx
-    
+
     def reset_data(self):
         """ Reset """
 
         for k in self.data :
             self.data[k] = self.data[k]*0
-            
-
-
-

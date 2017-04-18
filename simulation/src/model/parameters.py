@@ -1,9 +1,9 @@
 import numpy as np
 
 simulation_im_amp = 1.0
-simulation_im_decay = 0.2 
-simulation_competence_improvement_prop = 1.0 
-simulation_incompetence_prop = 0.5 
+simulation_im_decay = 0.2
+simulation_competence_improvement_prop = 1.0
+simulation_incompetence_prop = 0.0
 
 
 body_simulator_pixels = [20, 20]
@@ -20,25 +20,25 @@ pm_proprioceptive_retina_sigma_width_scale = 0.2
 pm_proprioceptive_angle_threshold = 1e-5
 pm_image_resolution = 12
 
-ka_num_joints = body_simulator_actuator_NUMBER_OF_JOINTS 
+ka_num_joints = body_simulator_actuator_NUMBER_OF_JOINTS
 ka_left_origin = [-1.5, 0.0]
-ka_left_lims = [ 
+ka_left_lims = [
         [0, np.pi],    # first joint limits
         [0, np.pi*0.6],    # second joint limits
         [0, np.pi*0.6]     # third joint limits
-        ] 
+        ]
 assert(len(ka_left_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
 ka_right_origin = [1.5, 0.0]
-ka_right_lims = [ 
+ka_right_lims = [
         [0, np.pi],    # first joint limits
         [0, np.pi*0.6],    # second joint limits
         [0, np.pi*0.6]     # third joint limits
-        ] 
+        ]
 assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
- 
 
-GOAL_NUMBER = 4 
+
+GOAL_NUMBER = 9 
 
 gs_dt = 0.001
 gs_tau = 0.04
@@ -62,7 +62,7 @@ gs_multiple_echo = True
 
 
 gp_eta = 0.2
-        
+
 robot_stime = 10000
 
 gm_n_input_layers = [gs_n_input, gs_n_input, gs_n_input]
@@ -77,7 +77,7 @@ gm_goalrep_lr = 0.8
 gm_goal_th = 0.1
 gm_stime = robot_stime
 gm_single_kohonen = True
-  
+
 gm_singlemod_n_dim_out = 2
 gm_singlemod_eta_bl_scale = 4.0
 gm_singlemod_eta_decay_scale = 4.0

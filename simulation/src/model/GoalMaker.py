@@ -156,9 +156,10 @@ class GoalMaker(object):
                 normalize = normalize
             )
 
-    def step(self, raw_inputs):
+    def step(self, raw_inputs, neigh_scale=None):
         '''
         :param raw_inputs: (list) raw inputs in all modalities
+        :param neigh_scale: manual value of the neighborhood radius
         '''
 
         assert len(raw_inputs) == self.TOT_INPUT_LAYERS, \
@@ -216,7 +217,7 @@ class GoalMaker(object):
         self.out_som.step(out_inp)
 
         # all to goal rep
-        self.goalrep_som.step(goalrep_inp)
+        self.goalrep_som.step(goalrep_inp,neigh_scale = neigh_scale)
 
         # UPDATE ACTIVATIONS
 
