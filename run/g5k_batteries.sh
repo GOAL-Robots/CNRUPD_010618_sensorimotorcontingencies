@@ -137,8 +137,6 @@ run()
             DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)" 
             DUMP_OPT="-s $(pwd)/$DUMPED_FILE"
             echo "starting from $DUMPED_FILE"
-            # we also clear previous dumps to maintain the folder small
-            rm -f ${sim_dir}/store/dumped_*  
         fi
     else
         # there are no previous data, create from template
@@ -156,7 +154,7 @@ run()
 
     CUM_OPT="-n $ITER"   
     GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
-    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
+    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -c -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
     
     eval "$MAIN_CMD"
 

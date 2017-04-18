@@ -27,6 +27,7 @@ OPTIONS:
    -g --graph       graphics on
    -w --wdir        working directory
    -s --start       dumped_robot to start from
+   -c --clean       clean dumped start file after copy
    -n --n_blocks    number of simulation blocks
    -h --help        show this help
 
@@ -40,9 +41,10 @@ START=
 STIME=100000
 N_BLOCKS=1
 GRAPH=false
+CLEAN=false
 
 # getopt
-GOTEMP="$(getopt -o "t:w:n:s:gh" -l "stime:,wdir:,n_blocks:,start:,graph,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:w:cn:s:gh" -l "stime:,wdir:,clean,n_blocks:,start:,graph,help"  -n '' -- "$@")"
 
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
@@ -60,6 +62,9 @@ do
         -w | --wdir) 
             WORK_DIR="$2"
             shift 2;;
+        -c | --clean) 
+            CLEAN=true
+            shift;;
         -n | --n_blocks) 
             N_BLOCKS="$2"
             shift 2;;
@@ -96,13 +101,17 @@ do
     snum="$(printf "%06d" $n)"
 
     GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
-    CMD="$CMD $GR_OPT"
     # run first block
     if [ $n -eq 0 ]; then
         
         if [ -f "$START" ]; then  # THERE IS a previous dump from which to start 
             
-            cp $START $WORK_DIR/dumped_robot 
+            if [ $CLEAN == true ]; then
+                mv $START $WORK_DIR/dumped_robot 
+            else
+                cp $START $WORK_DIR/dumped_robot 
+            fi
+
             CMD="$CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR"
 
         else    # NO previous dumps from which to start
@@ -124,6 +133,7 @@ do
     tag=$(date +%Y%m%d%H%M%S) 
     for f in $WORK_DIR/*; 
     do
+        rm -fr $(find store|grep dump|sort|head -n -2)
         cp $f store/"$(basename $f)-$tag"
     done
 
