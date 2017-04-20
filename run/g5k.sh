@@ -26,10 +26,10 @@ HERE_PARAMS
 
 # FIND RESOURCES 
 rm -fr log_resources
-stdbuf -oL ${HOME}/g5kutils/find_resources.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME 2>&1 | tee log_resources
+stdbuf -o0 ${HOME}/g5kutils/find_resources.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME 2>&1 | tee log_resources
 
 # exit if no resources 
-[ $? -ne 0 ] && exit 1 
+[ $? -ne 0 ] && echo "no deployment made." && exit 1 
 
 # get job_id
 JOB_ID=$(cat log_deploy| grep JOB_ID| sed -e"s/.*:\s*\([0-9]\+\)\s*$/\1/")
