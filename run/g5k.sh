@@ -25,13 +25,14 @@ HERE_PARAMS
 )
 
 # FIND RESOURCES 
-${HOME}/g5kutils/find_resources.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME 2>&1 | tee log_resources
+rm -fr log_resources
+stdbuf -oL ${HOME}/g5kutils/find_resources.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME 2>&1 | tee log_resources
 
 # exit if no resources 
 [ $? -ne 0 ] && exit 1 
 
 # get job_id
-JOB_ID=$(cat log_resources| grep JOB_ID| sed -e"s/.*:\s*\([0-9]\+\)\s*$/\1/")
+JOB_ID=$(cat log_deploy| grep JOB_ID| sed -e"s/.*:\s*\([0-9]\+\)\s*$/\1/")
 # save it in log dir
 echo -n ''> ${HOME}/.sensorimotor/$JOB_ID
 
@@ -54,6 +55,8 @@ cat << EOS > ${HOME}/working/${wdir}/run
 cd ~/working/$wdir
 \${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 50000 -n 1000 -b -P params
 EOS
+
+chmod +x ${HOME}/working/${wdir}/run
 
 # build the command to run in the machine
 CMD=$(cat<<EOS
@@ -89,7 +92,6 @@ for i in $(seq 0 0); do
 
         echo "${params[i]}" > ${HOME}/working/${wdir}/params
 
-        chmod +x ${HOME}/working/${wdir}/run
 
         run_cmd $wdir $node
 
