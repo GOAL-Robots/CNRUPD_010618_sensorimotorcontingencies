@@ -8,6 +8,8 @@ source ${HOME}/g5kutils/setwalltime.sh
 ${HOME}/g5kutils/clear.sh
 [ ! -d ${HOME}/.sensorimotor ] && mkdir ${HOME}/.sensorimotor
 
+LABEL=sensorimotor
+GRID_INFO=${HOME}/.grid_deploy/info
 N_MACHINES=4
 MIN_CORES=20
 MIN_RAM=100
@@ -26,13 +28,14 @@ HERE_PARAMS
 
 # FIND RESOURCES 
 rm -fr log_resources
-stdbuf -o0 ${HOME}/g5kutils/find_resources.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME 2>&1 | tee log_resources
+${HOME}/g5kutils/autodeploy.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME -l $LABEL 
 
 # exit if no resources 
-[ $? -ne 0 ] && echo "no deployment made." && exit 1 
+[ -z $(cat $GRID_INFO|grep $LABEL| grep deploy) ] && echo "no deployment made." && exit 1 
 
 # get job_id
-JOB_ID=$(cat log_deploy| grep JOB_ID| sed -e"s/.*:\s*\([0-9]\+\)\s*$/\1/")
+JOB_ID=$(cat $GRID_INFO|grep $LABEL|awk '{print $2}')
+
 # save it in log dir
 echo -n ''> ${HOME}/.sensorimotor/$JOB_ID
 
