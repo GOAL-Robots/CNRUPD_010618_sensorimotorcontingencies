@@ -190,7 +190,6 @@ class GoalSelector(object):
         self.reset_oscillator()
         self.t = 0
 
-        self.pid = KM.PID(n=self.N_ROUT_UNITS)
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
 
@@ -314,7 +313,6 @@ class GoalSelector(object):
         self.goal_selection_vec *= 0
         self.goal_window_counter = 0
         self.reset_window_counter = 0
-        self.pid.reset()
 
         self.out *= 0
 
