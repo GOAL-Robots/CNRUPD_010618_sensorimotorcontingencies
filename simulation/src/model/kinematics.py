@@ -161,11 +161,11 @@ class Polychain(object) :
 
 
         :param  epsilon             a trheshold of sensitivity of
-                                    each point of the chain (how much they
-                                    must be close one another to "touch")
+                                        each point of the chain (how much they
+                                        must be close one another to "touch")
 
         :param  is_set_collinear    further test for collinearity (segments are
-                                    parallel and non-intersecting)
+                                        parallel and non-intersecting)
 
         :param  debug               if collision_data has to be stored
 
@@ -193,7 +193,7 @@ class Polychain(object) :
 
             for y in rng :
 
-                # points of the seco_-nd segment
+                # points of the second segment
                 q = self.chain[y-1]    # start point
                 sq = self.chain[y]    # end point
                 s = sq - q    # end point relative to the start point
@@ -259,31 +259,69 @@ class Polychain(object) :
         return False
 
     def manage_auto_collision(self, prev_chain, curr_chain, move_back_fun, 
-            delta = 0.1, c_scale = 50.0, **kargs):
+            delta = 0.1, substeps = 50.0, **kargs):
+        """
+        Manage collisions. If the current set of positions (curr_chain)
+        has collisions produces substeps with beckward-moving positions until
+        the chain does not collide anymore.
+    
+        :param  prev_chain      previous position (at timestep t - 1)
+        :param  curr_chain      current position (at timestep t)
+        :param  move_back_fun   a function object generating backward moves
+        :param  delta           scaling factor for the length of a beckward move
+        :param  substeps        the number of maximum substeps
+        :param  kargs           arguments for autocollision
+        
+        :type   prev_chain      list of points
+        :type   curr_chain      list of points
+        :type   move_back_fun   function(count_substeps, delta, substeps):
+                                    :param  count_substeps      current substep number 
+                                    :param  delta               scaling factor for the 
+                                                                    length of a beckward move
+                                    :param  substeps            the number of maximum 
+                                                                    substeps
+        
+        :return (collided, curr_chain)  collided  := True if there was a collision
+                                        cur_chain := the positions after collision 
+                                                     management
+        :rtype  tuple(bool, array)                                
+        """
 
-        count_collisions = 1
+        # init the counter of substeps
+        count_substeps = 1
 
-        orig_chain = curr_chain.copy()
+        # set the current positions as 
+        # the current polychain
         self.set_chain(curr_chain)
 
+        # detect collisions
         is_colliding = self.autocollision(**kargs)
         collided = is_colliding
 
+        # if there is a collision loop through substeps
         while is_colliding == True :
-            if count_collisions <  c_scale :
+            if count_substeps <  substeps :
 
+                # do a backward move
                 curr_chain = move_back_fun(
-                    count_collisions = count_collisions,
+                    count_substeps = count_substeps,
                     delta = delta,
-                    c_scale = c_scale)
+                    substeps = substeps)
 
+                # set the current positions as 
+                # the current polychain
                 self.set_chain(curr_chain)
-
+                
+                # detect collisions
                 is_colliding = self.autocollision(**kargs)
-                count_collisions += 1
+                
+                # update substep counter 
+                count_substeps += 1
             else:
+                # too many substeps, step back to
+                # the previous (non colliding) position
                 return collided, prev_chain
-
+        
         return collided, curr_chain
 
     def isPointInChain(self, point, epsilon = 0.1 ) :
@@ -292,11 +330,11 @@ class Polychain(object) :
 
             :param  point       a 2D point
             :param  epsilon     a minimal distance to discriminate
-                                belonging points from non-belongingg ones.
+                                    belonging points from non-belongingg ones.
 
             :return             a list of distances correspoding to the the line
-                                intersection with that point. Empty list if
-                                the point does not belong to the chain
+                                    intersection with that point. Empty list if
+                                    the point does not belong to the chain
         '''
 
         distances = []
@@ -329,7 +367,7 @@ class Polychain(object) :
         distance from the first point of the chain
 
         :param  distance    the proportional distance within the polychain.
-                            can be a number between 0 and 1.
+                                can be a number between 0 and 1.
         :type   distance    float
 
         :return             the 2D coordinates of the point
@@ -532,9 +570,18 @@ class Arm(object):
 
 def oscillator(x, scale, freqs):
     '''
-    :param  x       list of timesteps
-    :param  scale   scaling factor for the frequency
+    
+    Create oscillatory trajectories with different frequencies
+
+    :param  x       timeseries (timesteps) 
+    :param  scale   scaling factor for frequencies
     :param  freqs   list of frequencies (one for each trjectory)
+    :type   x       array(stime)
+    :type   scale   float
+    :type   freqs   list(float)
+
+    :return         the oscillatory timeseries (a column for each 
+                        frequency
     '''
 
     x = np.array(x)  # timeseries
@@ -546,26 +593,37 @@ def oscillator(x, scale, freqs):
 
 #----------------------------------------------------------------------
 
-def test_collision(plot=True):
+def test_collision():
+    """
+    Test simulation for autocollisions
+    """
 
-    if plot == True:
-        import matplotlib.pyplot as plt
-        plt.ion()
+    import matplotlib.pyplot as plt
+    plt.ion()
 
+    # init the polychain manager
     polychain = Polychain()
 
+    # consts
+    stime = 200
+    xline = np.arange(stime)
+    trials = 400
+    n_sensors = 30
+    
+    # object that manages the left arm (mirrowed) 
     larm = Arm(
-            number_of_joint = 3,    # 3 joints
+            number_of_joint = 3, # 3 joints
             origin = [-1.5,0.0], # origin at (1.0 , 0.5)
             segment_lengths = np.array([1,1,1]),
             joint_lims = [
                 [0, np.pi*0.9],    # first joint limits
                 [0, np.pi*0.6],    # second joint limits
-                [0, np.pi*0.6],     # third joint limits
+                [0, np.pi*0.6],    # third joint limits
                 ],
-            mirror=True
+            mirror=True   
             )
 
+    # object that manages the right arm  
     rarm = Arm(
             number_of_joint = 3,    # 3 joints
             origin = [1.5,0.0], # origin at (1.0 , 0.5)
@@ -577,109 +635,148 @@ def test_collision(plot=True):
                 ]
             )
 
-    stime = 200
-    xline = np.arange(stime)
-    trials = 400
-    n_sensors = 30
-
-    langle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
-    rangle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
+    # init langle and rangle joint timeseries
+    langle =  np.vstack([ np.pi*oscillator(xline,5,np.random.rand(3)) 
+        for i in range(trials) ])
+    rangle =  np.vstack([ np.pi*oscillator(xline,5,np.random.rand(3)) 
+        for i in range(trials) ])
+    # comute the initial joint positions
     lpos,langle[0,:] = larm.get_joint_positions(langle[0,:])
     rpos,rangle[0,:] = rarm.get_joint_positions(rangle[0,:])
+    # merge arm positions and obtain the whole initial body chain
     curr_chain = np.vstack((lpos[::-1],rpos))
 
-    if plot == True:
-        fig = plt.figure()
-        ax = fig.add_subplot(111,aspect="equal")
-        robot_img, = plt.plot(*curr_chain.T)
-        robot_jts = plt.scatter(*curr_chain.T)
-        prpl, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="red")
-        prpp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="red")
-        qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
-        qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
-        prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
-        plt.xlim([-5,5])
-        plt.ylim([-0.5,3.0])
 
     def move(x) :
+        """
+        move function - simply browse the joint timeseries
+
+        :param  x   the current index in the angles timeseries
+        """
+        # comute the x-th joint positions
         lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
         rpos,rangle[x,:] = rarm.get_joint_positions(rangle[x,:])
+        # merge arm positions and obtain the whole x-th body chain
         return np.vstack((lpos[::-1],rpos))
 
     class MoveBackFunct:
+        """
+        Function object for backward moves - used by polychain.manage_auto_collision
+        """
         def __init__(self, x, langle, rangle):
+            """
+            Share data with the main function
+
+            :param  x           the current index in the angles timeseries
+            :param  langle      the timeseries of left joint angles
+            :param  rangle      the timeseries of right joint angles
+            """
             self.x = x
             self.langle = langle.copy()
             self.rangle = rangle.copy()
 
-        def __call__(self, count_collisions, delta, c_scale) :
+        def __call__(self, count_substeps, delta, substeps) :
+            """
+            Computes a backward step
 
+            :param  count_substeps      current substep number 
+            :param  delta               scaling factor for the 
+                                            length of a beckward move
+            :param  substeps            the number of maximum 
+                                            substeps
+            """
             x = self.x
+            # the gap between the current and the previous left arm joint angles
             delta_langle = ( (self.langle[x,:] - self.langle[x-1,:])
                             if not x<0 else self.langle[x,:]*0.0 )
-
+            # compute the substep left angles
             curr_langle = (self.langle[x,:]
-                       - count_collisions
-                       * delta*(count_collisions**0.8)
+                       - count_substeps
+                       * delta*(count_substeps**0.8)
                        * np.sign(delta_langle)
-                       / float(c_scale) )
+                       / float(substeps) )
 
+            # the gap between the current and the previous right arm joint angles
             delta_rangle = ( (self.rangle[x,:] - self.rangle[x-1,:])
                             if not x<0 else self.rangle[x,:]*0.1 )
+            # compute the substep left angles
             curr_rangle = (self.rangle[x,:]
-                       - count_collisions
-                       * delta*(count_collisions**0.8)
+                       - count_substeps
+                       * delta*(count_substeps**0.8)
                        * np.sign(delta_rangle)
-                       / float(c_scale) )
+                       / float(substeps) )
 
+            # compute positions
             lpos,langle = larm.get_joint_positions(curr_langle)
             rpos,rangle = rarm.get_joint_positions(curr_rangle)
-
+            
+            # return the whole body positions
             return np.vstack((lpos[::-1],rpos))
 
+    # prepare graphic objects
+    fig = plt.figure()
+    ax = fig.add_subplot(111,aspect="equal")
+    robot_img, = plt.plot(*curr_chain.T)
+    robot_jts = plt.scatter(*curr_chain.T)
+    prpl, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="red")
+    prpp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="red")
+    qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
+    qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
+    prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
+    plt.xlim([-5,5])
+    plt.ylim([-0.5,3.0])
+
+
+    # loop over the whole time-story
     for x in range(stime*trials):
 
+        # manages current move
         collided, curr_chain = polychain.manage_auto_collision(
             prev_chain = curr_chain,
             curr_chain =  move(x),
             move_back_fun = MoveBackFunct(x, langle, rangle),
             epsilon = 0.1)
 
+        # plot the body
+        robot_img.set_data(curr_chain.T)
+        robot_jts.set_offsets(curr_chain)
 
-        if plot == True:
-            robot_img.set_data(curr_chain.T)
-            robot_jts.set_offsets(curr_chain)
-
-            fig.canvas.draw()
-            plt.pause(0.05)
-        else:
-            print x,if_coll
+        fig.canvas.draw()
+        plt.pause(0.05)
 
     raw_input()
 
 
 #----------------------------------------------------------------------
 
-def test_intersection(plot=True):
+def test_intersection():
 
-    if plot == True:
-        import matplotlib.pyplot as plt
-        plt.ion()
+    import matplotlib.pyplot as plt
+    plt.ion()
 
+    # init the polychain manager
     polychain = Polychain()
 
+    # consts
+    stime = 200
+    xline = np.arange(stime)
+    trials = 400
+    n_sensors = 30
+    
+    # object that manages the left arm (mirrowed) 
     larm = Arm(
-            number_of_joint = 3,    # 3 joints
+            number_of_joint = 3, # 3 joints
             origin = [-1.5,0.0], # origin at (1.0 , 0.5)
             segment_lengths = np.array([1,1,1]),
             joint_lims = [
                 [0, np.pi*0.9],    # first joint limits
                 [0, np.pi*0.6],    # second joint limits
-                [0, np.pi*0.6],     # third joint limits
+                [0, np.pi*0.6],    # third joint limits
                 ],
-            mirror=True
+            mirror=True   
             )
 
+    # object that manages the right arm  
     rarm = Arm(
             number_of_joint = 3,    # 3 joints
             origin = [1.5,0.0], # origin at (1.0 , 0.5)
@@ -691,70 +788,88 @@ def test_intersection(plot=True):
                 ]
             )
 
-    stime = 200
-    xline = np.arange(stime)
-    trials = 400
-    n_sensors = 30
-
-    langle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
-    rangle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
+    # init langle and rangle joint timeseries
+    langle =  np.vstack([ np.pi*oscillator(xline,5,np.random.rand(3)) 
+        for i in range(trials) ])
+    rangle =  np.vstack([ np.pi*oscillator(xline,5,np.random.rand(3)) 
+        for i in range(trials) ])
+    # comute the initial joint positions
     lpos,langle[0,:] = larm.get_joint_positions(langle[0,:])
     rpos,rangle[0,:] = rarm.get_joint_positions(rangle[0,:])
+    # merge arm positions and obtain the whole initial body chain
     curr_chain = np.vstack((lpos[::-1],rpos))
 
-    if plot == True:
-        fig = plt.figure()
-        ax = fig.add_subplot(111,aspect="equal")
-        robot_img, = plt.plot(*curr_chain.T)
-        robot_jts = plt.scatter(*curr_chain.T)
-        prpl, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="red")
-        prpp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="red")
-        qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
-        qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
-        prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
-        plt.xlim([-5,5])
-        plt.ylim([-0.5,3.0])
 
     def move(x) :
+        """
+        move function - simply browse the joint timeseries
+
+        :param  x   the current index in the angles timeseries
+        """
+        # comute the x-th joint positions
         lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
         rpos,rangle[x,:] = rarm.get_joint_positions(rangle[x,:])
+        # merge arm positions and obtain the whole x-th body chain
         return np.vstack((lpos[::-1],rpos))
 
+    # prepare graphics
+    fig = plt.figure()
+    ax = fig.add_subplot(111,aspect="equal")
+    robot_img, = plt.plot(*curr_chain.T)
+    robot_jts = plt.scatter(*curr_chain.T)
+    prpl, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="red")
+    prpp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="red")
+    qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
+    qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
+    prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
+    plt.xlim([-5,5])
+    plt.ylim([-1.5,3.0])
 
+    # loop over the whole time-story
     for x in range(stime*trials):
 
+        # manage current move
         curr_chain = move(x)
         polychain.set_chain(curr_chain)
         collided = polychain.autocollision(
             epsilon = 0.1,
             is_set_collinear=True,
             debug=True)
+
+        # get info about collision
         (p,rp,int1,q,sq,int2) = polychain.collision_data
 
-        if plot == True:
-            robot_img.set_data(curr_chain.T)
-            robot_jts.set_offsets(curr_chain)
+        # plot the body 
+        robot_img.set_data(curr_chain.T)
+        robot_jts.set_offsets(curr_chain)
 
-            if collided == True:
-                prpp.set_offsets( np.vstack([p,rp]) )
-                qsqp.set_offsets( np.vstack([q,sq]) )
-                prtp.set_offsets( np.vstack([int1,int2]) )
-                prpl.set_data( *np.vstack([p,rp]).T )
-                qsql.set_data( *np.vstack([q,sq]).T )
-            else:
-                prpp.set_offsets( np.ones([2,2])*OUT_OF_RANGE )
-                qsqp.set_offsets( np.ones([2,2])*OUT_OF_RANGE )
-                prtp.set_offsets( np.ones([2,2])*OUT_OF_RANGE )
-                prpl.set_data( *(np.ones([2,2])*OUT_OF_RANGE).T )
-                qsql.set_data( *(np.ones([2,2])*OUT_OF_RANGE).T )
-
-            fig.canvas.draw()
-            plt.pause(0.05)
+        # plot collision info
+        if collided == True:
+            prpp.set_offsets( np.vstack([p,rp]) )
+            qsqp.set_offsets( np.vstack([q,sq]) )
+            prtp.set_offsets( np.vstack([int1,int2]) )
+            prpl.set_data( *np.vstack([p,rp]).T )
+            qsql.set_data( *np.vstack([q,sq]).T )
         else:
-            print x,if_coll
+            prpp.set_offsets( np.ones([2,2])*OUT_OF_RANGE )
+            qsqp.set_offsets( np.ones([2,2])*OUT_OF_RANGE )
+            prtp.set_offsets( np.ones([2,2])*OUT_OF_RANGE )
+            prpl.set_data( *(np.ones([2,2])*OUT_OF_RANGE).T )
+            qsql.set_data( *(np.ones([2,2])*OUT_OF_RANGE).T )
+
+        fig.canvas.draw()
+        plt.pause(0.05)
 
     raw_input()
 
 if __name__ == "__main__" :
+    
+    choice = raw_input("choose test (1:=collisions, 2:=intersections)")
+    if int(choice) == 1: 
+        test_collision()
+    elif int(choice) == 2:
+        test_intersection()
+    else:
+        print "wrong choice"
 
-    test_collision()
+
