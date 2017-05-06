@@ -148,16 +148,16 @@ class Polychain(object) :
 
         from http://stackoverflow.com/a/565282/4209308
 
-    q + s = sq     p + r = rp
-            \       /
-             \     /
-              \   /
-               \ /
-      p + t*r   \ q + u*s
-               / \
-              /   \
-             /     \
-            p       q
+          q + s = sq  p + r = rp
+                \       /
+                 \     /
+                  \   /
+                   \ /
+          p + t*r   \ q + u*s
+                   / \
+                  /   \
+                 /     \
+                p       q
 
 
         :param  epsilon             a trheshold of sensitivity of
@@ -258,13 +258,13 @@ class Polychain(object) :
         # no intersection
         return False
 
-    def manage_auto_collision(self, curr_chain, move_back_fun, **kargs):
-
-        self.set_chain(curr_chain)
+    def manage_auto_collision(self, prev_chain, curr_chain, move_back_fun, 
+            delta = 0.1, c_scale = 50.0, **kargs):
 
         count_collisions = 1
-        c_scale = 20.0
-        delta = np.pi*(1.0/15.0)
+
+        orig_chain = curr_chain.copy()
+        self.set_chain(curr_chain)
 
         is_colliding = self.autocollision(**kargs)
         collided = is_colliding
@@ -280,8 +280,9 @@ class Polychain(object) :
                 self.set_chain(curr_chain)
 
                 is_colliding = self.autocollision(**kargs)
-
                 count_collisions += 1
+            else:
+                return collided, prev_chain
 
         return collided, curr_chain
 
@@ -585,13 +586,13 @@ def test_collision(plot=True):
     rangle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
     lpos,langle[0,:] = larm.get_joint_positions(langle[0,:])
     rpos,rangle[0,:] = rarm.get_joint_positions(rangle[0,:])
-    rbt = np.vstack((lpos[::-1],rpos))
+    curr_chain = np.vstack((lpos[::-1],rpos))
 
     if plot == True:
         fig = plt.figure()
         ax = fig.add_subplot(111,aspect="equal")
-        robot_img, = plt.plot(*rbt.T)
-        robot_jts = plt.scatter(*rbt.T)
+        robot_img, = plt.plot(*curr_chain.T)
+        robot_jts = plt.scatter(*curr_chain.T)
         prpl, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="red")
         prpp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="red")
         qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
@@ -611,9 +612,7 @@ def test_collision(plot=True):
             self.langle = langle.copy()
             self.rangle = rangle.copy()
 
-        def __call__(self, count_collisions = 1,
-                      delta = np.pi*(1.0/15.0),
-                      c_scale = 20.0) :
+        def __call__(self, count_collisions, delta, c_scale) :
 
             x = self.x
             delta_langle = ( (self.langle[x,:] - self.langle[x-1,:])
@@ -621,17 +620,17 @@ def test_collision(plot=True):
 
             curr_langle = (self.langle[x,:]
                        - count_collisions
-                       * delta*(count_collisions**0.5)
+                       * delta*(count_collisions**0.8)
                        * np.sign(delta_langle)
-                       / float(c_scale*2) )
+                       / float(c_scale) )
 
             delta_rangle = ( (self.rangle[x,:] - self.rangle[x-1,:])
                             if not x<0 else self.rangle[x,:]*0.1 )
             curr_rangle = (self.rangle[x,:]
                        - count_collisions
-                       * delta*(count_collisions**0.5)
+                       * delta*(count_collisions**0.8)
                        * np.sign(delta_rangle)
-                       / float(c_scale*2) )
+                       / float(c_scale) )
 
             lpos,langle = larm.get_joint_positions(curr_langle)
             rpos,rangle = rarm.get_joint_positions(curr_rangle)
@@ -641,12 +640,95 @@ def test_collision(plot=True):
     for x in range(stime*trials):
 
         collided, curr_chain = polychain.manage_auto_collision(
+            prev_chain = curr_chain,
             curr_chain =  move(x),
             move_back_fun = MoveBackFunct(x, langle, rangle),
+            epsilon = 0.1)
+
+
+        if plot == True:
+            robot_img.set_data(curr_chain.T)
+            robot_jts.set_offsets(curr_chain)
+
+            fig.canvas.draw()
+            plt.pause(0.05)
+        else:
+            print x,if_coll
+
+    raw_input()
+
+
+#----------------------------------------------------------------------
+
+def test_intersection(plot=True):
+
+    if plot == True:
+        import matplotlib.pyplot as plt
+        plt.ion()
+
+    polychain = Polychain()
+
+    larm = Arm(
+            number_of_joint = 3,    # 3 joints
+            origin = [-1.5,0.0], # origin at (1.0 , 0.5)
+            segment_lengths = np.array([1,1,1]),
+            joint_lims = [
+                [0, np.pi*0.9],    # first joint limits
+                [0, np.pi*0.6],    # second joint limits
+                [0, np.pi*0.6],     # third joint limits
+                ],
+            mirror=True
+            )
+
+    rarm = Arm(
+            number_of_joint = 3,    # 3 joints
+            origin = [1.5,0.0], # origin at (1.0 , 0.5)
+            segment_lengths = np.array([1,1,1]),
+            joint_lims = [
+                [0, np.pi*0.9],    # first joint limits
+                [0, np.pi*0.6],    # second joint limits
+                [0, np.pi*0.6],     # third joint limits
+                ]
+            )
+
+    stime = 200
+    xline = np.arange(stime)
+    trials = 400
+    n_sensors = 30
+
+    langle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
+    rangle =  np.vstack([ np.pi*oscillator(xline,15,np.random.rand(3)) for i in range(trials) ])
+    lpos,langle[0,:] = larm.get_joint_positions(langle[0,:])
+    rpos,rangle[0,:] = rarm.get_joint_positions(rangle[0,:])
+    curr_chain = np.vstack((lpos[::-1],rpos))
+
+    if plot == True:
+        fig = plt.figure()
+        ax = fig.add_subplot(111,aspect="equal")
+        robot_img, = plt.plot(*curr_chain.T)
+        robot_jts = plt.scatter(*curr_chain.T)
+        prpl, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="red")
+        prpp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="red")
+        qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
+        qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
+        prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
+        plt.xlim([-5,5])
+        plt.ylim([-0.5,3.0])
+
+    def move(x) :
+        lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
+        rpos,rangle[x,:] = rarm.get_joint_positions(rangle[x,:])
+        return np.vstack((lpos[::-1],rpos))
+
+
+    for x in range(stime*trials):
+
+        curr_chain = move(x)
+        polychain.set_chain(curr_chain)
+        collided = polychain.autocollision(
             epsilon = 0.1,
             is_set_collinear=True,
             debug=True)
-
         (p,rp,int1,q,sq,int2) = polychain.collision_data
 
         if plot == True:
@@ -672,7 +754,6 @@ def test_collision(plot=True):
             print x,if_coll
 
     raw_input()
-
 
 if __name__ == "__main__" :
 

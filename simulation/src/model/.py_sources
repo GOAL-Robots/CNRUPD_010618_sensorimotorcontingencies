@@ -1,10 +1,11 @@
 
-./Controller.py
 ./GoalMaker.py
 ./GoalPredictor.py
 ./GoalSelector.py
-./Robot.py
+./Simulation.py
+./Simulator.py
 ./__init__.py
+./dynamics.py
 ./esn.py
 ./gauss_utils.py
 ./kinematics.py
