@@ -15,4 +15,4 @@ from gauss_utils import mapND1D
 from gauss_utils import MultidimensionalGaussianMaker as GM
 from kohonen import Kohonen
 
-
+import kinematics
