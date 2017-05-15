@@ -1300,6 +1300,10 @@ def test_collisions_two_chains():
     # prepare graphic objects
     fig = plt.figure()
     ax = fig.add_subplot(111,aspect="equal")
+    plt.xlim([-5,5])
+    plt.ylim([-0.5,3.0])
+
+    # inital plots
     robot_img, = plt.plot(*curr_chain.T)
     robot_jts = plt.scatter(*curr_chain.T)
     obj, = plt.plot(*box_object.T)
@@ -1308,16 +1312,13 @@ def test_collisions_two_chains():
     qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
     qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
     prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
-    plt.xlim([-5,5])
-    plt.ylim([-0.5,3.0])
-
-    # loop over the whole time-story
-    for x in range(stime*trials):
-
+        
+    # animate
+    for t in xrange(stime*trials):
         # manages current move
         collided, curr_chain = collision_manager.manage_collisions(
             prev_chain = curr_chain,
-            curr_chain =  move(x),
+            curr_chain =  move(curr_chain),
             other_chains = box_object,
             move_back_fun = MoveBackFunct(x, langle, rangle),
             epsilon = 0.1)
@@ -1327,11 +1328,7 @@ def test_collisions_two_chains():
         robot_jts.set_offsets(curr_chain)
 
         fig.canvas.draw()
-        plt.pause(0.05)
-
-    raw_input()
-
-
+        plt.pause(1e-2)
 
 if __name__ == "__main__" :
 
