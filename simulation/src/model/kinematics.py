@@ -90,12 +90,13 @@ OUT_OF_RANGE=1e10
 #----------------------------------------------------------------------
 
 
-class Collision:
-    '''
-    Detect if one or more chains are colliding
-    by reading intersections between all the segments of the chains
+class Collision(object):
+    ''' Detect if one or more chains are colliding
 
-    from http://stackoverflow.com/a/565282/4209308
+    Reads intersections between all the segments of the chains iterating over
+    all combinations of segments in the chains
+
+    Intersection algorithm from http://stackoverflow.com/a/565282/4209308
 
     for each pair of segments:
         first segment:
@@ -123,8 +124,10 @@ class Collision:
             p       q
 
     '''
+
     def __init__(self, debug = False):
         if debug == True:
+            # initialize info structure for the collision
             self.collision_data = [
                 np.ones(2)*OUT_OF_RANGE,  # p
                 np.ones(2)*OUT_OF_RANGE,  # rp
@@ -134,7 +137,8 @@ class Collision:
                 np.ones(2)*OUT_OF_RANGE ] # q + u*s
 
     def __call__(self, chains, epsilon = 0.1, is_set_collinear = False, debug = False):
-        '''
+        ''' call operator that computes collisions
+
         :param  chains              a list of chains (lists of points)
 
         :param  epsilon             a trheshold of sensitivity of
@@ -156,7 +160,6 @@ class Collision:
 
         # precondition : the argument must be an array or
         #   a list of arrays
-
         single_chain = type(chains) == np.ndarray
         multiple_chains = (type(chains) == list and
                            np.all([ type(chain)==np.ndarray
@@ -268,11 +271,10 @@ class Collision:
 
 # Manages polynomial chains
 class Polychain(object) :
-    """
-    Manages polynomial chains.
-    Given a polychain it can compute
+    """ Manages polynomial chains.
 
-    autocollision           collisions
+    Given a polychain it can compute:
+
     get_point(distance)     coordinates of points in the 2D space length
     isPointInChain          a point belonging or not to the chain
 
@@ -318,89 +320,6 @@ class Polychain(object) :
             bc = self.chain[x] - self.chain[x-1]
             # compute abVbc angle and add it to segment_angles
             self.segment_angles.append( get_angle(ab, bc) )
-
-    def autocollision(self, epsilon = 0.1, is_set_collinear=False, debug=False):
-
-        try:
-            self.collision
-        except AttributeError:
-            self.collision = Collision()
-
-        return self.collision(self.chain, epsilon = epsilon ,
-                          is_set_collinear = is_set_collinear,
-                          debug = debug )
-
-    def manage_auto_collision(self, prev_chain, curr_chain, move_back_fun,
-            delta = 0.1, substeps = 50.0, **kargs):
-        """
-        Manage collisions. If the current set of positions (curr_chain)
-        has collisions produces substeps with beckward-moving positions until
-        the chain does not collide anymore.
-
-        :param  prev_chain      previous position (at timestep t - 1)
-        :param  curr_chain      current position (at timestep t)
-        :param  move_back_fun   a function object generating backward moves
-        :param  delta           scaling factor for the length of a beckward move
-        :param  substeps        the number of maximum substeps
-        :param  kargs           arguments for autocollision
-
-        :type   prev_chain      list of points
-        :type   curr_chain      list of points
-        :type   move_back_fun   function(count_substeps, delta, substeps):
-                                    :param  count_substeps      current substep
-                                                                number
-                                    :param  delta               scaling factor
-                                                                    for the
-                                                                    length of
-                                                                    a beckward
-                                                                    move
-                                    :param  substeps            the number of
-                                                                    maximum
-                                                                    substeps
-
-        :return (collided, curr_chain)  collided := True if there was a
-                                            collision
-                                        cur_chain := the positions after
-                                            collision  management
-        :rtype  tuple(bool, array)
-        """
-
-        # init the counter of substeps
-        count_substeps = 1
-
-        # set the current positions as
-        # the current polychain
-        self.set_chain(curr_chain)
-
-        # detect collisions
-        is_colliding = self.autocollision(**kargs)
-        collided = is_colliding
-
-        # if there is a collision loop through substeps
-        while is_colliding == True :
-            if count_substeps <  substeps :
-
-                # do a backward move
-                curr_chain = move_back_fun(
-                    count_substeps = count_substeps,
-                    delta = delta,
-                    substeps = substeps)
-
-                # set the current positions as
-                # the current polychain
-                self.set_chain(curr_chain)
-
-                # detect collisions
-                is_colliding = self.autocollision(**kargs)
-
-                # update substep counter
-                count_substeps += 1
-            else:
-                # too many substeps, step back to
-                # the previous (non colliding) position
-                return collided, prev_chain
-
-        return collided, curr_chain
 
     def isPointInChain(self, point, epsilon = 0.1 ) :
         '''
@@ -508,9 +427,15 @@ class Polychain(object) :
         '''
         return sum(self.segment_lengths)
 
-class CollisionManager:
+class CollisionManager(object):
+    """ Manages collisions
 
-    def __init__(self, object_number=1):
+    Uses a Collision object to detect collisions and
+    calls a backward-move function object in case of
+    compenetrations
+    """
+
+    def __init__(self):
 
         self.collision = Collision()
         self.chain =  Polychain()
@@ -519,7 +444,7 @@ class CollisionManager:
                             other_chains = None, delta = 0.1, substeps = 50.0,
                              **kargs):
         """
-        Manage collisions. If the current set of positions (curr_chain)
+        Manage current collisions. If the current set of positions (curr_chain)
         has collisions produces substeps with beckward-moving positions until
         the chain does not collide anymore.
 
@@ -832,8 +757,7 @@ def test_collision():
 
     class MoveBackFunct:
         """
-        Function object for backward moves - used by
-            polychain.manage_auto_collision
+        Function object for backward moves
         """
         def __init__(self, x, langle, rangle):
             """
@@ -1235,6 +1159,7 @@ def test_collisions_two_chains():
 
         :param  x   the current index in the angles timeseries
         """
+
         # comute the x-th joint positions
         lpos,langle[x,:] = larm.get_joint_positions(langle[x,:])
         rpos,rangle[x,:] = rarm.get_joint_positions(rangle[x,:])
@@ -1243,8 +1168,7 @@ def test_collisions_two_chains():
 
     class MoveBackFunct:
         """
-        Function object for backward moves - used by
-            polychain.manage_auto_collision
+        Function object for backward moves
         """
         def __init__(self, x, langle, rangle):
             """
@@ -1312,15 +1236,18 @@ def test_collisions_two_chains():
     qsql, = plt.plot(*(np.ones([2,2])*OUT_OF_RANGE).T, lw=3, c="green")
     qsqp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=60, c="green")
     prtp = plt.scatter(*(np.ones([2,2])*OUT_OF_RANGE).T, s=120, color="yellow")
-        
+
     # animate
     for t in xrange(stime*trials):
+
+        curr_chain = move(t)
+
         # manages current move
         collided, curr_chain = collision_manager.manage_collisions(
             prev_chain = curr_chain,
-            curr_chain =  move(curr_chain),
+            curr_chain =  curr_chain,
             other_chains = box_object,
-            move_back_fun = MoveBackFunct(x, langle, rangle),
+            move_back_fun = MoveBackFunct(t, langle, rangle),
             epsilon = 0.1)
 
         # plot the body

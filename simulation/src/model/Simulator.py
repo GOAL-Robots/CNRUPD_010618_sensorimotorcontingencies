@@ -14,16 +14,16 @@ import kinematics as KM
 
 class PerceptionManager(object) :
     '''
-    Manages the computation of sensory inputs 
+    Manages the computation of sensory inputs
     '''
-    def __init__(self, pixels, lims, touch_th, 
-            num_touch_sensors, touch_sigma):
+    def __init__(self, pixels, lims, touch_th,
+            num_touch_sensors, touch_sigma, collision = KM.Collision()):
         '''
-        :param  pixels                  width and length of the retina      
-        :param  lims                    x and y limits of the field of view 
+        :param  pixels                  width and length of the retina
+        :param  lims                    x and y limits of the field of view
         :param  touch_th                threshold of sensor activation to detect touch
         :param  num_touch_sensors       number of sensors in the body
-        :param  touch_sigma             standard deviation of the sensor radial bases 
+        :param  touch_sigma             standard deviation of the sensor radial bases
         :type   pixels                  list - [width, height]
         :type   lims                    list of pairs   - [[xmin, xmax], [ymin, ymax]]
         :type   touch_th                float
@@ -33,10 +33,11 @@ class PerceptionManager(object) :
         '''
 
         self.pixels = np.array(pixels)
-        self.lims = np.vstack(lims) 
+        self.lims = np.vstack(lims)
         self.touch_th = touch_th
-        self.num_touch_sensors = num_touch_sensors 
-        self.touch_sigma =  touch_sigma 
+        self.num_touch_sensors = num_touch_sensors
+        self.touch_sigma =  touch_sigma
+        self.collision = collision
 
         # get the width and height of the visual field
         self.size = (self.lims[:,1]-self.lims[:,0])
@@ -45,53 +46,53 @@ class PerceptionManager(object) :
         # init the chain object that computes the current positions of sensors
         self.chain = KM.Polychain()
 
-        # compute the witdh and height magnitudes of the gaussians in proprioception retina 
+        # compute the witdh and height magnitudes of the gaussians in proprioception retina
         self.proprioceptive_retina_sigma =  (self.size *
                                              pm_proprioceptive_retina_sigma )
-        # compute the witdh and height magnitudes of the gaussians in touch retina 
+        # compute the witdh and height magnitudes of the gaussians in touch retina
         self.touch_retina_sigma =  self.size*pm_touch_retina_sigma
 
-        # scale width of the gaussians in proprioception retina 
+        # scale width of the gaussians in proprioception retina
         self.proprioceptive_retina_sigma[0] *=  pm_proprioceptive_retina_sigma_width_scale
-        # scale width of the gaussians in touch retina 
+        # scale width of the gaussians in touch retina
         self.touch_retina_sigma[0] *=  pm_touch_retina_sigma_width_scale
 
         # init the gaussian maker to build the 2d gaussians for the retinas
         self.gm = GM(lims = np.hstack([self.lims,self.pixels.reshape(2,1)]))
 
         # the resolution of each body part in the visual retina (number of points)
-        self.image_resolution = pm_image_resolution - 2 
+        self.image_resolution = pm_image_resolution - 2
 
-        # initially set the body chain to a 2-points line  
+        # initially set the body chain to a 2-points line
         self.chain.set_chain(np.vstack(([-1,0],[1,0])))
-        
-        # compute the initial sensors' positions
-        self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)        
 
-        self.sensors_prev = self.chain.get_dense_chain(self.num_touch_sensors)        
-    
+        # compute the initial sensors' positions
+        self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)
+
+        self.sensors_prev = self.chain.get_dense_chain(self.num_touch_sensors)
+
     def get_image(self, body_tokens ):
         '''
         Builds the retina image from the current positions of the body
 
         :param  body_tokens     list of body parts. Each part is a list of 2D points
-        :type   body_tokens     list of list of pairs - [ [[x0,y0], ..., [xn,yn]], ... ]    
+        :type   body_tokens     list of list of pairs - [ [[x0,y0], ..., [xn,yn]], ... ]
 
-        :return a 2D array 
+        :return a 2D array
         :rtype  np.array(self.size, dtype=float )
 
         '''
 
         # init image
         image = np.zeros(self.pixels)
-        
+
         # for each token add all points to the 2D image
         for c in body_tokens:
             # compute the positions of the token's points
             self.chain.set_chain(c)
             # compute the position of the new poins given the current resolution
             dense_chain = self.chain.get_dense_chain(self.image_resolution)
-            
+
             # add each point to the image
             for point in dense_chain:
                 # compute the discrete coordinates of the point in terms of the retina
@@ -99,10 +100,10 @@ class PerceptionManager(object) :
                 # add points only if within the retina margins
                 if np.all(p<self.pixels) and np.all(p>0) :
                     image[p[0],p[1]] += 1
-        
-        # ensure that max value is at most 1    
+
+        # ensure that max value is at most 1
         image /= image.max()
-        
+
         #TODO: control all rotations  (it works, but why we transpose this?)
         return image.T
 
@@ -111,55 +112,55 @@ class PerceptionManager(object) :
         Build the current proprioception retina.
         All body joints are viewed as points in a 1-dimensional space.
         At each joint position a 2D gaussian is computed with standard deviation
-        on the vertical axis defined by the amplitude of the 
-        joint angle times self.proprioceptive_retina_sigma[1] and 
-        standard deviation on the orizontal axis defined by the amplitude of 
+        on the vertical axis defined by the amplitude of the
+        joint angle times self.proprioceptive_retina_sigma[1] and
+        standard deviation on the orizontal axis defined by the amplitude of
         the joint angle times self.proprioceptive_retina_sigma[0].
         All gaussians are summed point-to-point to obtain a mixture.
 
         :param  angle_tokens    list of lists of angles of all body parts' joints
         :type   angle_token     listo f list of floats - [ [ja0, ..., jan], ... ]
-        
-        :return a 2D array 
-        :rtype  np.array(self.size, dtype=float ) 
-        
+
+        :return a 2D array
+        :rtype  np.array(self.size, dtype=float )
+
         '''
 
-        
+
         # init retina
         image = np.zeros(self.pixels).astype("float")
-        
+
         # convrt the sequence of angle lists in a into a flatten vector
         all_angles = np.hstack(angles_tokens)
-        
-        # add a column with the number of joints to the lims array (x-axis) -  needed for 
+
+        # add a column with the number of joints to the lims array (x-axis) -  needed for
         # telling the number of bins to linspace
         lims = np.hstack([self.lims[0], len(all_angles) ])
-        
+
         # compute the center of joint gaussians within the retina
-        abs_body_tokens = np.vstack([ 
+        abs_body_tokens = np.vstack([
             np.linspace(*lims), # x-positions are uniformly distributed within the retinal x-limits
-            self.ycenter*np.ones(len(all_angles)) # y-positions are all alligned at the middel of the retinal y-limits 
+            self.ycenter*np.ones(len(all_angles)) # y-positions are all alligned at the middel of the retinal y-limits
             ]).T
-       
-        # for each joint compute the gaussian 
+
+        # for each joint compute the gaussian
         for point, angle in zip(abs_body_tokens, all_angles):
             if abs(angle) > pm_proprioceptive_angle_threshold :
                 # the standard deviation on the x and y axis depends on the angle of the joint
-                sigma = abs(angle)*self.proprioceptive_retina_sigma 
+                sigma = abs(angle)*self.proprioceptive_retina_sigma
                 # build the 2d_gaussian on the retina-grid
                 g = self.gm(point, sigma)[0]
                 # add the current gaussian to the retina
                 image += g.reshape(*self.pixels)*angle
-        
+
         return image.T
-    
+
     def calc_collision(self, body_tokens):
         '''
         Compute collisions between all the points of the body
 
         :param  body_tokens     list of body parts. Each part is a list of 2D points
-        :type   body_tokens     list of list of pairs - [ [[x0,y0], ..., [xn,yn]], ... ]    
+        :type   body_tokens     list of list of pairs - [ [[x0,y0], ..., [xn,yn]], ... ]
 
 
         return  True if body collides with itself
@@ -167,9 +168,8 @@ class PerceptionManager(object) :
 
         '''
         bts = np.vstack(body_tokens)
-        self.chain.set_chain( bts ) 
-        colliding = self.chain.autocollision(epsilon=0.01, is_set_collinear=True)
-        
+        colliding = self.collision(bts, epsilon=0.01, is_set_collinear=True)
+
         return colliding
 
     def get_touch(self, body_tokens):
@@ -177,64 +177,64 @@ class PerceptionManager(object) :
         Build the current touch retina.
         All body joints are viewed as points in a 1-dimensional space.
         At each joint position a 2D gaussian is computed with standard deviation
-        on the vertical axis defined by the amplitude of the 
-        joint angle times self.touch_retina_sigma[1] and 
-        standard deviation on the orizontal axis defined by the amplitude of 
-        self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)   
+        on the vertical axis defined by the amplitude of the
+        joint angle times self.touch_retina_sigma[1] and
+        standard deviation on the orizontal axis defined by the amplitude of
+        self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)
         All gaussians are summed point-to-point to obtain a mixture.
 
         :param  angle_tokens    list of lists of angles of all body parts' joints
         :type   angle_token     listo f list of floats - [ [ja0, ..., jan], ... ]
-        
-        :return a 2D array 
-        :rtype  np.array(self.size, dtype=float ) 
-        
-        ''' 
-        
+
+        :return a 2D array
+        :rtype  np.array(self.size, dtype=float )
+
+        '''
+
         #### compute touches
 
         # get the chain of the whole body (a single array of 2D points )
         bts = np.vstack(body_tokens)
         self.chain.set_chain( bts )
-  
+
         # update sensors
-        self.sensors_prev = self.sensors   
-        self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)   
+        self.sensors_prev = self.sensors
+        self.sensors = self.chain.get_dense_chain(self.num_touch_sensors)
 
         # init the vector of touch measures
         sensors_n = len(self.sensors)
         touches = np.zeros(sensors_n)
-            
-        # read contact of the two edges (hands) with the rest of the points 
+
+        # read contact of the two edges (hands) with the rest of the points
         for x,sensor  in zip( [0, sensors_n-1], [ self.sensors[0], self.sensors[-1] ] ):
 
             # for each edge iterate over the other points
-            for y,point in enumerate(self.sensors):        
+            for y,point in enumerate(self.sensors):
 
                 # do not count the edge with itself (it would be autotouch!!)
                 if x != y and abs(y-x)>(self.num_touch_sensors/4.0):
 
                     # touch is measured as a radial basis of the distance from the sensor
                     stouch = np.exp(-((np.linalg.norm(point - sensor))**2)/ \
-                            (2*self.touch_sigma**2)  ) 
+                            (2*self.touch_sigma**2)  )
 
-                    touches[y] += stouch 
+                    touches[y] += stouch
 
         ### write information into the touch retina
         # init retina
         image = np.zeros(self.pixels)
-  
-        # add a column with the number of joints to the lims array (x-axis) -  needed to 
+
+        # add a column with the number of joints to the lims array (x-axis) -  needed to
         # tell the number of bins to linspace
         lims = np.hstack([self.lims[0], sensors_n])
-        
+
         # compute the center of joint gaussians within the retina
-        abs_body_tokens = np.vstack([ 
+        abs_body_tokens = np.vstack([
             np.linspace(*lims), # x-positions are uniformly distributed within the retinal x-limits
-            self.ycenter*np.ones(sensors_n) # y-positions are all alligned at the middle of the retinal y-limits 
+            self.ycenter*np.ones(sensors_n) # y-positions are all alligned at the middle of the retinal y-limits
             ]).T
 
-        # for each joint compute the gaussian 
+        # for each joint compute the gaussian
         for touch,point in  zip(touches, abs_body_tokens) :
             # the standard deviation on the x and y axis depends on the touch
             sigma = 1e-5+touch*self.touch_retina_sigma
@@ -243,7 +243,7 @@ class PerceptionManager(object) :
             # add the current gaussian to the retina if touch is greater than threshold
             if touch>self.touch_th:
                 image += g.reshape(*self.pixels)
-         
+
         return image.T, touches
 
 #-----------------------------------------------------------------------------
@@ -259,11 +259,11 @@ class KinematicActuator(object) :
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     def __init__(self) :
-        
+
         self.NUMBER_OF_JOINTS = ka_num_joints
         self.L_ORIGIN = ka_left_origin
         self.R_ORIGIN = ka_right_origin
-        
+
         # build left arm (angle are mirrowed)
         self.arm_l = KM.Arm(
             number_of_joint = self.NUMBER_OF_JOINTS,    # 3 joints
@@ -291,16 +291,16 @@ class KinematicActuator(object) :
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     def rescale_angles(self, l_angles, r_angles):
-        
+
         l_mins = self.arm_l.joint_lims[:,0]
         l_maxs = self.arm_l.joint_lims[:,1]
         l_ranges = l_maxs - l_mins
-        l_angles = l_angles*l_ranges + l_mins 
+        l_angles = l_angles*l_ranges + l_mins
 
         r_mins = self.arm_r.joint_lims[:,0]
         r_maxs = self.arm_r.joint_lims[:,1]
         r_ranges = r_maxs - r_mins
-        r_angles = r_angles*r_ranges + r_mins 
+        r_angles = r_angles*r_ranges + r_mins
 
         return l_angles, r_angles
 
@@ -313,14 +313,14 @@ class KinematicActuator(object) :
         l_mins = self.arm_l.joint_lims[:,0]
         l_maxs = self.arm_l.joint_lims[:,1]
         l_ranges = l_maxs - l_mins
-        l_angles = (l_angles - l_mins)/l_ranges 
+        l_angles = (l_angles - l_mins)/l_ranges
 
         r_mins = self.arm_r.joint_lims[:,0]
         r_maxs = self.arm_r.joint_lims[:,1]
         r_ranges = r_maxs - r_mins
-        r_angles = (r_angles - r_mins)/r_ranges 
+        r_angles = (r_angles - r_mins)/r_ranges
 
-        return l_angles, r_angles 
+        return l_angles, r_angles
 
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
@@ -363,24 +363,24 @@ class BodySimulator(object) :
 
     def __init__(self, pixels, lims, **kargs):
         '''
-        :param  pixels                  width and length of the retina      
-        :param  lims                    x and y limits of the field of view 
+        :param  pixels                  width and length of the retina
+        :param  lims                    x and y limits of the field of view
         :type   pixels                  list - [width, height]
         :type   lims                    list of pairs   - [[xmin, xmax], [ymin, ymax]]
         '''
 
-        self.pixels = pixels 
+        self.pixels = pixels
         self.lims = lims
-        
+
         # init actuators
         self.actuator = KinematicActuator()
         self.theoric_actuator = KinematicActuator()
         self.target_actuator = KinematicActuator()
 
         self.actuator.reset()
-        self.theoric_actuator.reset()   
-        self.target_actuator.reset() 
-         
+        self.theoric_actuator.reset()
+        self.target_actuator.reset()
+
         # init all data members
         n_joints = self.actuator.NUMBER_OF_JOINTS
         self.larm_angles = np.zeros(n_joints)
@@ -409,20 +409,20 @@ class BodySimulator(object) :
         self.init_body_tokens = (
                 self.actuator.position_l[::-1],
                 self.actuator.position_r)
-        
+
         # init the perception manager
-        self.perc = PerceptionManager( 
+        self.perc = PerceptionManager(
                 lims=lims,
                 pixels=pixels,
                 **kargs )
 
-        # 
+        #
         self.touches = np.zeros(len(self.perc.sensors))
         self.curr_body_tokens = self.init_body_tokens
 
-    
+
     def get_positions(self,
-        langles,       rangles, 
+        langles,       rangles,
         dlangles=None, drangles=None,
         tlangles=None, trangles=None ):
 
@@ -430,19 +430,19 @@ class BodySimulator(object) :
         if dlangles is not None and  drangles is not None:
             self.theoric_actuator.set_angles(dlangles, drangles)
         if tlangles is not None and  trangles is not None:
-            self.target_actuator.set_angles(tlangles, trangles)                        
+            self.target_actuator.set_angles(tlangles, trangles)
 
     def get_collision(self) :
-              
-        self.larm_angles, self.rarm_angles = (self.actuator.angles_l, 
+
+        self.larm_angles, self.rarm_angles = (self.actuator.angles_l,
                     self.actuator.angles_r)
-        
-        self.curr_body_tokens = (self.actuator.position_l[::-1], 
-            self.actuator.position_r) 
-            
+
+        self.curr_body_tokens = (self.actuator.position_l[::-1],
+            self.actuator.position_r)
+
         ###############################################################
-        # calculate collisions 
-    
+        # calculate collisions
+
         autocollision = self.perc.calc_collision(
                 body_tokens=self.curr_body_tokens)
 
@@ -450,10 +450,10 @@ class BodySimulator(object) :
 
 
 
-    def step_kinematic(self, 
-            larm_angles_unscaled, rarm_angles_unscaled, 
-            larm_angles_theoric_unscaled, rarm_angles_theoric_unscaled, 
-            larm_angles_target_unscaled, rarm_angles_target_unscaled, 
+    def step_kinematic(self,
+            larm_angles_unscaled, rarm_angles_unscaled,
+            larm_angles_theoric_unscaled, rarm_angles_theoric_unscaled,
+            larm_angles_target_unscaled, rarm_angles_target_unscaled,
             active=True ):
         '''
         :param  larm_angles_unscaled             actual angles of the joints of the left arm
@@ -461,32 +461,32 @@ class BodySimulator(object) :
         :param  larm_angles_theoric_unscaled     motor commands to the left arm
         :param  rarm_angles_theoric_unscaled     motor commands to the right arm
         :param  larm_angles_target_unscaled      desired angle end-point positions the left arm
-        :param  rarm_angles_target_unscaled      desired angle end-point positions the right arm 
+        :param  rarm_angles_target_unscaled      desired angle end-point positions the right arm
         :param  active                           if the body_simulator is currently activa
 
         '''
 
-        larm_angles, rarm_angles = self.actuator.rescale_angles( 
-                larm_angles_unscaled, 
-                rarm_angles_unscaled ) 
-        
-        larm_angles_theoric, rarm_angles_theoric = self.actuator.rescale_angles( 
-                larm_angles_theoric_unscaled, 
-                rarm_angles_theoric_unscaled ) 
- 
-        larm_angles_target, rarm_angles_target = self.actuator.rescale_angles( 
-                larm_angles_target_unscaled, 
-                rarm_angles_target_unscaled ) 
+        larm_angles, rarm_angles = self.actuator.rescale_angles(
+                larm_angles_unscaled,
+                rarm_angles_unscaled )
+
+        larm_angles_theoric, rarm_angles_theoric = self.actuator.rescale_angles(
+                larm_angles_theoric_unscaled,
+                rarm_angles_theoric_unscaled )
+
+        larm_angles_target, rarm_angles_target = self.actuator.rescale_angles(
+                larm_angles_target_unscaled,
+                rarm_angles_target_unscaled )
 
         # update previous data
 
         self.pos_old = self.pos
         self.prop_old = self.prop
-        self.touch_old = self.touch 
+        self.touch_old = self.touch
 
         # update current data
         self.larm_delta_angles =  larm_angles - self.larm_angles
-        self.rarm_delta_angles =  rarm_angles - self.rarm_angles 
+        self.rarm_delta_angles =  rarm_angles - self.rarm_angles
         self.larm_angles = larm_angles
         self.rarm_angles = rarm_angles
         self.larm_angles_theoric = larm_angles_theoric
@@ -494,38 +494,38 @@ class BodySimulator(object) :
         self.larm_angles_target = larm_angles_target
         self.rarm_angles_target = rarm_angles_target
 
-        # compute actual angles 
+        # compute actual angles
         self.actuator.set_angles(self.larm_angles, self.rarm_angles)
         self.theoric_actuator.set_angles(self.larm_angles_theoric,
                                          self.rarm_angles_theoric)
         self.target_actuator.set_angles(self.larm_angles_target,
                                         self.rarm_angles_target)
-        
 
-        # compute actual positions given the current angles 
+
+        # compute actual positions given the current angles
         self.get_positions( self.larm_angles, self.rarm_angles,
                 self.larm_angles_theoric, self.rarm_angles_theoric,
                 self.larm_angles_target, self.rarm_angles_target )
-        
+
         # compute collisions
         autocollision = self.get_collision()
         res_autocollision = autocollision
-        
+
         # control collision resolution
-        larm_angles = self.larm_angles 
+        larm_angles = self.larm_angles
         rarm_angles = self.rarm_angles
-        
+
         count_collisions = 1
         c_scale = 20
         delta = np.pi*(1.0/15.0)
-   
-        while autocollision : 
-            if count_collisions <  c_scale : 
-                
-                # try angles that are a little bit moved back 
+
+        while autocollision :
+            if count_collisions <  c_scale :
+
+                # try angles that are a little bit moved back
                 # from those producing collision
-                
-                # go back of a fraction of angle  
+
+                # go back of a fraction of angle
                 larm_angles = (self.larm_angles
                                - count_collisions
                                * delta*(count_collisions**0.5)
@@ -539,16 +539,16 @@ class BodySimulator(object) :
                                / np.abs(self.rarm_delta_angles)
                                / float(c_scale*2) )
 
-                # compute actual positions given the current angles 
+                # compute actual positions given the current angles
                 self.get_positions( larm_angles, rarm_angles,
                         self.larm_angles_theoric, self.rarm_angles_theoric,
                         self.larm_angles_target, self.rarm_angles_target  )
-                
+
                 # compute collisions
                 autocollision = self.get_collision()
 
                 count_collisions += 1
-                
+
 
             else:
 
@@ -558,18 +558,18 @@ class BodySimulator(object) :
                 larm_angles = self.larm_angles - self.larm_delta_angles/2.0
                 rarm_angles = self.rarm_angles - self.rarm_delta_angles/2.0
 
-                # compute actual positions given the current angles 
+                # compute actual positions given the current angles
                 self.get_positions( larm_angles, rarm_angles,
                         self.larm_angles_theoric, self.rarm_angles_theoric,
                         self.larm_angles_target, self.rarm_angles_target  )
-                
+
                 autocollision = False
                 res_autocollision = False
 
-        self.larm_angles = larm_angles 
+        self.larm_angles = larm_angles
         self.rarm_angles = rarm_angles
-       
-      
+
+
         #######################################################################
 
         # VISUAL POSITION
@@ -582,9 +582,9 @@ class BodySimulator(object) :
         #TOUCH
         self.touch, self.touches = self.perc.get_touch(
             body_tokens = self.curr_body_tokens)
-        
+
         delta_angles_tokens = (self.larm_delta_angles,
-            self.rarm_delta_angles) 
+            self.rarm_delta_angles)
 
 
         # deltas
@@ -594,13 +594,12 @@ class BodySimulator(object) :
                 angles_tokens=delta_angles_tokens)
         self.touch_delta = self.touch - self.touch_old
 
-        return  active and res_autocollision 
+        return  active and res_autocollision
 
     def reset(self):
-        self.pos_old *=0 
-        self.pos *=0 
-        self.prop_old *=0 
-        self.prop *=0 
-        self.touch_old *=0 
-        self.touch *=0 
-
+        self.pos_old *=0
+        self.pos *=0
+        self.prop_old *=0
+        self.prop *=0
+        self.touch_old *=0
+        self.touch *=0
