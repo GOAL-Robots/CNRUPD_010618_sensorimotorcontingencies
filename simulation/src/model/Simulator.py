@@ -166,23 +166,6 @@ class PerceptionManager(object):
 
         return image.T
 
-    def calc_collision(self, body_tokens):
-        '''
-        Compute collisions between all the points of the body
-
-        :param  body_tokens     list of body parts. Each part is a list of 2D points
-        :type   body_tokens     list of list of pairs - [ [[x0,y0], ..., [xn,yn]], ... ]
-
-
-        return  True if body collides with itself
-        rtype   bool
-
-        '''
-        bts = np.vstack(body_tokens)
-        colliding = self.collision(bts, epsilon=0.01, is_set_collinear=True)
-
-        return colliding
-
     def get_touch(self, body_tokens):
         '''
         Build the current touch retina.
@@ -449,21 +432,6 @@ class BodySimulator(object):
         if tlangles is not None and trangles is not None:
             self.target_actuator.set_angles(tlangles, trangles)
 
-    def get_collision(self):
-
-        self.larm_angles, self.rarm_angles = (self.actuator.angles_l,
-                                              self.actuator.angles_r)
-
-        self.curr_body_tokens = (self.actuator.position_l[::-1],
-                                 self.actuator.position_r)
-
-        ###############################################################
-        # calculate collisions
-
-        autocollision = self.perc.calc_collision(
-            body_tokens=self.curr_body_tokens)
-
-        return autocollision
 
     def reset_body_chain(self):
 

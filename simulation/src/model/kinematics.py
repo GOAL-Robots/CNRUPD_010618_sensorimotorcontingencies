@@ -456,8 +456,8 @@ class CollisionManager(object):
         :param  substeps        the number of maximum substeps
         :param  kargs           arguments for autocollision
 
-        :type   prev_chain     list of points
-        :type   curr_chain     list of points
+        :type   prev_chain      list of points
+        :type   curr_chain      list of points
         :type   move_back_fun   function(count_substeps, delta, substeps):
                                     :param  count_substeps      current substep
                                                                 number
@@ -469,7 +469,8 @@ class CollisionManager(object):
                                     :param  substeps            the number of
                                                                     maximum
                                                                     substeps
-        :type   reset   function()
+        :type   reset           function()
+
         :return (collided, curr_chain)  collided := True if there was a
                                             collision
                                         curr_chain := the position after
