@@ -432,7 +432,6 @@ class BodySimulator(object):
         if tlangles is not None and trangles is not None:
             self.target_actuator.set_angles(tlangles, trangles)
 
-
     def reset_body_chain(self):
 
         self.curr_body_tokens = self.prev_body_tokens[:]
@@ -458,17 +457,11 @@ class BodySimulator(object):
 
         # go back of a fraction of angle
         larm_angles = (self.larm_angles
-                       - count_substeps
-                       * delta * (count_substeps**0.5)
-                       * self.larm_delta_angles
-                       / np.abs(self.larm_delta_angles)
-                       / float(substeps * 2))
+                       - (count_substeps / float(substeps))
+                       * delta * np.sign(self.larm_delta_angles))
         rarm_angles = (self.rarm_angles
-                       - count_substeps
-                       * delta * (count_substeps**0.5)
-                       * self.rarm_delta_angles
-                       / np.abs(self.rarm_delta_angles)
-                       / float(substeps * 2))
+                       - (count_substeps / float(substeps))
+                       * delta * np.sign(self.rarm_delta_angles))
 
         # compute actual positions given the current angles
         self.get_positions(larm_angles, rarm_angles,
@@ -483,6 +476,8 @@ class BodySimulator(object):
 
         if update_prev == True:
             self.prev_body_tokens = self.curr_body_tokens[:]
+            self.prev_larm_angles = self.larm_angles
+            self.prev_rarm_angles = self.rarm_angles
 
         self.larm_angles, self.rarm_angles = (self.actuator.angles_l,
                                               self.actuator.angles_r)
@@ -598,9 +593,6 @@ class BodySimulator(object):
         #
         #         autocollision = False
         #         res_autocollision = False
-
-        self.larm_angles = larm_angles
-        self.rarm_angles = rarm_angles
 
         #######################################################################
 

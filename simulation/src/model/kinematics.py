@@ -137,7 +137,7 @@ class Collision(object):
                 np.ones(2) * OUT_OF_RANGE,  # sq
                 np.ones(2) * OUT_OF_RANGE]  # q + u*s
 
-    def __call__(self, chains, epsilon=0.1, is_set_collinear=False, debug=False):
+    def __call__(self, chains, epsilon=0.1, is_set_collinear=True, debug=False):
         ''' call operator that computes collisions
 
         :param  chains              a list of chains (lists of points)
@@ -233,11 +233,11 @@ class Collision(object):
                                 t0 = np.dot(q - p, r / np.dot(r, r))
                                 t1 = t0 + np.dot(s, r / np.dot(r, r))
 
-                                mint = min(t0, t1)
-                                maxt = max(t0, t1)
+                                mint = max(t0, 0)
+                                maxt = min(t1, 1)
 
                                 # segments overlap
-                                if 0 < maxt < 1 or 0 < mint < 1:
+                                if mint < maxt:
                                     if debug == True:
                                         self.collision_data[0] = p
                                         self.collision_data[1] = rp
@@ -441,7 +441,7 @@ class CollisionManager(object):
         self.chain = Polychain()
 
     def manage_collisions(self, prev_chain, curr_chain, move_back_fun, reset=None,
-                          other_chains=None, delta=0.1, substeps=50.0,
+                          other_chains=None, delta=1.0, substeps=3.0,
                           **kargs):
         """
         Manage current collisions. If the current set of positions (curr_chain)
