@@ -90,185 +90,9 @@ OUT_OF_RANGE = 1e10
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
 
-
-class Collision(object):
-    ''' Detect if one or more chains are colliding
-
-    Reads intersections between all the segments of the chains iterating over
-    all combinations of segments in the chains
-
-    Intersection algorithm from http://stackoverflow.com/a/565282/4209308
-
-    for each pair of segments:
-        first segment:
-            p is one endpoint
-            r is the coordinates relative to the first endpoint
-                of the second endpoint
-            t is a scalar defining the distance of the intersection point
-                from p on the first segment
-        second segment:
-            q is one endpoint
-            s is the coordinates relative to the first endpoint
-                of the second endpoint
-            u is a scalar defining the distance of the intersection point
-                from p on the first segment
-
-    q + s = sq     p + r = rp
-            \       /
-             \     /
-              \   /
-               \ /
-      p + t*r   \ q + u*s
-               / \
-              /   \
-             /     \
-            p       q
-
-    '''
-
-    def __init__(self, debug=False):
-        if debug == True:
-            # initialize info structure for the collision
-            self.collision_data = [
-                np.ones(2) * OUT_OF_RANGE,  # p
-                np.ones(2) * OUT_OF_RANGE,  # rp
-                np.ones(2) * OUT_OF_RANGE,  # p + t*r
-                np.ones(2) * OUT_OF_RANGE,  # q
-                np.ones(2) * OUT_OF_RANGE,  # sq
-                np.ones(2) * OUT_OF_RANGE]  # q + u*s
-
-    def __call__(self, chains, epsilon=0.1, is_set_collinear=True, debug=False):
-        ''' call operator that computes collisions
-
-        :param  chains              a list of chains (lists of points)
-
-        :param  epsilon             a trheshold of sensitivity of
-                                        each point of the chain (how much they
-                                        must be close one another to "touch")
-
-        :param  is_set_collinear    further test for collinearity (segments are
-                                        parallel and non-intersecting)
-
-        :param  debug               if collision_data has to be stored
-
-        :return  True in case of collision
-        '''
-
-        # initialize intersection flag
-        self.intersect = None
-
-        # ----- control the integrity of the chains argument ------
-
-        # precondition : the argument must be an array or
-        #   a list of arrays
-        single_chain = type(chains) == np.ndarray
-        multiple_chains = (type(chains) == list and
-                           np.all([type(chain) == np.ndarray
-                                   for chain in chains]))
-        assert(multiple_chains or single_chain)
-
-        # make a unique chain - precondition (all objects within
-        #   "chains" muts have the same length on their last dimension)
-        self.chain = np.vstack(chains)
-
-        # precondition: elements must be points
-        assert(self.chain.shape[-1] == 2)
-
-        # ---------------------------------------------------------
-
-        # get chain's info
-        (start, end) = self.chain[[1, -1]]
-        n = len(self.chain)
-        rng = range(1, n)
-
-        # if more than one chain is given
-        if multiple_chains:
-            # compute the lengths of the given chains
-            chain_lens = [len(chain) for chain in chains]
-            # throw away the indices corresponfding to the begin
-            #   of each original chain
-            rng = list(set(rng) - set(np.cumsum(chain_lens)))
-
-        # store variables for graphic debug
-        if debug == True:
-            self.collision_data = np.ones([6, 2]) * OUT_OF_RANGE
-
-        # iterate over all combinations of pairs of segments
-        # of the polychain and for each pair compute intersection
-        for x in rng:
-
-            # points of the first segment
-            p = self.chain[x - 1]    # start point
-            rp = self.chain[x]    # end point
-            r = rp - p    # end point relative to the start point
-
-            for y in rng:
-
-                # points of the second segment
-                q = self.chain[y - 1]    # start point
-                sq = self.chain[y]    # end point
-                s = sq - q    # end point relative to the start point
-
-                # test if start or end points overlap
-                junction = np.all(p == sq) or np.all(q == rp)
-
-                # only compute collisions if end points are not junktions
-                if x != y and not junction:
-
-                    # cross product of the relative end points.
-                    # if rxs = 0 the two segments are parallels
-                    rxs = cross(r, s)
-                    rxs_zero = abs(rxs) < epsilon
-
-                    qpxr = cross(q - p, r)
-                    qpxs = cross(q - p, s)
-
-                    # segments are parallel
-                    if rxs_zero:
-                        if is_set_collinear:
-
-                            # segments are collinear
-                            if abs(qpxr) < epsilon:
-
-                                t0 = np.dot(q - p, r / np.dot(r, r))
-                                t1 = t0 + np.dot(s, r / np.dot(r, r))
-
-                                mint = max(t0, 0)
-                                maxt = min(t1, 1)
-
-                                # segments overlap
-                                if mint < maxt:
-                                    if debug == True:
-                                        self.collision_data[0] = p
-                                        self.collision_data[1] = rp
-                                        self.collision_data[3] = q
-                                        self.collision_data[4] = sq
-                                    return True
-
-                    # segments are not parallel
-                    if not rxs_zero:
-                        t = qpxs / rxs
-                        u = qpxr / rxs
-
-                        int1 = p + t * r
-                        int2 = q + u * s
-
-                        # segments intersect
-                        if 0 <= t <= 1 and 0 <= u <= 1:
-                            self.intersect = int1
-                            if debug == True:
-                                self.collision_data[0] = p
-                                self.collision_data[1] = rp
-                                self.collision_data[2] = int1
-                                self.collision_data[3] = q
-                                self.collision_data[4] = sq
-                                self.collision_data[5] = int2
-                            return True
-        # no intersection
-        return False
-
-
 # Manages polynomial chains
+
+
 class Polychain(object):
     """ Manages polynomial chains.
 
@@ -425,6 +249,191 @@ class Polychain(object):
         return: the length of the current polyline
         '''
         return sum(self.segment_lengths)
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+# COLLISIONS ----------------------------------------------------------
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+
+class Collision(object):
+    ''' Detect if one or more chains are colliding
+
+    Reads intersections between all the segments of the chains iterating over
+    all combinations of segments in the chains
+
+    Intersection algorithm from http://stackoverflow.com/a/565282/4209308
+
+    for each pair of segments:
+        first segment:
+            p is one endpoint
+            r is the coordinates relative to the first endpoint
+                of the second endpoint
+            t is a scalar defining the distance of the intersection point
+                from p on the first segment
+        second segment:
+            q is one endpoint
+            s is the coordinates relative to the first endpoint
+                of the second endpoint
+            u is a scalar defining the distance of the intersection point
+                from p on the first segment
+
+    q + s = sq     p + r = rp
+            \       /
+             \     /
+              \   /
+               \ /
+      p + t*r   \ q + u*s
+               / \
+              /   \
+             /     \
+            p       q
+
+    '''
+
+    def __init__(self, debug=False):
+        if debug == True:
+            # initialize info structure for the collision
+            self.collision_data = [
+                np.ones(2) * OUT_OF_RANGE,  # p
+                np.ones(2) * OUT_OF_RANGE,  # rp
+                np.ones(2) * OUT_OF_RANGE,  # p + t*r
+                np.ones(2) * OUT_OF_RANGE,  # q
+                np.ones(2) * OUT_OF_RANGE,  # sq
+                np.ones(2) * OUT_OF_RANGE]  # q + u*s
+
+    def __call__(self, chains, epsilon=0.1, is_set_collinear=True, debug=False):
+        ''' call operator that computes collisions
+
+        :param  chains              a list of chains (lists of points)
+
+        :param  epsilon             a trheshold of sensitivity of
+                                        each point of the chain (how much they
+                                        must be close one another to "touch")
+
+        :param  is_set_collinear    further test for collinearity (segments are
+                                        parallel and non-intersecting)
+
+        :param  debug               if collision_data has to be stored
+
+        :return  True in case of collision
+        '''
+
+        # initialize intersection flag
+        self.intersect = None
+
+        # ----- control the integrity of the chains argument ------
+
+        # precondition : the argument must be an array or
+        #   a list of arrays
+        single_chain = type(chains) == np.ndarray
+        multiple_chains = (type(chains) == list and
+                           np.all([type(chain) == np.ndarray
+                                   for chain in chains]))
+        assert(multiple_chains or single_chain)
+
+        # make a unique chain - precondition (all objects within
+        #   "chains" muts have the same length on their last dimension)
+        self.chain = np.vstack(chains)
+
+        # precondition: elements must be points
+        assert(self.chain.shape[-1] == 2)
+
+        # ---------------------------------------------------------
+
+        # get chain's info
+        (start, end) = self.chain[[1, -1]]
+        n = len(self.chain)
+        rng = range(1, n)
+
+        # if more than one chain is given
+        if multiple_chains:
+            # compute the lengths of the given chains
+            chain_lens = [len(chain) for chain in chains]
+            # throw away the indices corresponfding to the begin
+            #   of each original chain
+            rng = list(set(rng) - set(np.cumsum(chain_lens)))
+
+        # store variables for graphic debug
+        if debug == True:
+            self.collision_data = np.ones([6, 2]) * OUT_OF_RANGE
+
+        # iterate over all combinations of pairs of segments
+        # of the polychain and for each pair compute intersection
+        for x in rng:
+
+            # points of the first segment
+            p = self.chain[x - 1]    # start point
+            rp = self.chain[x]    # end point
+            r = rp - p    # end point relative to the start point
+
+            for y in rng:
+
+                # points of the second segment
+                q = self.chain[y - 1]    # start point
+                sq = self.chain[y]    # end point
+                s = sq - q    # end point relative to the start point
+
+                # test if start or end points overlap
+                junction = np.all(p == sq) or np.all(q == rp)
+
+                # only compute collisions if end points are not
+                # junktions
+                if x != y and not junction:
+
+                    # cross product of the relative end points.
+                    # if rxs = 0 the two segments are parallels
+                    rxs = cross(r, s)
+                    rxs_zero = abs(rxs) < epsilon
+
+                    qpxr = cross(q - p, r)
+                    qpxs = cross(q - p, s)
+
+                    # segments are parallel
+                    if rxs_zero:
+                        if is_set_collinear:
+
+                            # segments are collinear
+                            if abs(qpxr) < epsilon:
+
+                                t0 = np.dot(q - p, r / np.dot(r, r))
+                                t1 = t0 + np.dot(s, r / np.dot(r, r))
+
+                                mint = max(t0, 0)
+                                maxt = min(t1, 1)
+
+                                # segments overlap
+                                if mint < maxt:
+                                    if debug == True:
+                                        self.collision_data[0] = p
+                                        self.collision_data[1] = rp
+                                        self.collision_data[3] = q
+                                        self.collision_data[4] = sq
+                                    return True
+
+                    # segments are not parallel
+                    if not rxs_zero:
+                        t = qpxs / rxs
+                        u = qpxr / rxs
+
+                        int1 = p + t * r
+                        int2 = q + u * s
+
+                        # segments intersect
+                        if 0 <= t <= 1 and 0 <= u <= 1:
+                            self.intersect = int1
+                            if debug == True:
+                                self.collision_data[0] = p
+                                self.collision_data[1] = rp
+                                self.collision_data[2] = int1
+                                self.collision_data[3] = q
+                                self.collision_data[4] = sq
+                                self.collision_data[5] = int2
+                            return True
+        # no intersection
+        return False
 
 
 class CollisionManager(object):
@@ -854,7 +863,6 @@ def test_collision():
 
 
 #----------------------------------------------------------------------
-
 def test_intersection():
 
     import matplotlib.pyplot as plt
@@ -1210,10 +1218,8 @@ def test_collisions_two_chains():
                             if not x < 0 else self.langle[x, :] * 0.0)
             # compute the substep left angles
             curr_langle = (self.langle[x, :]
-                           - count_substeps
-                           * delta * (count_substeps**0.8)
-                           * np.sign(delta_langle)
-                           / float(substeps))
+                           - (count_substeps / float(substeps))
+                           * delta * np.sign(delta_langle))
 
             # the gap between the current and the previous right arm joint
             #   angles
@@ -1221,10 +1227,8 @@ def test_collisions_two_chains():
                             if not x < 0 else self.rangle[x, :] * 0.1)
             # compute the substep left angles
             curr_rangle = (self.rangle[x, :]
-                           - count_substeps
-                           * delta * (count_substeps**0.8)
-                           * np.sign(delta_rangle)
-                           / float(substeps))
+                           - (count_substeps / float(substeps))
+                           * delta * np.sign(delta_rangle))
 
             # compute positions
             lpos, langle = larm.get_joint_positions(curr_langle)
