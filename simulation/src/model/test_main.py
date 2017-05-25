@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
         gs.step( static_inp )
 
-        body_simulator.step_kinematic(
+        body_simulator.step(
                 larm_angles=np.pi*gs.out[:(gs.N_ROUT_UNITS/2)],
                 rarm_angles=np.pi*gs.out[(gs.N_ROUT_UNITS/2):]
                 )

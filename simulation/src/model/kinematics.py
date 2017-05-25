@@ -441,7 +441,7 @@ class CollisionManager(object):
         self.chain = Polychain()
 
     def manage_collisions(self, prev_chain, curr_chain, move_back_fun, reset=None,
-                          other_chains=None, delta=1.0, substeps=3.0,
+                          other_chains=None, delta=1.0, substeps=20.0,
                           **kargs):
         """
         Manage current collisions. If the current set of positions (curr_chain)

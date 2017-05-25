@@ -390,7 +390,7 @@ class Simulation(object) :
         ########################################################################
 
         # Simulation step
-        collision = self.body_simulator.step_kinematic(
+        collision = self.body_simulator.step(
                 larm_angles_unscaled = larm_angles,
                 rarm_angles_unscaled = rarm_angles,
                 larm_angles_theoric_unscaled = larm_angles_theoric,

@@ -14,8 +14,7 @@ import kinematics as KM
 
 
 class PerceptionManager(object):
-    '''
-    Manages the computation of sensory inputs
+    ''' Manages the computation of sensory inputs
     '''
 
     def __init__(self, pixels, lims, touch_th,
@@ -77,8 +76,7 @@ class PerceptionManager(object):
         self.sensors_prev = self.chain.get_dense_chain(self.num_touch_sensors)
 
     def get_image(self, body_tokens):
-        '''
-        Builds the retina image from the current positions of the body
+        ''' Builds the retina image from the current positions of the body
 
         :param  body_tokens     list of body parts. Each part is a list of 2D points
         :type   body_tokens     list of list of pairs - [ [[x0,y0], ..., [xn,yn]], ... ]
@@ -116,8 +114,8 @@ class PerceptionManager(object):
         return image.T
 
     def get_proprioception(self, angles_tokens):
-        '''
-        Build the current proprioception retina.
+        ''' Build the current proprioception retina.
+
         All body joints are viewed as points in a 1-dimensional space.
         At each joint position a 2D gaussian is computed with standard deviation
         on the vertical axis defined by the amplitude of the
@@ -167,8 +165,8 @@ class PerceptionManager(object):
         return image.T
 
     def get_touch(self, body_tokens):
-        '''
-        Build the current touch retina.
+        ''' Build the current touch retina.
+
         All body joints are viewed as points in a 1-dimensional space.
         At each joint position a 2D gaussian is computed with standard deviation
         on the vertical axis defined by the amplitude of the
@@ -251,8 +249,7 @@ class PerceptionManager(object):
 
 
 class KinematicActuator(object):
-    '''
-    Init and control the position of the two arms
+    ''' Init and control the position of the two arms
     '''
 
     #-------------------------------------------------------------------------
@@ -325,8 +322,7 @@ class KinematicActuator(object):
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     def set_angles(self, angles_l, angles_r):
-        '''
-        Set angles and update positions
+        ''' Set angles and update positions
 
         :param  angles_l    angles of the joints of the left arm
         :param  angles_r    angles of the joints of the right arm
@@ -356,8 +352,7 @@ class KinematicActuator(object):
 
 
 class BodySimulator(object):
-    '''
-    Control sensory inputs and motor actuators
+    ''' Control sensory inputs and motor actuators
     '''
 
     def __init__(self, pixels, lims, **kargs):
@@ -421,10 +416,20 @@ class BodySimulator(object):
 
         self.collisionManager = KM.CollisionManager()
 
-    def get_positions(self,
-                      langles,       rangles,
-                      dlangles=None, drangles=None,
-                      tlangles=None, trangles=None):
+    def update_angles_and_positions(self,
+                                    langles,       rangles,
+                                    dlangles=None, drangles=None,
+                                    tlangles=None, trangles=None):
+        """ Update the angles and positions of the body simulator
+
+        :param langles      real left arm angles
+        :param rangles      real right arm angles
+        :param dlangles     commanded left arm angles
+        :param drangles     commanded right arm angles
+        :param tlangles     target left arm angles
+        :param trangles     target right arm angles
+
+        """
 
         self.actuator.set_angles(langles, rangles)
         if dlangles is not None and drangles is not None:
@@ -433,24 +438,44 @@ class BodySimulator(object):
             self.target_actuator.set_angles(tlangles, trangles)
 
     def reset_body_chain(self):
+        """ Reset the current body chain to the initial one
+        """
 
         self.curr_body_tokens = self.prev_body_tokens[:]
 
     def single_step_forward(self):
+        """ Compute the forward step
 
-        # compute actual angles
-        self.actuator.set_angles(self.larm_angles, self.rarm_angles)
-        self.theoric_actuator.set_angles(self.larm_angles_theoric,
-                                         self.rarm_angles_theoric)
-        self.target_actuator.set_angles(self.larm_angles_target,
-                                        self.rarm_angles_target)
+        update angles positions and body chain based on input
+
+        :return an array with the current body chain
+        """
 
         # compute actual positions given the current angles
-        self.get_positions(self.larm_angles, self.rarm_angles,
-                           self.larm_angles_theoric, self.rarm_angles_theoric,
-                           self.larm_angles_target, self.rarm_angles_target)
+        self.update_angles_and_positions(self.larm_angles,
+                                         self.rarm_angles,
+                                         self.larm_angles_theoric,
+                                         self.rarm_angles_theoric,
+                                         self.larm_angles_target,
+                                         self.rarm_angles_target)
+
+        # update the body chain
+        self.update_body_chain()
+
+        return np.vstack(self.curr_body_tokens)
 
     def single_step_backward(self, count_substeps, delta, substeps):
+        """ Compute a backward step
+
+        update angles positions and body chain based on input and backward
+        arguments
+        :param  count_substeps      current substep number
+        :param  delta               scaling factor for the length of
+                                        a beckward move
+        :param  substeps            the number of maximum substeps
+
+        :return an array with the current body chain
+        """
 
         # try angles that are a little bit moved back
         # from those producing collision
@@ -464,15 +489,23 @@ class BodySimulator(object):
                        * delta * np.sign(self.rarm_delta_angles))
 
         # compute actual positions given the current angles
-        self.get_positions(larm_angles, rarm_angles,
-                           self.larm_angles_theoric, self.rarm_angles_theoric,
-                           self.larm_angles_target, self.rarm_angles_target)
+        self.update_angles_and_positions(larm_angles,
+                                         rarm_angles,
+                                         self.larm_angles_theoric,
+                                         self.rarm_angles_theoric,
+                                         self.larm_angles_target,
+                                         self.rarm_angles_target)
 
-        self.get_body_chain(update_prev=False)
+        self.update_body_chain(update_prev=False)
 
         return np.vstack(self.curr_body_tokens)
 
-    def get_body_chain(self, update_prev=True):
+    def update_body_chain(self, update_prev=True):
+        """ Update the current body chain
+
+        :param update_prev  toggle saving previous
+                            body chain and angles values
+        """
 
         if update_prev == True:
             self.prev_body_tokens = self.curr_body_tokens[:]
@@ -485,11 +518,24 @@ class BodySimulator(object):
         self.curr_body_tokens = (self.actuator.position_l[::-1],
                                  self.actuator.position_r)
 
-    def step_kinematic(self,
-                       larm_angles_unscaled, rarm_angles_unscaled,
-                       larm_angles_theoric_unscaled, rarm_angles_theoric_unscaled,
-                       larm_angles_target_unscaled, rarm_angles_target_unscaled,
-                       active=True):
+    def reset(self):
+        """ Reset perceptive data
+        """
+        self.pos_old *= 0
+        self.pos *= 0
+        self.prop_old *= 0
+        self.prop *= 0
+        self.touch_old *= 0
+        self.touch *= 0
+
+    def step(self,
+             larm_angles_unscaled,
+             rarm_angles_unscaled,
+             larm_angles_theoric_unscaled,
+             rarm_angles_theoric_unscaled,
+             larm_angles_target_unscaled,
+             rarm_angles_target_unscaled,
+             active=True):
         '''
         :param  larm_angles_unscaled             actual angles of the joints of the left arm
         :param  rarm_angles_unscaled             actual angles of the joints of the right arm
@@ -500,6 +546,8 @@ class BodySimulator(object):
         :param  active                           if the body_simulator is currently activa
 
         '''
+
+        # rescale all angles
 
         larm_angles, rarm_angles = self.actuator.rescale_angles(
             larm_angles_unscaled,
@@ -514,7 +562,6 @@ class BodySimulator(object):
             rarm_angles_target_unscaled)
 
         # update previous data
-
         self.pos_old = self.pos
         self.prop_old = self.prop
         self.touch_old = self.touch
@@ -530,7 +577,6 @@ class BodySimulator(object):
         self.rarm_angles_target = rarm_angles_target
 
         self.single_step_forward()
-        self.get_body_chain()
 
         # compute collisions
         autocollision, _ = self.collisionManager.manage_collisions(
@@ -538,61 +584,6 @@ class BodySimulator(object):
             curr_chain=np.vstack(self.curr_body_tokens),
             move_back_fun=self.single_step_backward,
             reset=None)
-
-        #
-        # # control collision resolution
-        # larm_angles = self.larm_angles
-        # rarm_angles = self.rarm_angles
-        #
-        # count_collisions = 1
-        # c_scale = 20
-        # delta = np.pi * (1.0 / 15.0)
-        #
-        # while autocollision:
-        #     if count_collisions < c_scale:
-        #
-        #         # try angles that are a little bit moved back
-        #         # from those producing collision
-        #
-        #         # go back of a fraction of angle
-        #         larm_angles = (self.larm_angles
-        #                        - count_collisions
-        #                        * delta * (count_collisions**0.5)
-        #                        * self.larm_delta_angles
-        #                        / np.abs(self.larm_delta_angles)
-        #                        / float(c_scale * 2))
-        #         rarm_angles = (self.rarm_angles
-        #                        - count_collisions
-        #                        * delta * (count_collisions**0.5)
-        #                        * self.rarm_delta_angles
-        #                        / np.abs(self.rarm_delta_angles)
-        #                        / float(c_scale * 2))
-        #
-        #         # compute actual positions given the current angles
-        #         self.get_positions(larm_angles, rarm_angles,
-        #                            self.larm_angles_theoric, self.rarm_angles_theoric,
-        #                            self.larm_angles_target, self.rarm_angles_target)
-        #
-        #         # compute collisions
-        #         autocollision = self.get_collision()
-        #
-        #         count_collisions += 1
-        #
-        #     else:
-        #
-        #         # if still colliding after 10 trials
-        #         # give up and reset to the angles before colliding
-        #
-        #         larm_angles = self.larm_angles - self.larm_delta_angles / 2.0
-        #         rarm_angles = self.rarm_angles - self.rarm_delta_angles / 2.0
-        #
-        #         # compute actual positions given the current angles
-        #         self.get_positions(larm_angles, rarm_angles,
-        #                            self.larm_angles_theoric, self.rarm_angles_theoric,
-        #                            self.larm_angles_target, self.rarm_angles_target)
-        #
-        #         autocollision = False
-        #         res_autocollision = False
 
         #######################################################################
 
@@ -618,11 +609,3 @@ class BodySimulator(object):
         self.touch_delta = self.touch - self.touch_old
 
         return active and autocollision
-
-    def reset(self):
-        self.pos_old *= 0
-        self.pos *= 0
-        self.prop_old *= 0
-        self.prop *= 0
-        self.touch_old *= 0
-        self.touch *= 0
