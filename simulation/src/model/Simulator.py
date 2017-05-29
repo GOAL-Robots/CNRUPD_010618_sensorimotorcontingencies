@@ -464,41 +464,56 @@ class BodySimulator(object):
 
         return np.vstack(self.curr_body_tokens)
 
-    def single_step_backward(self, count_substeps, delta, substeps):
-        """ Compute a backward step
+    class Single_step_backward(object):
+        def __init__(self, actuator, larm_angles, rarm_angles,
+                     larm_delta_angles, rarm_delta_angles):
+            self.actuator = copy.copy(actuator)
+            self.larm_angles = larm_angles.copy()
+            self.rarm_angles = larm_angles.copy()
+            self.larm_delta_angles = larm_delta_angles
+            self.rarm_delta_angles = rarm_delta_angles
 
-        update angles positions and body chain based on input and backward
-        arguments
-        :param  count_substeps      current substep number
-        :param  delta               scaling factor for the length of
-                                        a beckward move
-        :param  substeps            the number of maximum substeps
+        def __call__(self, count_substeps, delta, substeps):
+            """ Compute a backward step
 
-        :return an array with the current body chain
-        """
+            update angles positions and body chain based on input and backward
+            arguments
+            :param  count_substeps      current substep number
+            :param  delta               scaling factor for the length of
+                                            a beckward move
+            :param  substeps            the number of maximum substeps
 
-        # try angles that are a little bit moved back
-        # from those producing collision
+            :return an array with the current body chain
+            """
 
-        # go back of a fraction of angle
-        larm_angles = (self.larm_angles
-                       - (count_substeps / float(substeps))
-                       * delta * np.sign(self.larm_delta_angles))
-        rarm_angles = (self.rarm_angles
-                       - (count_substeps / float(substeps))
-                       * delta * np.sign(self.rarm_delta_angles))
+            # try angles that are a little bit moved back
+            # from those producing collision
 
-        # compute actual positions given the current angles
-        self.update_angles_and_positions(larm_angles,
-                                         rarm_angles,
-                                         self.larm_angles_theoric,
-                                         self.rarm_angles_theoric,
-                                         self.larm_angles_target,
-                                         self.rarm_angles_target)
+            # go back of a fraction of angle
+            larm_angles = (self.larm_angles
+                           - (count_substeps / float(substeps))
+                           * delta * np.sign(self.larm_delta_angles))
+            rarm_angles = (self.rarm_angles
+                           - (count_substeps / float(substeps))
+                           * delta * np.sign(self.rarm_delta_angles))
 
-        self.update_body_chain(update_prev=False)
+            # compute actual positions given the current angles
+            self.actuator.set_angles(larm_angles, rarm_angles)
 
-        return np.vstack(self.curr_body_tokens)
+            # self.update_angles_and_positions(larm_angles,
+            #                                  rarm_angles,
+            #                                  self.larm_angles_theoric,
+            #                                  self.rarm_angles_theoric,
+            #                                  self.larm_angles_target,
+            #                                  self.rarm_angles_target)
+
+            # self.update_body_chain(update_prev=False)
+            self.larm_angles, self.rarm_angles = (self.actuator.angles_l,
+                                                  self.actuator.angles_r)
+
+            curr_body_tokens = (self.actuator.position_l[::-1],
+                                self.actuator.position_r)
+            return np.vstack(curr_body_tokens)
 
     def update_body_chain(self, update_prev=True):
         """ Update the current body chain
@@ -579,11 +594,34 @@ class BodySimulator(object):
         self.single_step_forward()
 
         # compute collisions
-        autocollision, _ = self.collisionManager.manage_collisions(
+        autocollision, curr_chain = self.collisionManager.manage_collisions(
             prev_chain=np.vstack(self.prev_body_tokens),
             curr_chain=np.vstack(self.curr_body_tokens),
-            move_back_fun=self.single_step_backward,
-            reset=None)
+            move_back_fun=self.Single_step_backward(
+                actuator=self.actuator,
+                larm_angles=self.larm_angles,
+                rarm_angles=self.rarm_angles,
+                larm_delta_angles=self.larm_delta_angles,
+                rarm_delta_angles=self.rarm_delta_angles))
+
+        chain = KM.Polychain()
+
+        larm = curr_chain[:(self.actuator.NUMBER_OF_JOINTS + 1)][::-1]
+        chain.set_chain(larm)
+        larm_angles = chain.get_angles()
+
+        rarm = curr_chain[(self.actuator.NUMBER_OF_JOINTS + 1):]
+        chain.set_chain(rarm)
+        rarm_angles = chain.get_angles()
+
+        self.update_angles_and_positions(larm_angles,
+                                         rarm_angles,
+                                         self.larm_angles_theoric,
+                                         self.rarm_angles_theoric,
+                                         self.larm_angles_target,
+                                         self.rarm_angles_target)
+
+        self.update_body_chain(update_prev=False)
 
         #######################################################################
 
@@ -594,6 +632,7 @@ class BodySimulator(object):
         angles_tokens = (self.larm_angles, self.rarm_angles)
         self.prop = self.perc.get_proprioception(
             angles_tokens=angles_tokens)
+
         # TOUCH
         self.touch, self.touches = self.perc.get_touch(
             body_tokens=self.curr_body_tokens)
