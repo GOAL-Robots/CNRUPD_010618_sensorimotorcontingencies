@@ -247,7 +247,6 @@ class PerceptionManager(object):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
-
 class KinematicActuator(object):
     ''' Init and control the position of the two arms
     '''
@@ -321,7 +320,7 @@ class KinematicActuator(object):
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
-    def set_angles(self, angles_l, angles_r):
+    def set_positions_basedon_angles(self, angles_l, angles_r):
         ''' Set angles and update positions
 
         :param  angles_l    angles of the joints of the left arm
@@ -332,9 +331,27 @@ class KinematicActuator(object):
         '''
         self.angles_l = angles_l
         self.angles_r = angles_r
-        self.position_l, _ = self.arm_l.get_joint_positions(self.angles_l)
-        self.position_r, _ = self.arm_r.get_joint_positions(self.angles_r)
+        self.position_l, self.angles_l = self.arm_l.get_joint_positions(self.angles_l)
+        self.position_r, self.angles_r = self.arm_r.get_joint_positions(self.angles_r)
+    
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
+    def set_angles_basedon_positions(self, position_l, position_r):
+        ''' Set positions and update angles
 
+        :param  position_l    positions the left arm
+        :param  position_r    positions the right arm
+        :type   position_l    numpy.array((n, 2), dtype=float)
+        :type   position_r    numpy.array((n, 2), dtype=float)
+
+        '''
+        self.position_l = position_l
+        self.position_r = position_r
+    
+        self.angles_l = self.arm_l.get_joint_angles(self.position_l)
+        self.angles_r = self.arm_r.get_joint_angles(self.position_r)
+        
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
     #-------------------------------------------------------------------------
@@ -342,7 +359,7 @@ class KinematicActuator(object):
         '''
         Reset all angles to initial position
         '''
-        self.set_angles(self.angles_l * 0.0, self.angles_r * 0.0)
+        self.set_positions_basedon_angles(self.angles_l * 0.0, self.angles_r * 0.0)
         self.position_l, _ = self.arm_l.get_joint_positions(self.angles_l)
         self.position_r, _ = self.arm_r.get_joint_positions(self.angles_r)
 
@@ -415,8 +432,9 @@ class BodySimulator(object):
         self.prev_body_tokens = self.init_body_tokens
 
         self.collisionManager = KM.CollisionManager()
+        self.autocollision = False
 
-    def update_angles_and_positions(self,
+    def update_all_positions_basedon_angles(self,
                                     langles,       rangles,
                                     dlangles=None, drangles=None,
                                     tlangles=None, trangles=None):
@@ -431,11 +449,11 @@ class BodySimulator(object):
 
         """
 
-        self.actuator.set_angles(langles, rangles)
+        self.actuator.set_positions_basedon_angles(langles, rangles)
         if dlangles is not None and drangles is not None:
-            self.theoric_actuator.set_angles(dlangles, drangles)
+            self.theoric_actuator.set_positions_basedon_angles(dlangles, drangles)
         if tlangles is not None and trangles is not None:
-            self.target_actuator.set_angles(tlangles, trangles)
+            self.target_actuator.set_positions_basedon_angles(tlangles, trangles)
 
     def reset_body_chain(self):
         """ Reset the current body chain to the initial one
@@ -452,7 +470,7 @@ class BodySimulator(object):
         """
 
         # compute actual positions given the current angles
-        self.update_angles_and_positions(self.larm_angles,
+        self.update_all_positions_basedon_angles(self.larm_angles,
                                          self.rarm_angles,
                                          self.larm_angles_theoric,
                                          self.rarm_angles_theoric,
@@ -496,23 +514,14 @@ class BodySimulator(object):
             rarm_angles = (self.rarm_angles
                            - (count_substeps / float(substeps))
                            * delta * np.sign(self.rarm_delta_angles))
-
+            
             # compute actual positions given the current angles
-            self.actuator.set_angles(larm_angles, rarm_angles)
+            self.actuator.set_positions_basedon_angles(larm_angles, rarm_angles)
 
-            # self.update_angles_and_positions(larm_angles,
-            #                                  rarm_angles,
-            #                                  self.larm_angles_theoric,
-            #                                  self.rarm_angles_theoric,
-            #                                  self.larm_angles_target,
-            #                                  self.rarm_angles_target)
-
-            # self.update_body_chain(update_prev=False)
-            self.larm_angles, self.rarm_angles = (self.actuator.angles_l,
-                                                  self.actuator.angles_r)
-
+            # update body chain
             curr_body_tokens = (self.actuator.position_l[::-1],
-                                self.actuator.position_r)
+                                self.actuator.position_r) 
+            
             return np.vstack(curr_body_tokens)
 
     def update_body_chain(self, update_prev=True):
@@ -521,8 +530,9 @@ class BodySimulator(object):
         :param update_prev  toggle saving previous
                             body chain and angles values
         """
-
+        
         if update_prev == True:
+   
             self.prev_body_tokens = self.curr_body_tokens[:]
             self.prev_larm_angles = self.larm_angles
             self.prev_rarm_angles = self.rarm_angles
@@ -532,6 +542,7 @@ class BodySimulator(object):
 
         self.curr_body_tokens = (self.actuator.position_l[::-1],
                                  self.actuator.position_r)
+        
 
     def reset(self):
         """ Reset perceptive data
@@ -555,7 +566,7 @@ class BodySimulator(object):
         :param  larm_angles_unscaled             actual angles of the joints of the left arm
         :param  rarm_angles_unscaled             actual angles of the joints of the right arm
         :param  larm_angles_theoric_unscaled     motor commands to the left arm
-        :param  rarm_angles_theoric_unscaled     motor commands to the right arm
+        :param  rarm_5angles_theoric_unscaled     motor commands to the right arm
         :param  larm_angles_target_unscaled      desired angle end-point positions the left arm
         :param  rarm_angles_target_unscaled      desired angle end-point positions the right arm
         :param  active                           if the body_simulator is currently activa
@@ -563,7 +574,6 @@ class BodySimulator(object):
         '''
 
         # rescale all angles
-
         larm_angles, rarm_angles = self.actuator.rescale_angles(
             larm_angles_unscaled,
             rarm_angles_unscaled)
@@ -577,9 +587,9 @@ class BodySimulator(object):
             rarm_angles_target_unscaled)
 
         # update previous data
-        self.pos_old = self.pos
-        self.prop_old = self.prop
-        self.touch_old = self.touch
+        self.pos_old = copy.copy(self.pos)
+        self.prop_old = copy.copy(self.prop)
+        self.touch_old = copy.copy(self.touch)
 
         # update current data
         self.larm_delta_angles = larm_angles - self.larm_angles
@@ -592,36 +602,27 @@ class BodySimulator(object):
         self.rarm_angles_target = rarm_angles_target
 
         self.single_step_forward()
-
+ 
+        self.autocollision = False
         # compute collisions
-        autocollision, curr_chain = self.collisionManager.manage_collisions(
+        self.autocollision, curr_chain = self.collisionManager.manage_collisions(
             prev_chain=np.vstack(self.prev_body_tokens),
-            curr_chain=np.vstack(self.curr_body_tokens),
+            curr_chain=np.vstack(self.curr_body_tokens), 
+            substeps=15.0, min_distance=np.pi/4.0,
             move_back_fun=self.Single_step_backward(
                 actuator=self.actuator,
                 larm_angles=self.larm_angles,
                 rarm_angles=self.rarm_angles,
                 larm_delta_angles=self.larm_delta_angles,
                 rarm_delta_angles=self.rarm_delta_angles))
-
+  
         chain = KM.Polychain()
-
-        larm = curr_chain[:(self.actuator.NUMBER_OF_JOINTS + 1)][::-1]
-        chain.set_chain(larm)
-        larm_angles = chain.get_angles()
-
+  
+        larm = curr_chain[:(self.actuator.NUMBER_OF_JOINTS + 1)]
         rarm = curr_chain[(self.actuator.NUMBER_OF_JOINTS + 1):]
-        chain.set_chain(rarm)
-        rarm_angles = chain.get_angles()
-
-        self.update_angles_and_positions(larm_angles,
-                                         rarm_angles,
-                                         self.larm_angles_theoric,
-                                         self.rarm_angles_theoric,
-                                         self.larm_angles_target,
-                                         self.rarm_angles_target)
-
-        self.update_body_chain(update_prev=False)
+        self.actuator.set_angles_basedon_positions(larm, rarm) 
+         
+        #self.single_step_forward()
 
         #######################################################################
 
@@ -647,4 +648,4 @@ class BodySimulator(object):
             angles_tokens=delta_angles_tokens)
         self.touch_delta = self.touch - self.touch_old
 
-        return active and autocollision
+        return active and self.autocollision

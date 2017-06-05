@@ -528,7 +528,6 @@ class CollisionManager(object):
         if recursive == True:
             chain = None
             collided = False
-            min_distance = np.pi / 16.0
             substep = None
             distance = np.linalg.norm(prev_chain - curr_chain)
             if distance > min_distance:
@@ -549,7 +548,7 @@ class CollisionManager(object):
                         chain = None
         if recursive == True:
             if chain is not None:
-                curr_chain = prev_chain.copy()
+                curr_chain = chain.copy()
 
         # init the counter of substeps
         count_substeps = 1
@@ -735,6 +734,22 @@ class Arm(object):
             res_joint_angles = -res_joint_angles
 
         return (pos, res_joint_angles)
+    
+    def get_joint_angles(self, joint_positions):
+        ''' Get angles from a set of positions
+            
+            :param joint_positions: the positions 
+                       from which we compute angles
+            :type joint_positions: numpy.array(number_of_joint,
+                        dtype=float)
+        '''
+        
+        chain = Polychain()
+        chain.set_chain(joint_positions)
+        
+        return chain.get_angles()
+        
+        
 
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
@@ -917,11 +932,13 @@ def test_collision():
             robot_jts.set_offsets(curr_arm_pos)
 
             fig.canvas.draw()
-            plt.pause(1e-2)
+            plt.pause(1e-1)
 
 
 if __name__ == "__main__":
 
+    import matplotlib
+    matplotlib.use("QT4agg")
     import matplotlib.pyplot as plt
     plt.ion()
 

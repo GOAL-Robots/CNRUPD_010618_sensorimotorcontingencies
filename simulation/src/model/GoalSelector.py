@@ -24,7 +24,41 @@ def my_argwhere(x):
     return res
 
 
-def oscillator(x, scale, freqs):
+class Oscillator(object):
+    def __init__(self, scale, freqs):
+        '''
+        :param scale: scaling factor for the frequency
+        :type scale: float
+
+        :param freqs: list of frequencies (one for each trjectory)
+        :type freqs: list(float)
+        '''
+
+        self.scale = scale
+        self.freqs = np.array(freqs)
+        self.trajectories_num = freqs.size
+        self.t = 0
+
+    def __call__(self):
+        """ Calls an oscillator's step
+
+        :return: the current angles after one step
+        :rtype: numpy.array(trajectories_num, dtype=float)s
+        """
+        
+        res = -(np.sin(2.0 * np.pi * self.freqs * self.t / 
+                       self.scale + np.pi)) * 0.5
+
+        self.t += 1
+
+        return res
+
+    def reset(self):
+
+        self.t = 0
+
+
+def oscllator(x, scale, freqs):
     '''
     :param  x       list of timesteps
     :param  scale   scaling factor for the frequency
@@ -195,6 +229,7 @@ class GoalSelector(object):
 
     def reset_oscillator(self):
         self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
+        self.oscillator = Oscillator(self.scale, self.random_oscil)
 
     def goal_index(self):
 
@@ -356,8 +391,7 @@ class GoalSelector(object):
             curr_match = 0.0
 
         # OSCILLATOR NOISE
-        added_signal = self.NOISE * \
-            oscillator(self.t, self.scale, self.random_oscil)[0]
+        added_signal = self.NOISE * self.oscillator()
 
         self.out = curr_match * self.read_out + \
             (1.0 - curr_match) * added_signal
