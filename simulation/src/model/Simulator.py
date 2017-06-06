@@ -622,8 +622,6 @@ class BodySimulator(object):
         rarm = curr_chain[(self.actuator.NUMBER_OF_JOINTS + 1):]
         self.actuator.set_angles_basedon_positions(larm, rarm) 
          
-        #self.single_step_forward()
-
         #######################################################################
 
         # VISUAL POSITION

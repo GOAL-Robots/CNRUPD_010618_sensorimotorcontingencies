@@ -481,8 +481,8 @@ class CollisionManager(object):
 
     def manage_collisions(self, prev_chain, curr_chain, move_back_fun,
                           other_chains=None, delta=1.0, substeps=50.0,
-                          min_distance=np.pi / 16.0, recursive=True,
-                          **kargs):
+                          min_distance=np.pi / 16.0, do_substep=True,
+                           **kargs):
         """ Manage current collisions.
 
         If the current set of positions (curr_chain)
@@ -493,19 +493,23 @@ class CollisionManager(object):
         :type prev_chain: numpy.ndarray((n, 2), dtype=float)
 
         :param curr_chain: current position (at timestep t)
-        :type prev_chain: numpy.ndarray((n, 2), dtype=float)
-
+        :type curr_chain: numpy.ndarray((n, 2), dtype=float)
+        
         :param move_back_fun: a function object generating backward moves
         :type move_back_fun: function(count_substeps, delta, substeps):
 
-                                :param count_substeps: current substep number
-                                :type count_substeps: int
+                :param count_substeps: current substep number
+                :type count_substeps: int
 
-                                :param delta: scaling factor of a beckward move
-                                :type delta: float
+                :param delta: scaling factor of a beckward move
+                :type delta: float
 
-                                :param substeps: the number of maximum substeps
-                                :type substeps: int
+                :param substeps: the number of maximum substeps
+                :type substeps: int
+        
+                
+        :param other_chains: chains representing other objects that can collide with curr_chain
+        :param  other_chains: list(numpy.ndarray((n, 2), dtype=float), ...)
 
         :param delta: scaling factor of a beckward move
         :type delta: float
@@ -516,7 +520,10 @@ class CollisionManager(object):
         :param min_distance: the threshold distance over which we
                              compute substeps
         :type min_distance: float
-
+        
+        :param do_substep: do substeps (recursively) if distance is too much
+        :type do_substep: bool
+        
         :param **kargs: arguments for autocollision
 
         :return: a tuple with the test for collision and the current
@@ -524,31 +531,14 @@ class CollisionManager(object):
         :rtype: tuple(bool, numpy.ndarray((n, 2), dtype=float))
 
         """
-
-        if recursive == True:
-            chain = None
-            collided = False
-            substep = None
-            distance = np.linalg.norm(prev_chain - curr_chain)
-            if distance > min_distance:
-                min_substeps = 1 + distance / (min_distance / 2.0)
-                substep = (curr_chain - prev_chain) / min_substeps
-                local_collision = CollisionManager()
-                for step in xrange(1, int(min_substeps)):
-                    chain = prev_chain + step * substep
-                    collided, chain = local_collision.manage_collisions(
-                        prev_chain=prev_chain, curr_chain=chain,
-                        move_back_fun=move_back_fun,
-                        other_chains=other_chains,
-                        delta=delta, substeps=min_substeps,
-                        recursive=False, **kargs)
-                    if collided == True:
-                        return collided, prev_chain
-                    else:
-                        chain = None
-        if recursive == True:
-            if chain is not None:
-                curr_chain = chain.copy()
+        
+        curr_chain = curr_chain.copy()
+        prev_chain = prev_chain.copy()
+        if other_chains is not None:
+            other_chains = other_chains[:]
+        
+        # coumpute distance between prev and curr positions
+        distance = np.linalg.norm(prev_chain - curr_chain)
 
         # init the counter of substeps
         count_substeps = 1
@@ -569,7 +559,7 @@ class CollisionManager(object):
         collided = is_colliding
 
         # if there is a collision loop through substeps
-        while is_colliding == True:
+        while is_colliding == True or distance > min_distance:
             if count_substeps < substeps:
 
                 # do a backward move
@@ -598,9 +588,9 @@ class CollisionManager(object):
             else:
                 # too many substeps, step back to
                 # the previous (non colliding) position
-                return collided, prev_chain
+                return collided, prev_chain.copy()
 
-        return collided, curr_chain
+        return collided, curr_chain.copy()
 
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
@@ -908,6 +898,7 @@ def test_collision():
             object_pos += 1.0
             object_img.set_data(*object_pos.T)
         for t in xrange(stime):
+            print t
             prev_angle = curr_angle.copy()
             prev_arm_pos = curr_arm_pos.copy()
 
@@ -932,14 +923,14 @@ def test_collision():
             robot_jts.set_offsets(curr_arm_pos)
 
             fig.canvas.draw()
-            plt.pause(1e-1)
+            plt.pause(.5)
 
 
 if __name__ == "__main__":
 
     import matplotlib
-    matplotlib.use("QT4agg")
+    matplotlib.use("QT4Agg")
     import matplotlib.pyplot as plt
+    
     plt.ion()
-
     test_collision()
