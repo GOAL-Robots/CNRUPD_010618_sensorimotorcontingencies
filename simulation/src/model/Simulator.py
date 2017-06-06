@@ -603,7 +603,6 @@ class BodySimulator(object):
 
         self.single_step_forward()
  
-        self.autocollision = False
         # compute collisions
         self.autocollision, curr_chain = self.collisionManager.manage_collisions(
             prev_chain=np.vstack(self.prev_body_tokens),
