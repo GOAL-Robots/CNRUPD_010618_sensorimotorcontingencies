@@ -15,23 +15,25 @@ cat << EOF
 
 usage: $0 options
 
-This script builds the online plots  
+This script builds the online plots
 
 OPTIONS:
    -d --dir         where to find data
+   -w --www         open browser
    -l --loop        run recursivelly to follow online course
    -h --help        show this help
 
 EOF
 }
 
+WWW=false
 CURR=$(pwd)
 DIR=
-LOOP=false
+LOOP=
 VISUALIZE=false
 
 # getopt
-GOTEMP="$(getopt -o "d:lh" -l "dir:,loop,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "d:wl:h" -l "dir:,www,loop,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -42,18 +44,21 @@ eval set -- "$GOTEMP"
 while true ;
 do
     case "$1" in
-        -d | --dir) 
+        -d | --dir)
             DIR="$2"
             shift 2;;
-        -l | --loop) 
-            LOOP=true
+        -w | --www)
+            WWW=true
             shift;;
+        -l | --loop)
+            LOOP=$2
+            shift 2;;
         -h | --help)
             echo "on help"
             usage; exit;
             shift;
             break;;
-        --) shift ; 
+        --) shift ;
             break ;;
     esac
 done
@@ -105,24 +110,25 @@ cat << EOF > $TMP_DIR/plots.html
 EOF
 
 
-
-x-www-browser $TMP_DIR/plots.html & 
-sleep 2
+if [ $WWW == true ]; then
+    x-www-browser $TMP_DIR/plots.html &
+    sleep 2
+fi
 
 run()
 {
     cd $TMP_DIR
-   
-    echo "collect data..."     
+
+    echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
     cat $(find $DIR | grep predictions) | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_predictions
     cat $(find $DIR | grep log_sensors) | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_sensors
 
     echo "run R scripts..."
     R CMD BATCH ${BASE}/rscripts/analyze_touches.R
-    R CMD BATCH ${BASE}/rscripts/analyze_predictions.R 
+    R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
     R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
-    
+
     echo "convert images to png..."
     for f in *.pdf; do
         convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
@@ -132,6 +138,6 @@ run()
 }
 
 run
-if [ $LOOP == true ]; then
-    for((;;)); do run; done
+if [ ! -z "$LOOP" ]; then
+    for((;;)); do run; sleep $LOOP; done
 fi

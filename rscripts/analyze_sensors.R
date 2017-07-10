@@ -54,7 +54,6 @@ sensors = melt(sensors,
              variable.name="sensor", 
              value.name="amp" )
 
-
 means = sensors[,.(a_mean = mean(amp), 
                          a_count = sum(amp>AMP_TH),  
                          a_sd = sd(amp),  
@@ -87,6 +86,7 @@ for(idx in unique(means$INDEX))
     gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
     gp = gp + geom_line(size = 1.5, colour = "#000000")
     gp = gp + geom_bar(aes(y=a_count/count_tot),stat="identity", alpha=.3)
+
     gp = gp + theme_bw() 
     gp = gp + theme( 
                     text=element_text(size=14, family="Verdana"), 
@@ -99,15 +99,21 @@ for(idx in unique(means$INDEX))
     print(gp)
     dev.off()
   
-    pdf(paste("gs_means_goal",format(idx),".pdf",sep=""))
+    pdf(paste("gs_means_goal",format(idx),".pdf",sep=""), width=12, height=8)
     gp = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="SIM"), aes(x = sensor, y = a_mean))
-    gp = gp + geom_bar(aes(y=a_count/count_tot),stat="identity", alpha=.3)    
+    gp = gp + geom_bar(aes(y=a_count),stat="identity")    
     gp = gp + facet_grid(CURR_GOAL_ORDERED~.)
+    gp = gp + scale_y_continuous(limits=c(0, 90), breaks= c(0, 60))
+    gp = gp + xlab("Sensors") 
+    gp = gp + ylab("Number of touches") 
     gp = gp + theme_bw() 
     gp = gp + theme( 
                     text=element_text(size=14, family="Verdana"), 
                     panel.border=element_blank(),
-                    axis.text.x = element_text(angle = 90, hjust = 1),
+                    axis.text.x = element_text(size=8, angle = 90, hjust = 1),
+                    axis.text.y = element_text(size=8),
+                    strip.text.y = element_text(size=12, angle = 0, face = "bold"),
+                    strip.background = element_rect(colour="#FFFFFF", fill="#FFFFFF"),
                     legend.title = element_blank(),
                     legend.background = element_blank(),
                     panel.grid.major = element_blank(),

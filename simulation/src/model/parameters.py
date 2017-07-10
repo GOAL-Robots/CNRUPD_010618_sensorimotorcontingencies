@@ -23,17 +23,17 @@ pm_image_resolution = 12
 ka_num_joints = body_simulator_actuator_NUMBER_OF_JOINTS
 ka_left_origin = [-1.5, 0.0]
 ka_left_lims = [
-        [0, np.pi],    # first joint limits
-        [0, np.pi*0.6],    # second joint limits
-        [0, np.pi*0.6]     # third joint limits
+        [0, 1.2*np.pi],    # first joint limits
+        [0, 1.3*np.pi],    # second joint limits
+        [0, 1.3*np.pi]     # third joint limits
         ]
 assert(len(ka_left_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
 ka_right_origin = [1.5, 0.0]
 ka_right_lims = [
-        [0, np.pi],    # first joint limits
-        [0, np.pi*0.6],    # second joint limits
-        [0, np.pi*0.6]     # third joint limits
+        [0, 1.2*np.pi],    # first joint limits
+        [0, 1.3*np.pi],    # second joint limits
+        [0, 1.3*np.pi]     # third joint limits
         ]
 assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
@@ -49,9 +49,9 @@ gs_n_input = body_simulator_pixels[0]*body_simulator_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 200
 gs_n_rout_units = body_simulator_actuator_NUMBER_OF_JOINTS*2
-gs_match_decay = 0.2
+gs_match_decay = 0.6
 gs_noise = 1.0
-gs_noise_scale = 30.0
+gs_noise_scale = 15.0
 gs_sm_temp = 0.01
 gs_g2e_spars = 0.01
 gs_echo_ampl = 5.0
@@ -83,7 +83,7 @@ gm_singlemod_eta_bl_scale = 4.0
 gm_singlemod_eta_decay_scale = 4.0
 gm_singlemod_neigh_scale = 2.0
 gm_singlemod_neigh_decay_scale = 4.0
-gm_singlemod_neigh_bl = 0.5
+gm_singlemod_neigh_bl = 5.0
 gm_singlemod_weight_bl = 0.001
 
 gm_hidden_n_dim_out = 2
