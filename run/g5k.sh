@@ -11,8 +11,8 @@ ${HOME}/g5kutils/clear.sh
 LABEL=sensorimotor
 GRID_INFO=${HOME}/.grid_deploy/info
 N_MACHINES=4
-MIN_CORES=20
-MIN_RAM=100
+MIN_CORES=8
+MIN_RAM=16
 WALLTIME=$(max_walltime)
 declare -a dirs=(sm_singleecho_25g)
 declare -a params
@@ -44,8 +44,6 @@ declare -a nodes=($(cat ~/.G_${JOB_ID}/NODES|uniq))
 
 # save simulation status in log dir 
 echo "${dirs[@]}" > ${HOME}/.sensorimotor/$JOB_ID 
-
-
 
 run_cmd()
 {
