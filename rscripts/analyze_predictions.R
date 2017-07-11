@@ -123,25 +123,25 @@ gp = gp + theme(
 print(gp)
 dev.off()
 
-pdf("means_all.pdf", width=12, height=8)
+pdf("means_all.pdf", width=7, height=3)
 gp = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean))
 gp = gp + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
-                     size=0.4,
+                     size=0.1, stroke = 0,
                      inherit.aes=FALSE)
 gp = gp + geom_ribbon(data=means, aes(ymin = p_min, ymax = p_max), 
-                      colour = "#666666", fill = "#dddddd")
+                      colour = NA, fill = "#dddddd", size=0.0)
 gp = gp + geom_ribbon(data=means, aes(ymin = pmax(0, p_mean - p_sd), 
                                       ymax = pmin(1,p_mean + p_sd)),
-                      colour = "#666666", fill = "#bbbbbb")
-gp = gp + geom_line(data=means, size = 1.5, colour = "#000000")
-gp = gp + geom_line(aes(x = TIMESTEPS, y = th), , size=0.1, 
+                      colour = NA, fill = "#aaaaaa", size=0.0)
+gp = gp + geom_line(data=means, size = .5, colour = "#000000")
+gp = gp + geom_line(aes(x = TIMESTEPS, y = th), size=0.1, 
                     inherit.aes = FALSE, show.legend = F )
 gp = gp + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.5"))
 gp = gp + scale_x_continuous(limits=c(0, TS))
 gp = gp + xlab("Timesteps") 
-gp = gp + ylab("Means of goal predictions                            ") 
+gp = gp + ylab("Means of goal predictions") 
 gp = gp + theme_bw() 
 
 if(TYPES>1) gp = gp + facet_grid(LEARNING_TYPE~.)

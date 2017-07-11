@@ -68,6 +68,8 @@ if [ -z "$DIR" ]; then
 fi
 
 BASE=$(echo $0|sed -e"s/\/run\/$(basename $0)//")
+BASE=$(readlink -e $BASE)
+DIR=$(readlink -e $DIR)
 
 CURR=$(pwd)
 TMP_DIR=/tmp/$(basename $DIR)_plots
@@ -121,8 +123,8 @@ run()
 
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
-    cat $(find $DIR | grep predictions) | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_predictions
-    cat $(find $DIR | grep log_sensors) | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_sensors
+    cat $(find $DIR | grep predictions) | sort -k 1 -n | sed -e "s/^\s*/SIM 1 /" > $TMP_DIR/all_predictions
+    cat $(find $DIR | grep log_sensors) | sort -k 1 -n | sed -e "s/^\s*/SIM 1 /" > $TMP_DIR/all_sensors
 
     echo "run R scripts..."
     R CMD BATCH ${BASE}/rscripts/analyze_touches.R
