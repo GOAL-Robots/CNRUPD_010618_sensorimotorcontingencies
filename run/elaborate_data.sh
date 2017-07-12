@@ -19,6 +19,7 @@ This script builds the online plots
 
 OPTIONS:
    -d --dir         where to find data
+   -g --graph       make graphs   
    -w --www         open browser
    -l --loop        run recursivelly to follow online course
    -h --help        show this help
@@ -31,9 +32,10 @@ CURR=$(pwd)
 DIR=
 LOOP=
 VISUALIZE=false
+GRAPHS=false
 
 # getopt
-GOTEMP="$(getopt -o "d:wl:h" -l "dir:,www,loop,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "d:gwl:h" -l "dir:,graphs,www,loop,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -47,6 +49,9 @@ do
         -d | --dir)
             DIR="$2"
             shift 2;;
+        -g | --graphs)
+            GRAPHS=true
+            shift;;
         -w | --www)
             WWW=true
             shift;;
@@ -80,6 +85,7 @@ rm -fr $TMP_DIR/*
 echo "data dir: $DIR"
 echo "source dir: $BASE"
 
+if [ $GRAPHS == true ]; then
 
 cat << EOF > $TMP_DIR/plots.html
 <!DOCTYPE html>
@@ -110,9 +116,9 @@ cat << EOF > $TMP_DIR/plots.html
 
 </html>
 EOF
+fi
 
-
-if [ $WWW == true ]; then
+if [ $WWW == true ] && [ $GRAPHS == true ]; then
     x-www-browser $TMP_DIR/plots.html &
     sleep 2
 fi
@@ -123,20 +129,21 @@ run()
 
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
-    cat $(find $DIR | grep predictions) | sort -k 1 -n | sed -e "s/^\s*/SIM 1 /" > $TMP_DIR/all_predictions
-    cat $(find $DIR | grep log_sensors) | sort -k 1 -n | sed -e "s/^\s*/SIM 1 /" > $TMP_DIR/all_sensors
+    cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_predictions
+    cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_sensors
 
-    echo "run R scripts..."
-    R CMD BATCH ${BASE}/rscripts/analyze_touches.R
-    R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
-    R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
+    if [ $GRAPHS == true ]; then
+        echo "run R scripts..."
+        R CMD BATCH ${BASE}/rscripts/analyze_touches.R
+        R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
+        R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
 
-    echo "convert images to png..."
-    for f in *.pdf; do
-        convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
-    done
-    echo "done"
-
+        echo "convert images to png..."
+        for f in *.pdf; do
+            convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
+        done
+        echo "done"
+    fi
 }
 
 run
