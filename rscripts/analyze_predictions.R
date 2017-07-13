@@ -128,7 +128,7 @@ dev.off()
 gp1 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean))
 gp1 = gp1 + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
-                     size=0.1, stroke = 0,
+                     size=0.3, stroke = 0,
                      inherit.aes=FALSE)
 gp1 = gp1 + geom_ribbon(data=means, aes(ymin = p_min, ymax = p_max), 
                       colour = NA, fill = "#dddddd", size=0.0)
@@ -148,7 +148,7 @@ gp1 = gp1 + theme_bw()
 if(TYPES>1) gp1 = gp1 + facet_grid(LEARNING_TYPE~.)
 
 gp1 = gp1 + theme( 
-    text=element_text(size=14, family="Verdana"), 
+    text=element_text(size=11, family="Verdana"), 
     panel.border=element_blank(),
     legend.title = element_blank(),
     legend.background = element_blank(),
@@ -173,7 +173,7 @@ TS_SEC = max(first_means$TIMESTEPS)
 gp2 = ggplot(first_g_means, aes(x = TIMESTEPS, y = p_mean))
 gp2 = gp2 + geom_point(data=first_predictions, 
                      aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
-                     size=1.5, stroke = 0,
+                     size=0.5, stroke = 0,
                      inherit.aes=FALSE)
 gp2 = gp2 + geom_ribbon(data=first_means, aes(ymin = p_min, ymax = p_max), 
                       colour = NA, fill = "#dddddd", size=0.0)
@@ -194,7 +194,7 @@ gp2 = gp2 + theme_bw()
 if(TYPES>1) gp2 = gp2 + facet_grid(LEARNING_TYPE~.)
 
 gp2 = gp2 + theme( 
-    text=element_text(size=14, family="Verdana"), 
+    text=element_text(size=11, family="Verdana"), 
     panel.border=element_blank(),
     legend.title = element_blank(),
     legend.background = element_blank(),
@@ -221,7 +221,7 @@ first_means = subset(means,  TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
 gp3 = ggplot(first_g_means, aes(x = TIMESTEPS, y = p_mean))
 gp3 = gp3 + geom_point(data=first_predictions, 
                        aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
-                       size=1.5, stroke = 0,
+                       size=.5, stroke = 0,
                        inherit.aes=FALSE)
 gp3 = gp3 + geom_ribbon(data=first_means, aes(ymin = p_min, ymax = p_max), 
                         colour = NA, fill = "#dddddd", size=0.0)
@@ -242,7 +242,7 @@ gp3 = gp3 + theme_bw()
 if(TYPES>1) gp3 = gp3 + facet_grid(LEARNING_TYPE~.)
 
 gp3 = gp3 + theme( 
-    text=element_text(size=14, family="Verdana"), 
+    text=element_text(size=11, family="Verdana"), 
     panel.border=element_blank(),
     legend.title = element_blank(),
     legend.background = element_blank(),

@@ -226,7 +226,7 @@ class GoalSelector(object):
 
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
-
+    
     def reset_oscillator(self):
         self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
         self.oscillator = Oscillator(self.scale, self.random_oscil)

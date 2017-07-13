@@ -84,8 +84,7 @@ class Simulation(object) :
         self.collision = False
 
         self.init_streams()
-
-
+        
         self.timestep = 0
         self.kohonen_weights = None
         self.echo_weights = None

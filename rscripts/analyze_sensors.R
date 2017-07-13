@@ -12,7 +12,7 @@ for(pkg in toInstall)
     }
 
 library(extrafont)
-loadfonts()
+
 ###############################################################################################################################
 
 sem<-function(x) sd(x)/sqrt(length(x))
@@ -82,45 +82,80 @@ count_tot = sum(means$a_count)
 
 for(idx in unique(means$INDEX)) 
 { 
-    pdf(paste("gs_means",format(idx),".pdf",sep=""),  family="Verdana")
-    gp = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
-    gp = gp + geom_ribbon(aes(ymin = a_mean - a_sd, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
-    gp = gp + geom_line(size = 1.5, colour = "#000000")
-    gp = gp + geom_bar(aes(y=a_count/count_tot),stat="identity", alpha=.3)
 
-    gp = gp + theme_bw() 
-    gp = gp + theme( 
-                    text=element_text(size=14, family="Verdana"), 
+    gp1 = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
+    gp1 = gp1 + geom_ribbon(aes(ymin = 0, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
+    gp1 = gp1 + geom_line(size = 1.5, colour = "#000000")
+    gp1 = gp1 + geom_bar(aes(y=5*a_count/count_tot),stat="identity", alpha=.2)
+    gp1 = gp1 + xlab("Sensors")
+    gp1 = gp1 + ylab("Means of sensor activation")
+    gp1 = gp1 + scale_y_continuous(sec.axis = sec_axis(trans = ~./5, name = "Proportion of touches"))
+
+    gp1 = gp1 + theme_bw() 
+    gp1 = gp1 + theme( 
+                    text=element_text(size=11, family="Verdana"), 
+                    axis.text.x = element_text(size=8, angle = 90, hjust = 1),
+                    axis.text.y = element_text(size=8),
                     panel.border=element_blank(),
                     legend.title = element_blank(),
                     legend.background = element_blank(),
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank()
                     )
-    print(gp)
+    
+    basename = paste("gs_means",format(idx),sep="")
+    pdf(paste(
+        basename,".pdf",sep=""), 
+        width = 7, 
+        height = 3, 
+        family="Verdana")
+    print(gp1)
     dev.off()
+    png(paste(
+        basename,".png",sep=""),  
+        width = 700, 
+        height = 300, 
+        family = "Verdana")
+    print(gp1)
+    dev.off()
+    
   
-    pdf(paste("gs_means_goal",format(idx),".pdf",sep=""), width=12, height=8)
-    gp = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="SIM"), aes(x = sensor, y = a_mean))
-    gp = gp + geom_bar(aes(y=a_count),stat="identity")    
-    gp = gp + facet_grid(CURR_GOAL_ORDERED~.)
-    gp = gp + scale_y_continuous(limits=c(0, 90), breaks= c(0, 60))
-    gp = gp + xlab("Sensors") 
-    gp = gp + ylab("Number of touches") 
-    gp = gp + theme_bw() 
-    gp = gp + theme( 
-                    text=element_text(size=14, family="Verdana"), 
+    gp2 = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="SIM"), aes(x = sensor, y = a_mean))
+    gp2 = gp2 + geom_bar(aes(y=a_count),stat="identity")    
+    gp2 = gp2 + facet_grid(CURR_GOAL_ORDERED~.)
+    gp2 = gp2 + scale_y_continuous(limits=c(0, 90), breaks= c(0, 60),
+                                   sec.axis = sec_axis(trans = ~., breaks=c(), 
+                                                       name = "Goals"))
+    gp2 = gp2 + xlab("Sensors") 
+    gp2 = gp2 + ylab("Number of touches") 
+    gp2 = gp2 + theme_bw() 
+    gp2 = gp2 + theme( 
+                    text=element_text(size=11, family="Verdana"), 
                     panel.border=element_blank(),
                     axis.text.x = element_text(size=8, angle = 90, hjust = 1),
                     axis.text.y = element_text(size=8),
-                    strip.text.y = element_text(size=12, angle = 0, face = "bold"),
+                    strip.text.y = element_text(size=8, angle = 0, face = "bold"),
                     strip.background = element_rect(colour="#FFFFFF", fill="#FFFFFF"),
                     legend.title = element_blank(),
                     legend.background = element_blank(),
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank()
                     )
-
-    print(gp)
+    
+    basename = paste("gs_means_goal",format(idx),sep="")
+    pdf(paste(
+        basename,".pdf",sep=""), 
+        width = 7, 
+        height = 7, 
+        family="Verdana")
+    print(gp2)
     dev.off()
+    png(paste(
+        basename,".png",sep=""),  
+        width = 700, 
+        height = 700, 
+        family = "Verdana")
+    print(gp2)
+    dev.off()
+    
 }
