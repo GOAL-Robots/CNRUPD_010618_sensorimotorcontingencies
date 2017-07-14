@@ -20,6 +20,7 @@ This script builds the online plots
 OPTIONS:
    -d --dir         where to find data
    -g --graph       make graphs   
+   -c -local        local directory
    -w --www         open browser
    -l --loop        run recursivelly to follow online course
    -h --help        show this help
@@ -33,9 +34,10 @@ DIR=
 LOOP=
 VISUALIZE=false
 GRAPHS=false
+LOCAL=false
 
 # getopt
-GOTEMP="$(getopt -o "d:gwl:h" -l "dir:,graphs,www,loop,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "d:gcwl:h" -l "dir:,graphs,local,www,loop,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -51,6 +53,9 @@ do
             shift 2;;
         -g | --graphs)
             GRAPHS=true
+            shift;;
+        -c | --local)
+            LOCAL=true
             shift;;
         -w | --www)
             WWW=true
@@ -78,6 +83,7 @@ DIR=$(readlink -e $DIR)
 
 CURR=$(pwd)
 TMP_DIR=/tmp/$(basename $DIR)_plots
+[ $LOCAL == true ] && TMP_DIR=$CURR
 
 [ ! -d "$TMP_DIR" ] && mkdir $TMP_DIR
 rm -fr $TMP_DIR/*
