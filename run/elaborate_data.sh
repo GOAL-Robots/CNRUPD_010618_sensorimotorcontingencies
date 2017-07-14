@@ -85,7 +85,7 @@ rm -fr $TMP_DIR/*
 echo "data dir: $DIR"
 echo "source dir: $BASE"
 
-if [ $GRAPHS == true ] && [ $WWW == true ]; then
+if [ $GRAPHS == true ]; then
 
 cat << EOF > $TMP_DIR/plots.html
 <!DOCTYPE html>
