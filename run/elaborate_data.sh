@@ -77,12 +77,21 @@ if [ -z "$DIR" ]; then
     usage; exit;
 fi
 
+manage_path()
+{
+    path=$1
+    path="${path/#\~/$HOME}"
+    path=$(realpath $path)
+    echo -n $path
+}
+
+echo $DIR
 BASE=$(echo $0|sed -e"s/\/run\/$(basename $0)//")
-BASE=$(readlink -e $BASE)
-DIR=$(readlink -e $DIR)
+BASE=$(manage_path $BASE)
+DIR=$(manage_path $DIR)
 
 CURR=$(pwd)
-TMP_DIR=/tmp/$(basename $DIR)_plots
+TMP_DIR=/tmp/$(basename "$DIR")_plots
 [ $LOCAL == true ] && TMP_DIR=$CURR
 
 [ ! -d "$TMP_DIR" ] && mkdir $TMP_DIR
@@ -90,7 +99,7 @@ rm -fr $TMP_DIR/*
 
 echo "data dir: $DIR"
 echo "source dir: $BASE"
-
+echo "out dir: $TMP_DIR"
 if [ $GRAPHS == true ]; then
 
 cat << EOF > $TMP_DIR/plots.html
