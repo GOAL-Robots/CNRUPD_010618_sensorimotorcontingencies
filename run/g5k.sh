@@ -11,7 +11,7 @@ ${HOME}/g5kutils/clear.sh
 LABEL=sensorimotor
 GRID_INFO=${HOME}/.grid_deploy/info
 N_MACHINES=4
-MIN_CORES=8
+MIN_CORES=4
 MIN_RAM=16
 WALLTIME=$(max_walltime)
 declare -a dirs=(sm_singleecho_25g)

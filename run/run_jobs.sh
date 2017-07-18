@@ -1,11 +1,10 @@
 #!/bin/bash
 
-
 # CLEAR NON RUNNING SIMULATIOMS
 
 RUN_DIR=$(echo $0 | sed -e"s/\/$(basename $0)$//")
 
-$RUN_DIR/clear_simulations.s &> clear_log
+$RUN_DIR/clear_simulations.sh 
 [ $? -ne 0 ] && echo "no further simulation started." && exit 0
 
 SCREEN=/usr/bin/screen
