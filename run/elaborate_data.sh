@@ -18,11 +18,14 @@ usage: $0 options
 This script builds the online plots
 
 OPTIONS:
-   -d --dir         where to find data
+echo $DIR
+echo $TMP_DIR
+exit
+   -d --dir PATH    where to find data
    -g --graph       make graphs   
    -c -local        local directory
    -w --www         open browser
-   -l --loop        run recursivelly to follow online course
+   -l --loop SEC    run recursivelly to follow online course
    -h --help        show this help
 
 EOF
