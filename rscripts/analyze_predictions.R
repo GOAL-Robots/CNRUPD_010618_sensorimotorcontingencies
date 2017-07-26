@@ -124,22 +124,22 @@ gp0 = gp0 + theme(
                 )
 print(gp0)
 dev.off()
-
-gp1 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean))
+TS = max(means$TIMESTEPS)
+gp1 = ggplot(means, aes(x = TIMESTEPS, y = p_mean))
 gp1 = gp1 + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
                      size=0.3, stroke = 0,
                      inherit.aes=FALSE)
-gp1 = gp1 + geom_ribbon(data=means, aes(ymin = p_min, ymax = p_max), 
+gp1 = gp1 + geom_ribbon(aes(ymin = p_min, ymax = p_max), 
                       colour = NA, fill = "#dddddd", size=0.0)
-gp1 = gp1 + geom_ribbon(data=means, aes(ymin = pmax(0, p_mean - p_sd), 
+gp1 = gp1 + geom_ribbon(aes(ymin = pmax(0, p_mean - p_sd), 
                                       ymax = pmin(1,p_mean + p_sd)),
                       colour = NA, fill = "#aaaaaa", size=0.0)
-gp1 = gp1 + geom_line(data=means, size = .5, colour = "#000000")
+gp1 = gp1 + geom_line(size = .5, colour = "#000000")
 gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1, 
                     inherit.aes = FALSE, show.legend = F )
-gp1 = gp1 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
-                             labels=c("0.0","0.5","1.5"))
+gp1 = gp1 + scale_y_continuous(limits=c(0, 1.7), breaks= c(0,.5, 1), 
+                             labels=c("0.0","0.5","1.0"))
 gp1 = gp1 + scale_x_continuous(limits=c(0, TS))
 gp1 = gp1 + xlab("Timesteps") 
 gp1 = gp1 + ylab("") 
