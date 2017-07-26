@@ -10,6 +10,7 @@
 ./gauss_utils.py
 ./kinematics.py
 ./kohonen.py
+./ksimulator.py
 ./parameters.py
 ./plotter.py
 ./test_main.py
