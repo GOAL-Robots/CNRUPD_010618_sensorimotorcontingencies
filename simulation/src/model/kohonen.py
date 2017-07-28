@@ -131,6 +131,8 @@ class Kohonen(object) :
             # Calculate neighbourhood
             max_index = np.argmax(y) # index of maximum
             self.idx = max_index
+            if not np.isscalar(curr_neighborhood):
+                curr_neighborhood = curr_neighborhood[max_index]
 
             # output:
             self.out_raw = y
@@ -168,7 +170,7 @@ class Kohonen(object) :
 
         :param  value   the current neighborhood radius (if None it is the
                         negative exponential of neighborhood_DECAY in time)
-        :type   value   float
+        :type   value   float or array
 
         '''
 

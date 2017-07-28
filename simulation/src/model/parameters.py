@@ -1,7 +1,7 @@
 import numpy as np
 
 simulation_im_amp = 1.0
-simulation_im_decay = 0.2
+simulation_im_decay = 0.3
 simulation_competence_improvement_prop = 1.0
 simulation_incompetence_prop = 0.0
 
