@@ -339,8 +339,6 @@ class Simulation(object) :
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
-
-
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask,
                                            (self.gm.goalrep_layer > 0) )
@@ -410,7 +408,7 @@ class Simulation(object) :
             # Train goal maker
             self.gm.step(self.gm_input,
                          neigh_scale = self.gp.w.copy())
-                         # neigh_scale = 1 - self.gp.getCurrPred())
+                         #neigh_scale = 1 - self.gp.getCurrPred())
 
             ####################################################################
             ####################################################################

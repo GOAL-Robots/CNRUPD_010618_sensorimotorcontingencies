@@ -117,9 +117,6 @@ class Kohonen(object) :
 
         self.t += 1
 
-        # Current neighbourhood
-        curr_neighborhood = self.updateNeigh(neigh_scale)
-
         # # input
         if not all(inp==0) :
 
@@ -129,11 +126,14 @@ class Kohonen(object) :
             y = np.dot(w,x) -0.5*np.diag(np.dot(w,w.T))
 
             # Calculate neighbourhood
+            #   Current neighbourhood
+            curr_neighborhood = self.updateNeigh(neigh_scale)
+
             max_index = np.argmax(y) # index of maximum
             self.idx = max_index
             if not np.isscalar(curr_neighborhood):
-                curr_neighborhood = curr_neighborhood[max_index]
-
+                curr_neighborhood = 1e-2 +  curr_neighborhood[max_index]
+            
             # output:
             self.out_raw = y
             point = map1DND(max_index, self.N_DIM_OUT, self.BINS)
@@ -182,7 +182,7 @@ class Kohonen(object) :
         else:
             neighborhood = self.neighborhood_BL + value * (self.neighborhood)
 
-        return neighborhood
+        return neighborhood.copy()
 
 
 

@@ -116,7 +116,7 @@ class GoalMaker(object):
         )
 
         # GOALS
-        if self.SINGLE_KOHONEN :
+        if self.SINGLE_KOHONEN == True :
             n_input =  self.N_INPUT_LAYERS[-1] # last input layer size (touch)
             n_output = self.N_GOALREP_LAYER
             self.goalrep_som = Kohonen(
@@ -175,73 +175,74 @@ class GoalMaker(object):
 
         # PREPARE INPUTS
 
-        # singlemod
+        if self.SINGLE_KOHONEN == False :
 
-        n_singlemod_inp = []
-        for n_singlemod in xrange(self.TOT_INPUT_LAYERS):
-            n_singlemod_inp.append(self.input_layers[n_singlemod])
+            # singlemod
 
-        # hidden
+            n_singlemod_inp = []
+            for n_singlemod in xrange(self.TOT_INPUT_LAYERS):
+                n_singlemod_inp.append(self.input_layers[n_singlemod])
 
-        n_hidden_inp = []
-        for n_hidden in xrange(self.TOT_SINGLEMOD_LAYERS):
-            n_hidden_inp.append(np.hstack(
-                self.singlemod_layers[n_hidden:(n_hidden + 2)]))
+            # hidden
 
-        # output
+            n_hidden_inp = []
+            for n_hidden in xrange(self.TOT_SINGLEMOD_LAYERS):
+                n_hidden_inp.append(np.hstack(
+                    self.singlemod_layers[n_hidden:(n_hidden + 2)]))
 
-        out_inp = np.hstack(self.hidden_layers)
+            # output
 
-        # goal representation
-        if self.SINGLE_KOHONEN :
-            goalrep_inp = np.hstack(self.input_layers[-1]) # last layer is touch
-        else:
+            out_inp = np.hstack(self.hidden_layers)
+
+            # goal representation
             goalrep_inp = np.hstack([
                 np.hstack(self.singlemod_layers),
                 np.hstack(self.hidden_layers),
                 self.output_layer])
 
+            # SPREADING
 
+            # input to single modality
+            for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS):
+                self.singlemod_soms[n_singlemod].step(n_singlemod_inp[n_singlemod])
 
-        # SPREADING
+            # single modality to hidden
+            for n_hidden in xrange(self.TOT_HIDDEN_LAYERS):
+                self.hidden_soms[n_hidden].step(n_hidden_inp[n_hidden])
 
-        # input to single modality
-        for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS):
-            self.singlemod_soms[n_singlemod].step(n_singlemod_inp[n_singlemod])
+            # hidden to output
+            self.out_som.step(out_inp)
 
-        # single modality to hidden
-        for n_hidden in xrange(self.TOT_HIDDEN_LAYERS):
-            self.hidden_soms[n_hidden].step(n_hidden_inp[n_hidden])
+            # UPDATE ACTIVATIONS
 
-        # hidden to output
-        self.out_som.step(out_inp)
+            # single modality (The activation is multiplied
+            # times the highest unit of the som)
+            for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS):
+                self.singlemod_layers[n_singlemod] = step_fun(
+                    (self.singlemod_soms[n_singlemod].out == 1) *
+                    self.singlemod_soms[n_singlemod].out_raw,
+                    self.GOAL_TH)
+
+            # hidden (The activation is multiplied
+            # times the highest unit of the som)
+            for n_hidden in xrange(self.TOT_HIDDEN_LAYERS):
+                self.hidden_layers[n_hidden] = step_fun(
+                    (self.hidden_soms[n_hidden].out == 1) *
+                    self.hidden_soms[n_hidden].out_raw,
+                    self.GOAL_TH)
+
+            # output (The activation is multiplied
+            # times the highest unit of the som)
+            self.output_layer = \
+            step_fun((self.out_som.out == 1) *\
+                    self.out_som.out_raw, self.GOAL_TH)
+
+        else :
+            # goal representation
+            goalrep_inp = np.hstack(self.input_layers[-1]) # last layer is touch
 
         # all to goal rep
         self.goalrep_som.step(goalrep_inp,neigh_scale = neigh_scale)
-
-        # UPDATE ACTIVATIONS
-
-        # single modality (The activation is multiplied
-        # times the highest unit of the som)
-        for n_singlemod in xrange(self.TOT_SINGLEMOD_LAYERS):
-            self.singlemod_layers[n_singlemod] = step_fun(
-                (self.singlemod_soms[n_singlemod].out == 1) *
-                self.singlemod_soms[n_singlemod].out_raw,
-                self.GOAL_TH)
-
-        # hidden (The activation is multiplied
-        # times the highest unit of the som)
-        for n_hidden in xrange(self.TOT_HIDDEN_LAYERS):
-            self.hidden_layers[n_hidden] = step_fun(
-                (self.hidden_soms[n_hidden].out == 1) *
-                self.hidden_soms[n_hidden].out_raw,
-                self.GOAL_TH)
-
-        # output (The activation is multiplied
-        # times the highest unit of the som)
-        self.output_layer = \
-        step_fun((self.out_som.out == 1) *\
-                self.out_som.out_raw, self.GOAL_TH)
 
         # goal rep (The activation is multiplied
         # times the highest unit of the som)
