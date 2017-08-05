@@ -407,7 +407,8 @@ class Simulation(object) :
 
             # Train goal maker
             self.gm.step(self.gm_input,
-                         neigh_scale = self.gp.w.copy())
+                         #neigh_scale = self.gp.w.copy())
+                         neigh_scale = self.gp.w.mean())
                          #neigh_scale = 1 - self.gp.getCurrPred())
 
             ####################################################################
@@ -432,8 +433,6 @@ class Simulation(object) :
             self.gs.goal_window_counter += 1
 
             # End of trial
-
-            #self.match_value = 0 # TODO Debug
 
             self.match_value = match(
                     self.gm.goalrep_layer,

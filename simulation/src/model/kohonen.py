@@ -195,7 +195,6 @@ class Kohonen(object) :
         :type   eta_scale   float
         :type   pred        array(float)
 
-
         """
 
         if pred is None:
@@ -210,8 +209,9 @@ class Kohonen(object) :
         y = self.out if self.neighborhood > 0 \
                 else self.out*(self.out == self.out.max())
         w = self.inp2out_w
-
-        w += eta* (np.outer(y*pred,x) -  np.outer(y*pred, np.ones(self.N_INPUT)) *w )
+        
+        w += eta* (np.outer(y * pred,x) -  
+                np.outer(y * pred, np.ones(self.N_INPUT)) * w)
 
     def store(self):
         """ storage """

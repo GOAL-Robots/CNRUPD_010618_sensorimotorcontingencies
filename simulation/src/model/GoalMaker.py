@@ -127,7 +127,7 @@ class GoalMaker(object):
                 eta = goalrep_lr,
                 eta_bl = gm_single_kohonen_eta_bl,
                 eta_decay = gm_single_kohonen_eta_decay,
-                neighborhood = gm_single_kohonen_neigh_scale*np.sqrt(n_output),
+                neighborhood = np.sqrt(n_output),
                 neighborhood_decay = gm_single_kohonen_neigh_decay_scale,
                 neighborhood_bl = gm_single_kohonen_neigh_bl,
                 stime =self.STIME,
@@ -255,11 +255,12 @@ class GoalMaker(object):
             self.prev_raw_inputs[layer] = raw_inputs[layer]
 
     def learn(self, eta_scale=None, pred=None):
-        for som in self.singlemod_soms:
-            som.learn(eta_scale=eta_scale)
-        for som in self.hidden_soms:
-            som.learn(eta_scale=eta_scale)
-        self.out_som.learn(eta_scale=eta_scale)
+        if self.SINGLE_KOHONEN == False:
+                for som in self.singlemod_soms:
+                    som.learn(eta_scale=eta_scale)
+                for som in self.hidden_soms:
+                    som.learn(eta_scale=eta_scale)
+                self.out_som.learn(eta_scale=eta_scale)
         self.goalrep_som.learn(eta_scale=eta_scale, pred=pred)
 
 #----------------------------------------------------------------
