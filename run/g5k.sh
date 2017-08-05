@@ -19,12 +19,19 @@ declare -a dirs=(test)
 declare -a params
 
 params[0]=$(cat<<HERE_PARAMS
-simulation_competence_improvement_prop = 1.0
-simulation_im_decay = 0.22
-gs_sm_temp = 0.08
-simulation_incompetence_prop = 0.0
-gs_n_echo_units = 800
+simulation_im_decay = 0.2
+gs_eta = 0.1
+gs_n_echo_units = 200
+gs_match_decay = 0.4
+gs_sm_temp = 0.01
+gs_goal_window = 100
+gs_goal_learn_start = 10
+gs_reset_window = 10
 gs_multiple_echo = False
+gp_eta = 0.4
+gm_goalrep_lr = 0.2
+gm_single_kohonen = True
+gm_single_kohonen_neigh_scale = 0.2
 GOAL_NUMBER = 25
 HERE_PARAMS
 )
