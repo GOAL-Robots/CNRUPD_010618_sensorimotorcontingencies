@@ -10,19 +10,15 @@ ${HOME}/g5kutils/clear.sh
 
 LABEL=sensorimotor
 GRID_INFO=${HOME}/.grid_deploy/info
-N_MACHINES=1
-MIN_CORES=2
+N_MACHINES=4
+MIN_CORES=4
 MIN_RAM=40
 WALLTIME=$(max_walltime)
-#declare -a dirs=(sm_singleecho_25g)
-declare -a dirs=(test)
+declare -a dirs=(sm_singleecho_25g)
+#declare -a dirs=(test)
 declare -a params
 
 params[0]=$(cat<<HERE_PARAMS
-simulation_competence_improvement_prop = 1.0
-simulation_im_decay = 0.22
-gs_sm_temp = 0.08
-simulation_incompetence_prop = 0.0
 gs_n_echo_units = 800
 gs_multiple_echo = False
 GOAL_NUMBER = 25
