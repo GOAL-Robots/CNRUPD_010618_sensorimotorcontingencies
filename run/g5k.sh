@@ -14,10 +14,11 @@ N_MACHINES=4
 MIN_CORES=4
 MIN_RAM=40
 WALLTIME=$(max_walltime)
+
 declare -a dirs=(sm_singleecho_25g)
+
 #declare -a dirs=(test)
 declare -a params
-
 params[0]=$(cat<<HERE_PARAMS
 simulation_im_decay = 0.2
 gs_eta = 0.1
