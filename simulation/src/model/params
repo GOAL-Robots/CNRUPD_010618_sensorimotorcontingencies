@@ -15,5 +15,5 @@ gm_goalrep_lr = 0.2
 gm_single_kohonen = True
 
 gm_single_kohonen_neigh_scale = 0.2
-GOAL_NUMBER = 25
+GOAL_NUMBER = 9
 

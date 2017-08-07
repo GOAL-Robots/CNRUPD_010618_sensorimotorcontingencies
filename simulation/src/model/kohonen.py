@@ -137,7 +137,7 @@ class Kohonen(object) :
             point = map1DND(max_index, self.N_DIM_OUT, self.BINS)
             self.out,_ = self.gmaker(point,
                     np.ones(self.N_DIM_OUT)*(
-                        (np.maximum(curr_neighborhood, 0.0e-6))**2))
+                        (np.maximum(curr_neighborhood, 1.0e-6))**2))
         else:
             x = np.zeros(inp.shape)
             self.out = np.zeros(self.N_OUTPUT)
@@ -181,8 +181,6 @@ class Kohonen(object) :
             neighborhood = self.neighborhood_BL + value * (self.neighborhood)
 
         return neighborhood.copy()
-
-
 
     def learn(self, eta_scale = None, pred = None) :
         """
