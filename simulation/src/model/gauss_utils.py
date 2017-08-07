@@ -3,6 +3,11 @@ import numpy.random as rnd
 import time
 import os
 
+
+def clipped_exp(x):
+    cx = np.clip(x, -700, 700)
+    return np.exp(cx)
+
 def pseudo_diag(rows, cols):
 
     bn = rows/float(cols)
@@ -212,7 +217,7 @@ class MultidimensionalGaussianMaker(object) :
 
         e = (self.X - mu).T
         S = np.eye(self.nDim, self.nDim)*(1.0/sigma)
-        y = np.exp( -np.diag(np.dot(e.T, np.dot(S,e) ) ))
+        y = clipped_exp( -np.diag(np.dot(e.T, np.dot(S,e) ) ))
 
         return (y, self.X)
 
@@ -248,7 +253,7 @@ class TwoDimensionalGaussianMaker(object) :
         :rtype: tuple(array((n_nodes), float), array((n_nodes, 2), int) )
         '''
 
-        if np.isscalar(sigma) == 1 :
+        if np.isscalar(sigma) == True :
             sigma = [sigma,sigma]
 
         sx,sy = sigma
@@ -261,7 +266,7 @@ class TwoDimensionalGaussianMaker(object) :
         c = (np.sin(theta)**2)/(2*sx**2) +\
             (np.cos(theta)**2)/(2*sy**2);
 
-        res = np.exp(
+        res = clipped_exp(
                 -a*(self.X-mx)**2
                 -2*b*(self.X-mx)*(self.Y-my)
             -c*(self.Y-my)**2)
@@ -286,7 +291,7 @@ class OneDimensionalGaussianMaker(object) :
         :rtype: tuple(array((n_nodes), float), array((n_nodes, 1), int) )
         '''
 
-        return np.exp((-(self.x-mu)**2)/(sigma**2)), self.x
+        return clipped_exp((-(self.x-mu)**2)/(sigma**2)), self.x
 
 class OptimizedGaussianMaker(object) :
     ''' Wrapper to the 2-D, 1-D, n-D gaussian makers
@@ -330,7 +335,7 @@ def gauss2d_oriented(x,y,m1,m2,std_x, std_y, theta) :
     c = (np.sin(theta)**2)/(2*std_x**2) +\
         (np.cos(theta)**2)/(2*std_y**2);
 
-    return np.exp( -a*(x-m1)**2 -2*b*(x-m1)*(y-m2) -c*(y-m2)**2)
+    return clipped_exp( -a*(x-m1)**2 -2*b*(x-m1)*(y-m2) -c*(y-m2)**2)
 
 
 if __name__ == "__main__" :

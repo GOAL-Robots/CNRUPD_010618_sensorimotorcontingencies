@@ -5,6 +5,7 @@ import numpy as np
 import time
 
 from model import *
+from gauss_utils import clipped_exp
 from gauss_utils import TwoDimensionalGaussianMaker as GM
 import kinematics as KM
 
@@ -208,7 +209,7 @@ class PerceptionManager(object):
 
                     # touch is measured as a radial basis of the distance from
                     # the sensor
-                    stouch = np.exp(-((np.linalg.norm(point - sensor))**2) /
+                    stouch = clipped_exp(-((np.linalg.norm(point - sensor))**2) /
                                     (2 * self.touch_sigma**2))
 
                     touches[y] += stouch

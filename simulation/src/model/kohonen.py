@@ -8,6 +8,7 @@ import os
 
 from gauss_utils import *
 
+
 #------------------------------------------------------------
 GaussianMaker = OptimizedGaussianMaker
 
@@ -137,7 +138,7 @@ class Kohonen(object) :
             point = map1DND(max_index, self.N_DIM_OUT, self.BINS)
             self.out,_ = self.gmaker(point,
                     np.ones(self.N_DIM_OUT)*(
-                        (np.maximum(curr_neighborhood, 1.0e-6))**2))
+                        (np.maximum(curr_neighborhood, 1.0e-6))))
         else:
             x = np.zeros(inp.shape)
             self.out = np.zeros(self.N_OUTPUT)
@@ -155,7 +156,7 @@ class Kohonen(object) :
         eta = None
 
         if value is None:
-            eta = self.ETA_BL + self.ETA* np.exp(-self.t/self.ETA_DECAY)
+            eta = self.ETA_BL + self.ETA* clipped_exp(-self.t/self.ETA_DECAY)
         else:
             eta = self.ETA_BL +value*(self.ETA)
 
@@ -176,7 +177,7 @@ class Kohonen(object) :
 
         if value is None:
             neighborhood = self.neighborhood_BL + \
-                self.neighborhood * np.exp(-self.t / self.neighborhood_DECAY)
+                self.neighborhood * clipped_exp(-self.t / self.neighborhood_DECAY)
         else:
             neighborhood = self.neighborhood_BL + value * (self.neighborhood)
 
