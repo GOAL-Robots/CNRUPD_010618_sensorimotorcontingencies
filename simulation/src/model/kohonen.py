@@ -131,15 +131,13 @@ class Kohonen(object) :
 
             max_index = np.argmax(y) # index of maximum
             self.idx = max_index
-            if not np.isscalar(curr_neighborhood):
-                curr_neighborhood = 1e-2 +  curr_neighborhood[max_index]
             
             # output:
             self.out_raw = y
             point = map1DND(max_index, self.N_DIM_OUT, self.BINS)
             self.out,_ = self.gmaker(point,
                     np.ones(self.N_DIM_OUT)*(
-                        (curr_neighborhood if self.neighborhood > 0 else 1.0)**2))
+                        (np.maximum(curr_neighborhood, 0.0e-6))**2))
         else:
             x = np.zeros(inp.shape)
             self.out = np.zeros(self.N_OUTPUT)
