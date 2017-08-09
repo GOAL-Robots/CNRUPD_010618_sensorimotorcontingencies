@@ -147,8 +147,8 @@ run()
 
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
-    cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_predictions
-    cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" > $TMP_DIR/all_sensors
+    cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
+    cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
 
     if [ $GRAPHS == true ]; then
         echo "run R scripts..."
