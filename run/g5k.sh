@@ -21,18 +21,21 @@ declare -a dirs=(sm_singleecho_25g)
 declare -a params
 params[0]=$(cat<<HERE_PARAMS
 simulation_im_decay = 0.2
+body_simulator_touch_sigma = 0.3
+body_simulator_num_touch_sensors = 30
 gs_eta = 0.1
-gs_n_echo_units = 800
-gs_match_decay = 0.4
+gs_n_echo_units = 200
+gs_match_decay = 0.5
 gs_sm_temp = 0.01
 gs_goal_window = 100
 gs_goal_learn_start = 10
 gs_reset_window = 10
 gs_multiple_echo = False
-gp_eta = 0.4
-gm_goalrep_lr = 0.2
+gp_eta = 0.35
+gm_goalrep_lr = 0.25
 gm_single_kohonen = True
-gm_single_kohonen_neigh_scale = 0.2
+gm_single_kohonen_neigh_bl = 0.05
+gm_single_kohonen_neigh_scale = 0.6
 GOAL_NUMBER = 25
 HERE_PARAMS
 )
