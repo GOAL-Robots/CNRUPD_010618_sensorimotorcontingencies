@@ -40,6 +40,27 @@ GOAL_NUMBER = 25
 HERE_PARAMS
 )
 
+params[1]=$(cat<<HERE_PARAMS
+simulation_im_decay = 0.2
+body_simulator_touch_sigma = 0.5
+body_simulator_num_touch_sensors = 30
+gs_eta = 0.1
+gs_n_echo_units = 200
+gs_match_decay = 0.5
+gs_sm_temp = 0.01
+gs_goal_window = 100
+gs_goal_learn_start = 10
+gs_reset_window = 10
+gs_multiple_echo = False
+gp_eta = 0.35
+gm_goalrep_lr = 0.25
+gm_single_kohonen = True
+gm_single_kohonen_neigh_bl = 0.1
+gm_single_kohonen_neigh_scale = 0.6
+GOAL_NUMBER = 25
+HERE_PARAMS
+)
+
 # FIND RESOURCES 
 rm -fr log_resources
 ${HOME}/g5kutils/autodeploy.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME -l $LABEL 
@@ -95,7 +116,7 @@ ssh $node "$CMD"
 for i in $(seq 0 $(( ${#params[@]} - 1 ))); do
     individual=1
     for node in ${nodes[@]}; do
-        wdir=${dirs[$i]}_$individual
+        wdir=${dirs[$i]}_${i}_${individual}
 
         echo "using node $node"
         echo "storing in ${HOME}/working/$wdir"
