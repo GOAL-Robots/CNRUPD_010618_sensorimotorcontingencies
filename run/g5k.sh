@@ -15,9 +15,7 @@ MIN_CORES=4
 MIN_RAM=40
 WALLTIME=$(max_walltime)
 
-declare -a dirs=(sm_singleecho_25g)
-
-#declare -a dirs=(test)
+declare -a dirs=(sm_singleecho_25g_p1 sm_singleecho_25g_p2)
 declare -a params
 params[0]=$(cat<<HERE_PARAMS
 simulation_im_decay = 0.2
