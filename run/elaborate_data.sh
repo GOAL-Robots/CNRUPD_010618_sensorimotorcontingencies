@@ -114,7 +114,7 @@ cat << EOF > $TMP_DIR/plots.html
 </head>
 
 <body>
-<h1>$(basename $DIR| sed -e"s/sm_//; s/c\([^i]\+\)i/competence \1i/; s/i\(.*\)/ - incompetence \1/; s/\([0-9]\)p\([0-9]\)/\1.\2/g ")</h1>
+<h1>$(basename $DIR)</h1>
 <table style="width:100%">
   <tr>
     <td><img src="means.png"  width="100%"></td>
