@@ -24,6 +24,7 @@ exit
    -d --dir PATH    where to find data
    -g --graph       make graphs   
    -c -local        local directory
+   -s -weights      include weights data
    -w --www         open browser
    -l --loop SEC    run recursivelly to follow online course
    -h --help        show this help
@@ -38,9 +39,10 @@ LOOP=
 VISUALIZE=false
 GRAPHS=false
 LOCAL=false
+WEIGHTS=false
 
 # getopt
-GOTEMP="$(getopt -o "d:gcwl:h" -l "dir:,graphs,local,www,loop,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "d:gcwl:sh" -l "dir:,graphs,local,www,loop,weights,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -66,6 +68,9 @@ do
         -l | --loop)
             LOOP=$2
             shift 2;;
+        -s | --weights)
+            WEIGHTS=true
+            shift;;
         -h | --help)
             echo "on help"
             usage; exit;
@@ -149,6 +154,7 @@ run()
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
     cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
     cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
+    cat $(find $DIR | grep weights) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
 
     if [ $GRAPHS == true ]; then
         echo "run R scripts..."
