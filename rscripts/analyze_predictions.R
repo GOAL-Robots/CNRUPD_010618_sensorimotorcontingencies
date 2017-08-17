@@ -24,6 +24,11 @@ all_predictions <- fread("all_predictions")
 N_GOALS = dim(all_predictions)[2] - 4 
 names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
 
+all_weights <- fread("all_weights")
+names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
+trials = 1:length(all_weights$TIMESTEPS)
+tlbrk = trials[trials%%5000 == 0]
+tsbrk = all_weights$TIMESTEPS[tlbrk]
 
 predictions = melt(all_predictions, 
              id.vars = c("LEARNING_TYPE", "TIMESTEPS", "INDEX"), 
@@ -140,8 +145,8 @@ gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                     inherit.aes = FALSE, show.legend = F )
 gp1 = gp1 + scale_y_continuous(limits=c(0, 1.7), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.0"))
-gp1 = gp1 + scale_x_continuous(limits=c(0, TS))
-gp1 = gp1 + xlab("Timesteps") 
+gp1 = gp1 + scale_x_continuous(limits=c(0, TS), breaks=tsbrk, labels=tlbrk)
+gp1 = gp1 + xlab("Trials") 
 gp1 = gp1 + ylab("") 
 gp1 = gp1 + theme_bw() 
 

@@ -25,6 +25,16 @@ N_GOALS = dim(all_predictions)[2] - 4
 names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
 
 
+all_weights <- fread("all_weights")
+names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
+trials = 1:length(all_weights$TIMESTEPS)
+tlbrk = trials[trials%%5000 == 0]
+tsbrk = all_weights$TIMESTEPS[tlbrk]
+tlbrk_medium = trials[trials%%1000 == 0]
+tsbrk_medium = all_weights$TIMESTEPS[tlbrk_medium]
+tlbrk_dense = trials[trials%%500 == 0]
+tsbrk_dense = all_weights$TIMESTEPS[tlbrk_dense]
+
 predictions = melt(all_predictions, 
              id.vars = c("LEARNING_TYPE", "TIMESTEPS", "INDEX"), 
              measure.vars = paste("G", 1:N_GOALS, sep = ""), 
@@ -109,8 +119,10 @@ gp0 = gp0 + geom_point(data=all_predictions,
 gp0 = gp0 + geom_line(size = 1, show.legend = F)
 gp0 = gp0 + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
 gp0 = gp0 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1))
-gp0 = gp0 + scale_x_continuous(limits=c(0, TS))
-gp0 = gp0 + xlab("Timesteps") 
+gp0 = gp0 + scale_x_continuous(limits=c(0, TS), 
+                               breaks=tsbrk, 
+                               labels=tlbrk )
+gp0 = gp0 + xlab("Trials") 
 gp0 = gp0 + ylab("Means of goal predictions                    ") 
 gp0 = gp0 + theme_bw() 
 if(TYPES>1) gp0 = gp0 + facet_grid(LEARNING_TYPE~.)
@@ -140,8 +152,10 @@ gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                     inherit.aes = FALSE, show.legend = F )
 gp1 = gp1 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.5"))
-gp1 = gp1 + scale_x_continuous(limits=c(0, TS))
-gp1 = gp1 + xlab("Timesteps") 
+gp1 = gp1 + scale_x_continuous(limits=c(0, TS), 
+                               breaks=tsbrk, 
+                               labels=tlbrk )
+gp1 = gp1 + xlab("Trials") 
 gp1 = gp1 + ylab("") 
 gp1 = gp1 + theme_bw() 
 
@@ -165,7 +179,7 @@ svg("means_all.svg", width=7, height=3)
 print(gp1)
 dev.off()
 
-TS_SEC = 60000
+TS_SEC = 150000
 first_g_means = subset(g_means, TIMESTEPS < TS_SEC)
 first_predictions = subset(all_predictions, TIMESTEPS < TS_SEC)
 first_means = subset(means, TIMESTEPS < TS_SEC)
@@ -185,8 +199,10 @@ gp2 = gp2 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                     inherit.aes = FALSE, show.legend = F )
 gp2 = gp2 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.5"))
-gp2 = gp2 + scale_x_continuous(limits=c(0, TS_SEC))
-gp2 = gp2 + xlab("Timesteps") 
+gp2 = gp2 + scale_x_continuous(limits=c(0, TS_SEC), 
+                               breaks=tsbrk_dense, 
+                               labels=tlbrk_dense )
+gp2 = gp2 + xlab("Trials") 
 gp2 = gp2 + ylab("") 
 #gp2 = gp2 + ylab("Means of goal predictions") 
 gp2 = gp2 + theme_bw() 
@@ -213,8 +229,8 @@ dev.off()
 
 
 
-TS_SEC2 = 0.3e6
-START = 1.5e6
+TS_SEC2 = 150000
+START = 1.1e6
 first_g_means = subset(g_means, TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2  )
 first_predictions = subset(all_predictions, TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
 first_means = subset(means,  TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
@@ -233,8 +249,10 @@ gp3 = gp3 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                       inherit.aes = FALSE, show.legend = F )
 gp3 = gp3 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                                labels=c("0.0","0.5","1.5"))
-gp3 = gp3 + scale_x_continuous(limits=c(START, START+TS_SEC2))
-gp3 = gp3 + xlab("Timesteps") 
+gp3 = gp3 + scale_x_continuous(limits=c(START, START+TS_SEC2), 
+                               breaks=tsbrk_medium, 
+                               labels=tlbrk_medium )
+gp3 = gp3 + xlab("Trials") 
 gp3 = gp3 + ylab("") 
 #gp3 = gp3 + ylab("Means of goal predictions") 
 gp3 = gp3 + theme_bw() 
