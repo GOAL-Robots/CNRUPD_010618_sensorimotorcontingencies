@@ -117,7 +117,7 @@ cat << EOF > $TMP_DIR/plots.html
 <h1>$(basename $DIR)</h1>
 <table style="width:100%">
   <tr>
-    <td><img src="means.png"  width="100%"></td>
+    <td><img src="means_all.png"  width="100%"></td>
     <td><img src="g_means.png"  width="100%"></td>
   </tr>
   <tr>
