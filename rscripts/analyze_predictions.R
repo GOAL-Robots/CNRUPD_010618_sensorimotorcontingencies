@@ -19,6 +19,15 @@ sem<-function(x) sd(x)/sqrt(length(x))
 
 ###############################################################################################################################
 
+which_dec_scale <- function(x)
+{
+    scales = 10^seq(1,10)
+    x_scaled = x/scales
+    test_scales = x_scaled <10 & x_scaled >1 
+    
+    scales[which(test_scales == TRUE)]
+}
+
 
 all_predictions <- fread("all_predictions")
 N_GOALS = dim(all_predictions)[2] - 4 
@@ -26,9 +35,13 @@ names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N
 
 all_weights <- fread("all_weights")
 names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
+TS = max(all_weights$TIMESTEPS)
+scale = which_dec_scale(TS)
 trials = 1:length(all_weights$TIMESTEPS)
-tlbrk = trials[trials%%5000 == 0]
+tlbrk = trials[trials%%(scale/200) == 0]
 tsbrk = all_weights$TIMESTEPS[tlbrk]
+TSS = 1:TS
+tslbrk = TSS[TSS%%(scale/10)==0]
 
 predictions = melt(all_predictions, 
              id.vars = c("LEARNING_TYPE", "TIMESTEPS", "INDEX"), 
@@ -102,9 +115,8 @@ g_means = g_means[,
                      TIMESTEPS )]
 
 g_means$th = 1
-TS = max(g_means$TIMESTEPS)
 
-TS = TS*(4/6)
+TS = max(means$TIMESTEPS)
 pdf("g_means.pdf")
 gp0 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
 gp0 = gp0 + geom_point(data=all_predictions, 
@@ -129,6 +141,8 @@ gp0 = gp0 + theme(
                 )
 print(gp0)
 dev.off()
+
+
 TS = max(means$TIMESTEPS)
 gp1 = ggplot(means, aes(x = TIMESTEPS, y = p_mean))
 gp1 = gp1 + geom_point(data=all_predictions, 
@@ -145,7 +159,9 @@ gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                     inherit.aes = FALSE, show.legend = F )
 gp1 = gp1 + scale_y_continuous(limits=c(0, 1.7), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.0"))
-gp1 = gp1 + scale_x_continuous(limits=c(0, TS), breaks=tsbrk, labels=tlbrk)
+gp1 = gp1 + scale_x_continuous(limits=c(0, TS), breaks=tsbrk, labels=tlbrk,
+                               sec.axis = sec_axis(~., name = "Timesteps", 
+                                                   breaks = tslbrk,  labels = tslbrk))
 gp1 = gp1 + xlab("Trials") 
 gp1 = gp1 + ylab("") 
 gp1 = gp1 + theme_bw() 
