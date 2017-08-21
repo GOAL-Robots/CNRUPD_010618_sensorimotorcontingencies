@@ -1,15 +1,23 @@
-require(data.table)
-require(ggplot2)
-require(cowplot)
-
-toInstall <- c("extrafont")
+toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot")
 for(pkg in toInstall)
+{
     if(!require(pkg, character.only=TRUE) )
     {
         install.packages(pkg, repos = "http://cran.us.r-project.org")
-        library(extrafont)
-        font_import()
     }
+}
+
+require(data.table)
+require(ggplot2)
+require(cowplot)
+library(extrafont)
+
+if (!("Verdana" %in% fonts()) )
+{
+    font_import()
+    loadfonts()
+}
+    
 
 library(extrafont)
 
@@ -27,9 +35,13 @@ names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N
 
 all_weights <- fread("all_weights")
 names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
+TS = max(all_weights$TIMESTEPS)
+scale = which_dec_scale(TS)
 trials = 1:length(all_weights$TIMESTEPS)
-tlbrk = trials[trials%%5000 == 0]
+tlbrk = trials[trials%%(scale/200) == 0]
 tsbrk = all_weights$TIMESTEPS[tlbrk]
+TSS = 1:TS
+tslbrk = TSS[TSS%%(scale)==0]
 tlbrk_medium = trials[trials%%1000 == 0]
 tsbrk_medium = all_weights$TIMESTEPS[tlbrk_medium]
 tlbrk_dense = trials[trials%%500 == 0]
@@ -107,9 +119,6 @@ g_means = g_means[,
                      TIMESTEPS )]
 
 g_means$th = 1
-TS = max(g_means$TIMESTEPS)
-
-TS = TS*(4/6)
 pdf("g_means.pdf")
 gp0 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
 gp0 = gp0 + geom_point(data=all_predictions, 
@@ -137,6 +146,7 @@ gp0 = gp0 + theme(
 print(gp0)
 dev.off()
 
+TS = 1.4e6
 gp1 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean))
 gp1 = gp1 + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
@@ -153,8 +163,12 @@ gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
 gp1 = gp1 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.5"))
 gp1 = gp1 + scale_x_continuous(limits=c(0, TS), 
-                               breaks=tsbrk, 
-                               labels=tlbrk )
+                               breaks=tsbrk,
+                               labels=tlbrk,
+                               sec.axis = sec_axis(~., 
+                                                   name = "Timesteps", 
+                                                   breaks = tslbrk, 
+                                                   labels = tslbrk))
 gp1 = gp1 + xlab("Trials") 
 gp1 = gp1 + ylab("") 
 gp1 = gp1 + theme_bw() 
@@ -200,8 +214,12 @@ gp2 = gp2 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
 gp2 = gp2 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.5"))
 gp2 = gp2 + scale_x_continuous(limits=c(0, TS_SEC), 
-                               breaks=tsbrk_dense, 
-                               labels=tlbrk_dense )
+                               breaks=tsbrk_dense,
+                               labels=tlbrk_dense,
+                               sec.axis = sec_axis(~., 
+                                                   name = "Timesteps", 
+                                                   breaks = tslbrk, 
+                                                   labels = tslbrk))
 gp2 = gp2 + xlab("Trials") 
 gp2 = gp2 + ylab("") 
 #gp2 = gp2 + ylab("Means of goal predictions") 
@@ -249,9 +267,14 @@ gp3 = gp3 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                       inherit.aes = FALSE, show.legend = F )
 gp3 = gp3 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
                                labels=c("0.0","0.5","1.5"))
+
 gp3 = gp3 + scale_x_continuous(limits=c(START, START+TS_SEC2), 
                                breaks=tsbrk_medium, 
-                               labels=tlbrk_medium )
+                               labels=tlbrk_medium, 
+                               sec.axis = sec_axis(~., 
+                                                   name = "Timesteps", 
+                                                   breaks = tslbrk, 
+                                                   labels = tslbrk))
 gp3 = gp3 + xlab("Trials") 
 gp3 = gp3 + ylab("") 
 #gp3 = gp3 + ylab("Means of goal predictions") 

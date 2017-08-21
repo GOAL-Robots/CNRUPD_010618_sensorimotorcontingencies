@@ -1,17 +1,22 @@
-require(data.table)
-require(ggplot2)
-require(cowplot)
-
-toInstall <- c("extrafont")
+toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot")
 for(pkg in toInstall)
+{
     if(!require(pkg, character.only=TRUE) )
     {
         install.packages(pkg, repos = "http://cran.us.r-project.org")
-        library(extrafont)
-        font_import()
     }
+}
 
+require(data.table)
+require(ggplot2)
+require(cowplot)
 library(extrafont)
+
+if (!("Verdana" %in% fonts()) )
+{
+    font_import()
+    loadfonts()
+}
 
 ###############################################################################################################################
 
@@ -41,7 +46,7 @@ trials = 1:length(all_weights$TIMESTEPS)
 tlbrk = trials[trials%%(scale/200) == 0]
 tsbrk = all_weights$TIMESTEPS[tlbrk]
 TSS = 1:TS
-tslbrk = TSS[TSS%%(scale/10)==0]
+tslbrk = TSS[TSS%%(scale)==0]
 
 predictions = melt(all_predictions, 
              id.vars = c("LEARNING_TYPE", "TIMESTEPS", "INDEX"), 
@@ -159,9 +164,11 @@ gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1,
                     inherit.aes = FALSE, show.legend = F )
 gp1 = gp1 + scale_y_continuous(limits=c(0, 1.7), breaks= c(0,.5, 1), 
                              labels=c("0.0","0.5","1.0"))
-gp1 = gp1 + scale_x_continuous(limits=c(0, TS), breaks=tsbrk, labels=tlbrk,
+gp1 = gp1 + scale_x_continuous(limits=c(0, TS), 
+                               breaks=tsbrk, labels=tlbrk,
                                sec.axis = sec_axis(~., name = "Timesteps", 
-                                                   breaks = tslbrk,  labels = tslbrk))
+                                                   breaks = tslbrk, 
+                                                   labels = tslbrk))
 gp1 = gp1 + xlab("Trials") 
 gp1 = gp1 + ylab("") 
 gp1 = gp1 + theme_bw() 

@@ -4,7 +4,6 @@
 
 import os
 import sys
-import copy
 import cPickle as pickle
 import gzip
 
