@@ -213,8 +213,6 @@ class PerceptionManager(object):
             #TODO: epsilon as parameter
             curr_touches = rel_chain.isPointInChain(hand)  
             
-            print x, hand,  curr_touches, rel_chain.chain           
-
             # for each sensor compute its distance form the touching points
             for y, sensor in zip(sensor_range, self.sensors[sensor_range]):
 
