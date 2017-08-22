@@ -2,23 +2,19 @@
 
 # -*- coding: utf-8 -*-
 import sys
-import copy 
 import numpy as np
-from model.Simulation import Simulation
 from model.Simulator import KinematicActuator
 np.set_printoptions(suppress=True, precision=5, linewidth=9999999)
 
 #################################################################
 #################################################################
 
-import pyqtgraph.Qt as Qt 
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
-from pyqtgraph.ptime import time
 pg.setConfigOptions(antialias=True)
 
 
-def hist_comp(x): 
+def hist_comp(x):
     h = np.histogram(x) 
     freqs = h[0]
     centr = np.linspace(h[1][0],h[1][-1], 
@@ -73,6 +69,23 @@ def reshape_coupled_weights(w):
 
     return reshaped_w
 
+def angles2positions(angles_array, act = None):
+    
+    if act is None:
+        act = KinematicActuator()
+    
+    positions = []
+    num_angles = len(angles_array[0])
+    for angles in angles_array:
+        l_angles = angles[:(num_angles/2)]
+        r_angles = angles[(num_angles/2):]
+        l_angles, r_angles = act.rescale_angles(l_angles, r_angles)
+        act.set_positions_basedon_angles(l_angles, r_angles)
+    
+        positions.append(np.vstack((act.position_l[::-1], act.position_r)))
+    
+    return positions
+        
 #################################################################
 #################################################################
 
@@ -86,7 +99,7 @@ class Plotter(QtGui.QWidget):
         self.kin = kin
         
         screen_resolution = app.desktop().screenGeometry()
-        width, height = screen_resolution.width(), screen_resolution.height()
+        _, height = screen_resolution.width(), screen_resolution.height()
             
         self.LEFT = height*(2/20.)
         self.TOP = height*(2/20.)
@@ -94,21 +107,21 @@ class Plotter(QtGui.QWidget):
         self.HEIGHT = height*(6/20.)
         
         self.setGeometry(self.LEFT, self.TOP, self.WIDTH, self.HEIGHT) 
-	self.setWindowTitle("MainBoard")
+        self.setWindowTitle("MainBoard")
         
         self.amapsButton = QtGui.QCheckBox('Abstraction Maps', self)
-	self.amapsButton.clicked.connect(self.onAMapsButton)
-	self.amapsButton.move(20,20)
+        self.amapsButton.clicked.connect(self.onAMapsButton)
+        self.amapsButton.move(20,20)
         self.amaps_toggle = False;
         
         self.smapsButton = QtGui.QCheckBox('Selection Maps', self)
-	self.smapsButton.clicked.connect(self.onSMapsButton)
-	self.smapsButton.move(20,50)
+        self.smapsButton.clicked.connect(self.onSMapsButton)
+        self.smapsButton.move(20,50)
         self.smaps_toggle = False;
         
         self.kinButton = QtGui.QCheckBox('Kinematics', self)
-	self.kinButton.clicked.connect(self.onKinButton)
-	self.kinButton.move(20,80)
+        self.kinButton.clicked.connect(self.onKinButton)
+        self.kinButton.move(20,80)
         self.kin_toggle = False;
 
         self.simButton = QtGui.QPushButton('Run', self)
@@ -209,13 +222,13 @@ class GoalAbstractionMaps(pg.GraphicsView):
     lut = cmap.getLookupTable(0.0, 1.0, 256)
         
     def __init__(self, app, simulation):
-         
-	super(GoalAbstractionMaps, self).__init__()
+        
+        super(GoalAbstractionMaps, self).__init__()
         self.simulation = simulation
         self.ts_duration = 1 
         self.main_app = app
 
-	self.setWindowTitle("Maps")
+        self.setWindowTitle("Maps")
         
         self.resetWindow()
 
@@ -255,7 +268,7 @@ class GoalAbstractionMaps(pg.GraphicsView):
     def resetWindow(self):
 
         screen_resolution = self.main_app.desktop().screenGeometry()
-        width, height = screen_resolution.width(), screen_resolution.height()
+        _, height = screen_resolution.width(), screen_resolution.height()
          
         self.LEFT = height*(8/20.)
         self.TOP = height*(1.2/20.)
@@ -414,12 +427,12 @@ class GoalSelectionMaps(pg.GraphicsView):
         
     def __init__(self, app, simulation):
          
-	super(GoalSelectionMaps, self).__init__()
+        super(GoalSelectionMaps, self).__init__()
         self.main_app = app
         
         self.resetWindow()
 
-	self.setWindowTitle("Selection and control")
+        self.setWindowTitle("Selection and control")
                
         layout = pg.GraphicsLayout()
         self.setCentralItem(layout)  
@@ -464,7 +477,7 @@ class GoalSelectionMaps(pg.GraphicsView):
     def resetWindow(self):
         
         screen_resolution = self.main_app.desktop().screenGeometry()
-        width, height = screen_resolution.width(), screen_resolution.height()
+        _, height = screen_resolution.width(), screen_resolution.height()
          
         self.LEFT = height*(14/20.)
         self.GAP = height*(1.5/20.)
@@ -503,24 +516,22 @@ class GoalSelectionMaps(pg.GraphicsView):
         
         ps = []
         for goal in target_position.keys() :
-             row, col = np.squeeze(np.nonzero(goal_idcs==goal))
-             trj_angles = target_position[goal]
+            row, col = np.squeeze(np.nonzero(goal_idcs==goal))
+            trj_angles = target_position[goal]
             
-             larm_angles = trj_angles[:(self.simulation.gs.N_ROUT_UNITS/2)]
-             rarm_angles = trj_angles[(self.simulation.gs.N_ROUT_UNITS/2):]
-             larm_angles, rarm_angles = act.rescale_angles(larm_angles, rarm_angles)
-  
-             act.set_positions_basedon_angles(larm_angles, rarm_angles)
-
-             lp = (act.position_l-mins)/rngs + [row, col] 
-             rp = (act.position_r-mins)/rngs + [row, col] 
-             ps.append(lp)
-             ps.append(rp)
+            larm_angles = trj_angles[:(self.simulation.gs.N_ROUT_UNITS/2)]
+            rarm_angles = trj_angles[(self.simulation.gs.N_ROUT_UNITS/2):]
+            larm_angles, rarm_angles = act.rescale_angles(larm_angles, rarm_angles)
+            act.set_positions_basedon_angles(larm_angles, rarm_angles)
+            lp = (act.position_l-mins)/rngs + [row, col] 
+            rp = (act.position_r-mins)/rngs + [row, col] 
+            ps.append(lp)
+            ps.append(rp)
 
        
         pos=None
         adj=None
-        if len(ps) <= 0: 
+        if len(ps) == 0: 
             for row in range(raw_gw):
                 for col in range(raw_gw):
                     ps.append(np.array([0.5,0.5])+[row,col])
@@ -530,8 +541,8 @@ class GoalSelectionMaps(pg.GraphicsView):
 
         else:  
             pos = np.vstack(ps)
-            lj = len(act.position_l)
             idcs = np.arange(len(pos))
+            lj = len(act.position_l)
             adj = np.vstack([ [idcs[i], idcs[i+1]] for i in idcs[idcs%lj!=(lj-1)] ])
           
         gr.setData(pos=pos, adj=adj,  size=2 )
@@ -556,7 +567,7 @@ class GoalSelectionMaps(pg.GraphicsView):
 class KinematicsView(QtGui.QWidget):
     
     def __init__(self, app, simulation):
-	
+
         super(KinematicsView, self).__init__()
         
         self.main_app = app
@@ -569,7 +580,7 @@ class KinematicsView(QtGui.QWidget):
         self.STIME = simulation.stime
         self.simulation = simulation
 
-	self.setWindowTitle("Kinematics")
+        self.setWindowTitle("Kinematics")
 
         self.ts_duration = 10
         self.time_id = self.startTimer(self.ts_duration)
@@ -720,5 +731,4 @@ def graph_main(simulation) :
 
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
         QtGui.QApplication.instance().exec_()
-
 

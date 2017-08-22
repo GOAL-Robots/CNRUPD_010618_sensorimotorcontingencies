@@ -182,27 +182,6 @@ class GoalSelector(object):
         # set second half of weight rows to positive random values
         self.GOAL2ECHO_W[(self.N_ECHO_UNITS / 2):, :] = half_weights/float(self.N_GOAL_UNITS)
 
-
-        # # set first half of weight rows to negative random values
-        # self.GOAL2ECHO_W[:(self.N_ECHO_UNITS / 2), :] = \
-        #     -np.random.rand(self.N_ECHO_UNITS / 2,
-        #                     self.N_GOAL_UNITS)
-        #
-        # # weights are sparse, set other weights of the first half to zero
-        # self.GOAL2ECHO_W[:(self.N_ECHO_UNITS / 2), :] *= \
-        #     (np.random.rand(self.N_ECHO_UNITS / 2,
-        #                     self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
-        #
-        # # set second half of weight rows to positive random values
-        # self.GOAL2ECHO_W[(self.N_ECHO_UNITS / 2):, :] = \
-        #     np.random.rand(self.N_ECHO_UNITS / 2,
-        #                    self.N_GOAL_UNITS)
-        #
-        # # weights are sparse, set other weights of the second half to zero
-        # self.GOAL2ECHO_W[(self.N_ECHO_UNITS / 2):, :] *= \
-        #     (np.random.rand(self.N_ECHO_UNITS / 2,
-        #                     self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
-
         #----------------------------------------------------
         # ESN readouts
 
