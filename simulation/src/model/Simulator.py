@@ -197,21 +197,35 @@ class PerceptionManager(object):
         # init the vector of touch measures
         sensors_n = len(self.sensors)
         touches = np.zeros(sensors_n)
+        
+        start_gap = int(self.num_touch_sensors / 4.0)
 
         # read contact of the two edges (hands) with the rest of the points
-        for x, sensor in zip([0, sensors_n - 1], [self.sensors[0], self.sensors[-1]]):
+        for x, hand in zip([0, sensors_n - 1], [self.sensors[0], self.sensors[-1]]):
+            
+            # prepare the relative chain (sensors not nearby the hand)
+            rel_chain = KM.Polychain()
+            sensor_range = range(start_gap, self.num_touch_sensors) if x == 0 else \
+                           range(self.num_touch_sensors - start_gap)
+            rel_chain.set_chain(self.sensors[sensor_range])     
+            
+            # find the hand touch-points (1d distances on the relative chain)
+            #TODO: epsilon as parameter
+            curr_touches = rel_chain.isPointInChain(hand)  
+            
+            print x, hand,  curr_touches, rel_chain.chain           
 
-            # for each edge iterate over the other points
-            for y, point in enumerate(self.sensors):
+            # for each sensor compute its distance form the touching points
+            for y, sensor in zip(sensor_range, self.sensors[sensor_range]):
 
-                # do not count the edge with itself (it would be autotouch!!)
-                if x != y and abs(y - x) > (self.num_touch_sensors / 4.0):
-
-                    # touch is measured as a radial basis of the distance from
-                    # the sensor
-                    stouch = clipped_exp(-((np.linalg.norm(point - sensor))**2) /
-                                    (2 * self.touch_sigma**2))
-
+                dsensor = rel_chain.isPointInChain(sensor)[0]
+                
+                for curr_touch in curr_touches:     
+                    
+                    
+                    # touch is measured as a radial basis of the distance from the sensor in the 1D chain 
+                    stouch = clipped_exp(-(curr_touch - dsensor)**2 / (2 * self.touch_sigma**2))
+    
                     touches[y] += stouch
 
         # write information into the touch retina

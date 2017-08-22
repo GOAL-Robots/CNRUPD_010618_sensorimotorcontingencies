@@ -55,6 +55,40 @@ def cross(a, b):
 
     return a[0] * b[1] - a[1] * b[0]
 
+def project(a, b, c):
+    """ Projects the point c into the segment ab
+    
+        :param a: the start-point of th segment
+        :type a: any container with a pair of doubles
+        
+        :param b: the end-point of th segment
+        :type b: any container with a pair of doubles
+        
+        :param c: the point to project
+        :type c: any container with a pair of doubles
+
+        :return: the projected point or None if cannot be projected
+        :rtype: numpy.array(2) or None
+
+    """
+    a = np.array(a)
+    b = np.array(b)
+    c = np.array(c)
+    
+    d = a + np.dot(c-a,b-a)/ np.dot(b-a,b-a) * (b-a)
+    
+    # if sum of the distances of d form a and b is equal to 
+    # the distance of a from b then d belongs to the segment ab
+    between = ((np.linalg.norm(a - d) + 
+                np.linalg.norm(b - d) ) / 
+               np.linalg.norm(b - a))
+    
+    if between == 1 :
+        return d
+    else:
+        return None
+
+
 
 def get_angle(v1, v2):
     """ Calculate the angle between two vectors in a 2D space
@@ -165,27 +199,38 @@ class Polychain(object):
         '''
 
         distances = []
-        c = array(point)
+        c = np.array(point)
         for x in xrange(1, len(self.chain)):
 
             a = self.chain[x - 1]
             b = self.chain[x]
 
             # check if the  point is within the same line
-            if np.all(c != a) and np.all(c != b):
-                if np.linalg.norm(np.cross(b - a, c - a)) < epsilon:
+            if np.any(c != a) and np.any(c != b):
+                if np.linalg.norm(cross(b - a, c - a)) < epsilon:
 
-                    abac = np.dot(b - a, c - a)
-                    ab = np.dot(b - a, b - a)
-                    if 0 <= abac <= ab:
+                    projected_point = project(a,b,c)
 
+                    if projected_point is not None:
+                        
                         distance = np.sum(self.segment_lengths[:(x - 1)])
-                        distance += np.linalg.norm(point - self.chain[x - 1])
+                        distance += np.linalg.norm(projected_point - self.chain[x - 1])
                         distance = distance / sum(self.segment_lengths)
-
                         distances.append(distance)
+                        
+            elif np.all(c == a):
+        
+                distance = np.sum(self.segment_lengths[:(x - 1)])
+                distance = distance / sum(self.segment_lengths)
+                distances.append(distance)
 
-        return distances
+            elif np.all(c == b):
+                
+                distance = np.sum(self.segment_lengths[:x])
+                distance = distance / sum(self.segment_lengths)
+                distances.append(distance)
+
+        return list(set(distances))
 
     def get_point(self, distance):
         ''' Get a point in the 2D space given a
@@ -933,4 +978,15 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     
     plt.ion()
-    test_collision()
+    #test_collision()
+    
+    cm = Polychain()
+    cm.set_chain([[-2,0],
+                  [-1,0],
+                  [0,0],
+                  [1,0],
+                  [1,1] ])
+    
+    print cm.isPointInChain([.95,0.05], 0.1)
+    print cm.isPointInChain([1.,0.0], 0.1)
+    print cm.isPointInChain([2.,0.0], 0.1)
