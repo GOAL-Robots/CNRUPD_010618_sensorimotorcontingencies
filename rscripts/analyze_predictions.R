@@ -18,6 +18,7 @@ if (!("Verdana" %in% fonts()) )
     loadfonts()
 }
 
+
 ###############################################################################################################################
 
 sem<-function(x) sd(x)/sqrt(length(x))
@@ -76,7 +77,6 @@ means = means[,
 means$th = 1
 TYPES=length(unique(sort(means$LEARNING_TYPE)))
 
-pdf("means.pdf")
 gp = ggplot(means, aes(x = TIMESTEPS, y = p_mean, group = LEARNING_TYPE))
 gp = gp + geom_ribbon(aes(ymin = p_min, ymax = p_max), 
                       colour = "#666666", fill = "#dddddd")
@@ -97,6 +97,8 @@ gp = gp + theme(
                 panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank()
                 )
+
+pdf("means.pdf")
 print(gp)
 dev.off()
 
@@ -122,7 +124,6 @@ g_means = g_means[,
 g_means$th = 1
 
 TS = max(means$TIMESTEPS)
-pdf("g_means.pdf")
 gp0 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
 gp0 = gp0 + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.05 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
@@ -144,6 +145,7 @@ gp0 = gp0 + theme(
                 panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank()
                 )
+pdf("g_means.pdf")
 print(gp0)
 dev.off()
 
@@ -183,13 +185,14 @@ gp1 = gp1 + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
 )
-png("means_all.png", width=700, height=300)
+bitmap(type="png256","means_all.png", width=5, height=5, 
+       family="Verdana")
 print(gp1)
 dev.off()
-pdf("means_all.pdf", width=7, height=3)
-print(gp1)
-dev.off()
-svg("means_all.svg", width=7, height=3)
-print(gp1)
-dev.off()
+# pdf("means_all.pdf", width=7, height=3)
+# print(gp1)
+# dev.off()
+# svg("means_all.svg", width=7, height=3)
+# print(gp1)
+# dev.off()
 

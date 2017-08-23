@@ -35,3 +35,51 @@ declare -a nodes=($(cat ~/.G_${JOB_ID}/NODES|uniq))
 echo "${dirs[@]}" > ${HOME}/.sensorimotor_data/$JOB_ID 
 
 
+# make run file and store it within the working dir 
+cat << EOS > ${HOME}/working/${wdir}/run
+cd ~/working/$wdir
+
+sudo apt-get update
+sudo apt-get --yes install apache2
+sudo a2enmod userdir
+sudo service apache2 restart
+sudo adduser \${USER} www-data
+mkdir -p \${HOME}/public_html
+
+cp kill_g.sh  \${HOME}/public_html
+cp make_g.sh  \${HOME}/public_html
+./make_g.sh &> log & 
+cd
+
+EOS
+
+chmod +x ${HOME}/working/${wdir}/run
+
+# build the command to run in the machine
+CMD=$(cat<<EOS
+[ -z "\$(mount | grep working )" ] && \
+    (sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
+    rennes:\${HOME}/working \${HOME}/working)
+
+screen -dmS $(basename $wdir)
+screen -S $(basename $wdir) -X exec bash -c "\${HOME}/working/$wdir/run; bash"
+EOS
+)
+
+# execute the command within the machine
+ssh $node "$CMD"
+
+# START NODES
+for node in ${nodes[@]}; do
+    wdir=${dirs[$i]}_${i}_${individual}
+
+    echo "using node $node"
+    echo "storing in ${HOME}/working/$wdir"
+    echo
+
+    if [ ! -d ${HOME}/working/$wdir ]; then
+        mkdir ${HOME}/working/$wdir
+    fi
+
+    run_cmd $wdir $node
+done
