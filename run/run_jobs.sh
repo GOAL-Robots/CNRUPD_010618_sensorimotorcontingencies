@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # CLEAR NON RUNNING SIMULATIOMS
+LABEL=sensorimotor
 
 RUN_DIR=$(echo $0 | sed -e"s/\/$(basename $0)$//")
 
-$RUN_DIR/clear_simulations.sh 
+$RUN_DIR/clear_simulations.sh $LABEL
 [ $? -ne 0 ] && echo "no further simulation started." && exit 0
 
 SCREEN=/usr/bin/screen
 
-LOG_DIR=${HOME}/.sensorimotor
+LOG_DIR=${HOME}/.${LABEL}
 [ ! -d $LOG_DIR ] && mkdir $LOG_DIR
 
 # control for the existence of a correct session

@@ -1,5 +1,22 @@
+toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot")
+for(pkg in toInstall)
+{
+    if(!require(pkg, character.only=TRUE) )
+    {
+        install.packages(pkg, repos = "http://cran.us.r-project.org")
+    }
+}
+
 require(data.table)
 require(ggplot2)
+require(cowplot)
+library(extrafont)
+
+if (!("Verdana" %in% fonts()) )
+{
+    font_import()
+    loadfonts()
+}
 
 d = fread("log_cont_sensors")
 n_sensors=dim(d)[2] - 2

@@ -1,18 +1,22 @@
-require(data.table)
-require(ggplot2)
-
-toInstall <- c("extrafont")
+toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot")
 for(pkg in toInstall)
+{
     if(!require(pkg, character.only=TRUE) )
     {
         install.packages(pkg, repos = "http://cran.us.r-project.org")
-        library(extrafont)
-        font_import()
-        loadfonts()
     }
+}
 
+require(data.table)
+require(ggplot2)
+require(cowplot)
 library(extrafont)
 
+if (!("Verdana" %in% fonts()) )
+{
+    font_import()
+    loadfonts()
+}
 ###############################################################################################################################
 
 sem<-function(x) sd(x)/sqrt(length(x))

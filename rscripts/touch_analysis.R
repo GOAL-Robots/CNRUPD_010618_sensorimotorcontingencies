@@ -8,6 +8,28 @@ require(gtable)
 require(gridExtra)
 
 
+toInstall <- c("extrafont", "ggplot2", "grid","gtable","gridextra", "data.table", "cowplot")
+for(pkg in toInstall)
+{
+    if(!require(pkg, character.only=TRUE) )
+    {
+        install.packages(pkg, repos = "http://cran.us.r-project.org")
+    }
+}
+
+require(data.table)
+require(ggplot2)
+library(grid)
+require(gtable)
+require(gridExtra)
+require(extrafont)
+
+if (!("Verdana" %in% fonts()) )
+{
+    font_import()
+    loadfonts()
+}
+
 #last = 20000
 
 
