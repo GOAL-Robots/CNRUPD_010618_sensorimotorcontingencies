@@ -17,7 +17,7 @@ WALLTIME=$(max_walltime)
 
 declare -a dirs=(sm_singleecho_25g_p1 sm_singleecho_25g_p2)
 declare -a params
-params[0]=$(cat<<HERE_PARAMS
+params[0]="
 simulation_im_decay = 0.2
 body_simulator_touch_sigma = 0.05
 body_simulator_num_touch_sensors = 30
@@ -36,9 +36,9 @@ gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
 GOAL_NUMBER = 25
 HERE_PARAMS
-)
+"
 
-params[1]=$(cat<<HERE_PARAMS
+params[1]="
 simulation_im_decay = 0.2
 body_simulator_touch_sigma = 0.05
 body_simulator_num_touch_sensors = 30
@@ -57,7 +57,7 @@ gm_single_kohonen_neigh_bl = 0.005
 gm_single_kohonen_neigh_scale = 0.995
 GOAL_NUMBER = 25
 HERE_PARAMS
-)
+"
 
 # FIND RESOURCES 
 rm -fr log_resources
@@ -81,30 +81,32 @@ echo "${dirs[@]}" > ${HOME}/.sensorimotor/$JOB_ID
 run_cmd()
 {
 
-wdir=$1
-node=$2
+    wdir=$1
+    node=$2
 
-# make run file and store it within the working dir 
-cat << EOS > ${HOME}/working/${wdir}/run
-cd ~/working/$wdir
-\${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 50000 -n 1000 -b -P params
-EOS
+    # make run file and store it within the working dir 
 
-chmod +x ${HOME}/working/${wdir}/run
+    run="
+    cd ~/working/$wdir
+    \${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 50000 -n 1000 -b -P params
+    "
 
-# build the command to run in the machine
-CMD=$(cat<<EOS
-[ -z "\$(mount | grep working )" ] && \
-    (sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
-    rennes:\${HOME}/working \${HOME}/working)
+    echo "$run" > ${HOME}/working/${wdir}/run
 
-screen -dmS $(basename $wdir)
-screen -S $(basename $wdir) -X exec bash -c "\${HOME}/working/$wdir/run; bash"
-EOS
-)
+    chmod +x ${HOME}/working/${wdir}/run
 
-# execute the command within the machine
-ssh $node "$CMD"
+    # build the command to run in the machine
+    CMD="
+    [ -z \"\$(mount | grep working )\" ] && \
+        (sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
+        rennes:\${HOME}/working \${HOME}/working)
+
+    screen -dmS $(basename $wdir)
+    screen -S $(basename $wdir) -X exec bash -c \"\${HOME}/working/$wdir/run; bash\"
+    "
+
+    # execute the command within the machine
+    ssh $node "$CMD"
 
 }
 
