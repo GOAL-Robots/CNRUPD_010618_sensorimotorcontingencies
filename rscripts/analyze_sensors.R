@@ -99,7 +99,7 @@ for(idx in unique(means$INDEX))
     gp1 = gp1 + theme( 
                     text=element_text(size=11, family="Verdana"), 
                     axis.text.x = element_text(size=8, angle = 90, hjust = 1),
-                    axis.text.y = element_text(size=8),
+                    axis.text.y = element_text(size=10),
                     panel.border=element_blank(),
                     legend.title = element_blank(),
                     legend.background = element_blank(),
@@ -108,18 +108,19 @@ for(idx in unique(means$INDEX))
                     )
     
     basename = paste("gs_means",format(idx),sep="")
-    pdf(paste(
-        basename,".pdf",sep=""), 
-        width = 7, 
-        height = 3, 
-        family="Verdana")
-    print(gp1)
-    dev.off()
-    png(paste(
-        basename,".png",sep=""),  
-        width = 700, 
-        height = 300, 
-        family = "Verdana")
+    # pdf(paste(
+    #     basename,".pdf",sep=""), 
+    #     width = 7, 
+    #     height = 3, 
+    #     family="Verdana")
+    # print(gp1)
+    # dev.off()
+    bitmap(
+           type="png256",
+           paste(basename,".png",sep=""),  
+           width = 7, 
+           height = 3, 
+           family = "Verdana")
     print(gp1)
     dev.off()
     
@@ -147,18 +148,19 @@ for(idx in unique(means$INDEX))
                     )
     
     basename = paste("gs_means_goal",format(idx),sep="")
-    pdf(paste(
-        basename,".pdf",sep=""), 
-        width = 7, 
-        height = 7, 
-        family="Verdana")
-    print(gp2)
-    dev.off()
-    png(paste(
-        basename,".png",sep=""),  
-        width = 700, 
-        height = 700, 
-        family = "Verdana")
+    # pdf(paste(
+    #     basename,".pdf",sep=""), 
+    #     width = 7, 
+    #     height = 7, 
+    #     family="Verdana")
+    # print(gp2)
+    # dev.off()
+    bitmap(
+           type="png256",
+           paste(basename,".png",sep=""),  
+           width = 7, 
+           height = 7, 
+           family = "Verdana")
     print(gp2)
     dev.off()
     
