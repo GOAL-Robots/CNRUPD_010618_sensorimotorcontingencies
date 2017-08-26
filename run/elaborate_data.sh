@@ -133,6 +133,10 @@ cat << EOF > $TMP_DIR/plots.html
     <td><img src="gs_means_goal1.png"   width="100%"></td>
     <td></td>
   </tr>
+  <tr>
+    <td><img src="weights.png"   width="100%"></td>
+    <td><img src="positions.png"   width="100%"></td>
+  </tr>
 </table>
 
 </body>
@@ -155,12 +159,19 @@ run()
     cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
     cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
     cat $(find $DIR | grep log_weights) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
+    [[ -f "${DIR}/main_data/test/dumped_robot" ]] && (cp ${DIR}/main_data/test/dumped_robot dumped_robot)
 
     if [ $GRAPHS == true ]; then
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
         R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
+        
+        if [[ -f dumped_robot ]]; then
+            cd ${BASE}/simulation/src
+            python get_data.py -s $TMP_DIR         
+            cd $TMP_DIR
+        fi
 
         echo "convert images to png..."
         for f in *.pdf; do

@@ -93,11 +93,13 @@ cd ${HOME}
 
 # prepare working folder
 MAIN_DIR=$(echo $TEMPLATE | sed -e"s/\/simulation//")
-TMP_TEMPLATE=/tmp/$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
+TMP_TEMPLATE=/tmp/tmpl_$(basename $TEMPLATE)_$(date +%Y%m%d%H%M%S)
+echo "reading data from $MAIN_DIR ..."
 cp -r $TEMPLATE $TMP_TEMPLATE
-mkdir $TMP_TEMPLATE/store
-mkdir $TMP_TEMPLATE/test
+mkdir -p $TMP_TEMPLATE/store
+mkdir -p $TMP_TEMPLATE/test
 TEMPLATE=$TMP_TEMPLATE
+
 
 # prepare parameters
 if [ $PARAMS == true ] && [ -z "$PARAMFILE" ]; then

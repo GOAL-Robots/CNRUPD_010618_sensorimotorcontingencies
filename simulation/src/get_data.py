@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import matplotlib
+matplotlib.use('agg')
 
 import os
 import sys
@@ -50,10 +52,9 @@ def main(args):
         for x in rng:
             plt.plot([-0.5,99.5], [y,y], color="black")
             plt.plot([x,x], [-0.5,99.5], color="black")
+    plt.savefig(SDIR+"/weights.png")        
             
-            
-    plt.figure()
-    
+    plt.figure() 
     act = KinematicActuator()
     for idx,pos in simulation.gs.target_position.iteritems():
         plt.subplot(5,5,idx+1, aspect="equal")
@@ -62,11 +63,8 @@ def main(args):
         plt.scatter(*positions.T, s=10)
         plt.xlim([-4,4])
         plt.ylim([-.1,3])
-        plt.axis("off")
-
-    
-    plt.show()        
-
+        plt.axis("off") 
+    plt.savefig(SDIR+"/positions.png")        
 
 if __name__ == "__main__" :
 
