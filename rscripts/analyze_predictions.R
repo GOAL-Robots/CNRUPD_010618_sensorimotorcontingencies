@@ -196,3 +196,28 @@ dev.off()
 # print(gp1)
 # dev.off()
 
+ts = all_predictions$TIMESTEPS
+l = as.integer(length(ts)*(3/20))
+ts = ts[seq(1, l, length.out = 10)]
+m = subset(predictions, TIMESTEPS %in% ts)
+m$r=(strtoi(sub("G","", m$GOAL))-1)%%5
+m$c=(strtoi(sub("G","", m$GOAL))-1)%/%5
+
+for(row in 1:length(ts))
+{
+    data = subset(m, TIMESTEPS == ts[row])
+    gp = ggplot(data)
+    gp = gp + geom_rect(
+        aes(
+            xmin = c - 0.4 * prediction,
+            xmax = c + 0.4 * prediction,
+            ymin = r - 0.4 * prediction,
+            ymax = r + 0.4 * prediction),
+        fill="black"
+        )
+    
+    gp = gp + scale_x_continuous(limits = c(-1,5), breaks=0:4)
+    gp = gp + scale_y_continuous(limits = c(-1,5), breaks=0:4)
+    gp = gp + ggtitle(ts[row])
+    print(gp)
+}
