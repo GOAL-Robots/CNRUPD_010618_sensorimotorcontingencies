@@ -166,6 +166,8 @@ run()
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
         R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
+        R CMD BATCH ${BASE}/rscripts/analyze_weights.R 
+        R CMD BATCH ${BASE}/rscripts/analyze_pred_history.R 
         
         if [[ -f dumped_robot ]]; then
             cd ${BASE}/simulation/src

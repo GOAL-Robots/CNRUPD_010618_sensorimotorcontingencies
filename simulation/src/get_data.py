@@ -56,7 +56,7 @@ def main(args):
             positions
             )) )
     pos_db = np.vstack(pos_db)
-    np.savetxt(SDIR+"/positions", weights)
+    np.savetxt(SDIR+"/positions", pos_db)
 
     plt.figure()
     rng = np.linspace(-0.5, 99.5, 6)
