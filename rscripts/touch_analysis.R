@@ -8,7 +8,7 @@ require(gtable)
 require(gridExtra)
 
 
-toInstall <- c("extrafont", "ggplot2", "grid","gtable","gridextra", "data.table", "cowplot")
+toInstall <- c("extrafont", "ggplot2", "grid","gtable","gridExtra", "data.table", "cowplot")
 for(pkg in toInstall)
 {
     if(!require(pkg, character.only=TRUE) )

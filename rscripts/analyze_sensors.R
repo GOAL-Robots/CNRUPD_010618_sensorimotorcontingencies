@@ -108,13 +108,13 @@ for(idx in unique(means$INDEX))
                     )
     
     basename = paste("gs_means",format(idx),sep="")
-    # pdf(paste(
-    #     basename,".pdf",sep=""), 
-    #     width = 7, 
-    #     height = 3, 
-    #     family="Verdana")
-    # print(gp1)
-    # dev.off()
+    pdf(paste(
+        basename,".pdf",sep=""),
+        width = 7,
+        height = 3,
+        family="Verdana")
+    print(gp1)
+    dev.off()
     bitmap(
            type="png256",
            paste(basename,".png",sep=""),  
@@ -148,13 +148,13 @@ for(idx in unique(means$INDEX))
                     )
     
     basename = paste("gs_means_goal",format(idx),sep="")
-    # pdf(paste(
-    #     basename,".pdf",sep=""), 
-    #     width = 7, 
-    #     height = 7, 
-    #     family="Verdana")
-    # print(gp2)
-    # dev.off()
+    pdf(paste(
+        basename,".pdf",sep=""),
+        width = 7,
+        height = 7,
+        family="Verdana")
+    print(gp2)
+    dev.off()
     bitmap(
            type="png256",
            paste(basename,".png",sep=""),  

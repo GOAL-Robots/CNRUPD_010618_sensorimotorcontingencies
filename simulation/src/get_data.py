@@ -41,13 +41,26 @@ def main(args):
     # --------------------------------------------------------
     
     weights = simulation.gm.goalrep_som.inp2out_w
-    weights = reshape_weights(weights)
-    np.savetxt("weights", weights)
+    np.savetxt(SDIR+"/weights", weights)
 
+    weights = reshape_weights(weights)
+    weights = weights[::-1].T[::-1]
+        
+    act = KinematicActuator()
+    pos_db = []
+    for idx, pos in simulation.gs.target_position.iteritems():
+        positions = angles2positions([pos], act)[0]
+        pos_db.append(
+            np.hstack((
+            np.ones([len(positions), 1]) * idx,
+            positions
+            )) )
+    pos_db = np.vstack(pos_db)
+    np.savetxt(SDIR+"/positions", weights)
 
     plt.figure()
     rng = np.linspace(-0.5, 99.5, 6)
-    plt.imshow(weights[::-1].T[::-1], aspect="auto", cmap=plt.cm.binary)
+    plt.imshow(weights, aspect="auto", cmap=plt.cm.binary)
     for y in rng:
         for x in rng:
             plt.plot([-0.5,99.5], [y,y], color="black")
@@ -55,10 +68,9 @@ def main(args):
     plt.savefig(SDIR+"/weights.png")        
             
     plt.figure() 
-    act = KinematicActuator()
     for idx,pos in simulation.gs.target_position.iteritems():
         plt.subplot(5,5,idx+1, aspect="equal")
-        positions = angles2positions([pos], act)[0]
+        positions = pos_db[pos_db[:,0] == idx,1:]
         plt.plot(*positions.T)
         plt.scatter(*positions.T, s=10)
         plt.xlim([-4,4])

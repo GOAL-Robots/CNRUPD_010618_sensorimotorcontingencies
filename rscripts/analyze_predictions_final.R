@@ -17,9 +17,7 @@ if (!("Verdana" %in% fonts()) )
     font_import()
     loadfonts()
 }
-    
 
-library(extrafont)
 
 ###############################################################################################################################
 
@@ -27,24 +25,37 @@ sem<-function(x) sd(x)/sqrt(length(x))
 
 ###############################################################################################################################
 
+which_dec_scale <- function(x)
+{
+    scales = 10^seq(1,10)
+    x_scaled = x/scales
+    test_scales = x_scaled <10 & x_scaled >1 
+    
+    scales[which(test_scales == TRUE)]
+}
+
+TS_ALL = 120e+3
+TS_GAP =  20e+3
+
+
+
 
 all_predictions <- fread("all_predictions")
 N_GOALS = dim(all_predictions)[2] - 4 
 names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
-
 
 all_weights <- fread("all_weights")
 names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
 TS = max(all_weights$TIMESTEPS)
 scale = which_dec_scale(TS)
 trials = 1:length(all_weights$TIMESTEPS)
-tlbrk = trials[trials%%(scale/200) == 0]
+tlbrk = trials[trials%%(scale/400) == 0]
 tsbrk = all_weights$TIMESTEPS[tlbrk]
 TSS = 1:TS
 tslbrk = TSS[TSS%%(scale)==0]
-tlbrk_medium = trials[trials%%1000 == 0]
+tlbrk_medium = trials[trials%%500 == 0]
 tsbrk_medium = all_weights$TIMESTEPS[tlbrk_medium]
-tlbrk_dense = trials[trials%%500 == 0]
+tlbrk_dense = trials[trials%%100 == 0]
 tsbrk_dense = all_weights$TIMESTEPS[tlbrk_dense]
 
 predictions = melt(all_predictions, 
@@ -75,14 +86,13 @@ means = means[,
 means$th = 1
 TYPES=length(unique(sort(means$LEARNING_TYPE)))
 
-pdf("means.pdf")
 gp = ggplot(means, aes(x = TIMESTEPS, y = p_mean, group = LEARNING_TYPE))
 gp = gp + geom_ribbon(aes(ymin = p_min, ymax = p_max), 
                       colour = "#666666", fill = "#dddddd")
 gp = gp + geom_ribbon(aes(ymin = pmax(0, p_mean - p_sd), ymax = pmin(1,p_mean + p_sd)),
                       colour = "#666666", fill = "#bbbbbb")
 gp = gp + geom_line(size = 1.5, colour = "#000000")
-gp = gp + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
+gzp = gp + geom_line(aes(x = TIMESTEPS, y = th), inherit.aes = FALSE, show.legend = F )
 gp = gp + xlab("Timesteps") 
 gp = gp + ylab("Means of goal predictions") 
 gp = gp + theme_bw() 
@@ -96,6 +106,8 @@ gp = gp + theme(
                 panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank()
                 )
+
+pdf("means.pdf")
 print(gp)
 dev.off()
 
@@ -119,7 +131,8 @@ g_means = g_means[,
                      TIMESTEPS )]
 
 g_means$th = 1
-pdf("g_means.pdf")
+
+TS = max(means$TIMESTEPS)
 gp0 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean, group = GOAL, colour = GOAL))
 gp0 = gp0 + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.05 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
@@ -143,10 +156,11 @@ gp0 = gp0 + theme(
                 panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank()
                 )
+pdf("g_means.pdf")
 print(gp0)
 dev.off()
 
-TS = 1.4e6
+TS = TS_ALL
 gp1 = ggplot(g_means, aes(x = TIMESTEPS, y = p_mean))
 gp1 = gp1 + geom_point(data=all_predictions, 
                      aes(x = TIMESTEPS, y = 1.2 + 0.4*(CURR_GOAL)/max(N_GOALS)), 
@@ -193,7 +207,7 @@ svg("means_all.svg", width=7, height=3)
 print(gp1)
 dev.off()
 
-TS_SEC = 150000
+TS_SEC = TS_GAP
 first_g_means = subset(g_means, TIMESTEPS < TS_SEC)
 first_predictions = subset(all_predictions, TIMESTEPS < TS_SEC)
 first_means = subset(means, TIMESTEPS < TS_SEC)
@@ -222,7 +236,6 @@ gp2 = gp2 + scale_x_continuous(limits=c(0, TS_SEC),
                                                    labels = tslbrk))
 gp2 = gp2 + xlab("Trials") 
 gp2 = gp2 + ylab("") 
-#gp2 = gp2 + ylab("Means of goal predictions") 
 gp2 = gp2 + theme_bw() 
 
 if(TYPES>1) gp2 = gp2 + facet_grid(LEARNING_TYPE~.)
@@ -247,8 +260,8 @@ dev.off()
 
 
 
-TS_SEC2 = 150000
-START = 1.1e6
+TS_SEC2 = TS_GAP
+START = TS_ALL -TS_GAP*3/2
 first_g_means = subset(g_means, TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2  )
 first_predictions = subset(all_predictions, TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
 first_means = subset(means,  TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
@@ -269,8 +282,8 @@ gp3 = gp3 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1),
                                labels=c("0.0","0.5","1.5"))
 
 gp3 = gp3 + scale_x_continuous(limits=c(START, START+TS_SEC2), 
-                               breaks=tsbrk_medium, 
-                               labels=tlbrk_medium, 
+                               breaks=tsbrk_dense, 
+                               labels=tlbrk_dense, 
                                sec.axis = sec_axis(~., 
                                                    name = "Timesteps", 
                                                    breaks = tslbrk, 
