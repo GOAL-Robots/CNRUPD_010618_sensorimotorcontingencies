@@ -162,6 +162,12 @@ run()
     [[ -f "${DIR}/main_data/test/dumped_robot" ]] && (cp ${DIR}/main_data/test/dumped_robot dumped_robot)
 
     if [ $GRAPHS == true ]; then
+        if [[ -f dumped_robot ]]; then
+            cd ${BASE}/simulation/src
+            python get_data.py -s $TMP_DIR         
+            cd $TMP_DIR
+        fi
+    
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
@@ -169,11 +175,7 @@ run()
         R CMD BATCH ${BASE}/rscripts/analyze_weights.R 
         R CMD BATCH ${BASE}/rscripts/analyze_pred_history.R 
         
-        if [[ -f dumped_robot ]]; then
-            cd ${BASE}/simulation/src
-            python get_data.py -s $TMP_DIR         
-            cd $TMP_DIR
-        fi
+
 
         echo "convert images to png..."
         for f in *.pdf; do

@@ -100,7 +100,7 @@ for(row in 1:rows)
 
 }
 
-pdf("weights.pdf", width=6, height=6)
+pdf("weights_grid.pdf", width=6, height=6)
 p = grid.arrange(grobs = grbs, nrow=5, ncol=5, 
              layout_matrix=matrix(1:rows,rgoals,rgoals))
 dev.off()
@@ -143,7 +143,7 @@ for (row in 1:rows)
     grbs[[row]] = ggplotGrob(gp)
 }
 
-pdf("positions.pdf", width=6, height=6)
+pdf("positions_grid.pdf", width=6, height=6)
 p = grid.arrange(grobs = grbs, nrow=5, ncol=5,
                  layout_matrix=matrix(1:rows,rgoals,rgoals))
 dev.off()
