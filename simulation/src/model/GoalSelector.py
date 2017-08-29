@@ -379,7 +379,12 @@ class GoalSelector(object):
 
         self.t += 1
 
-    def learn(self):
+    def learn(self, comp):
+        '''
+        
+        :param comp: motivation
+        :type comp: float
+        '''
 
         goalwin_idx = self.goal_index()
 
@@ -390,7 +395,7 @@ class GoalSelector(object):
                 target = self.target_position[goalwin_idx]
                 x = self.inp
                 y = self.tout
-                eta = self.ETA
+                eta = self.ETA*comp
                 w = self.curr_echo2out_w
                 w += eta * np.outer((1 - y**2) * (target - y), x)
         #------------------------------------------------

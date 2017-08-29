@@ -5,13 +5,14 @@ simulation_im_decay = 0.2
 simulation_competence_improvement_prop = 1.0
 simulation_incompetence_prop = 0.0
 
-
 body_simulator_pixels = [20, 20]
 body_simulator_lims = [[-5, 5], [-2, 4.]]
 body_simulator_touch_th = 0.1
-body_simulator_num_touch_sensors = 12
+body_simulator_num_touch_sensors = 30
 body_simulator_touch_sigma = 0.15
 body_simulator_actuator_NUMBER_OF_JOINTS = 3
+body_simulator_substeps = 20
+body_simulator_substep_min_angle = np.pi
 
 pm_proprioceptive_retina_sigma = 0.1
 pm_touch_retina_sigma = 0.1
@@ -38,13 +39,13 @@ ka_right_lims = [
 assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
 
-GOAL_NUMBER = 9 
+GOAL_NUMBER = 25
 
 gs_dt = 0.001
 gs_tau = 0.04
 gs_alpha = 0.04
 gs_epsilon = 1.0e-10
-gs_eta = 0.1
+gs_eta = 20.0
 gs_n_input = body_simulator_pixels[0]*body_simulator_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 200
@@ -116,3 +117,4 @@ gm_goalrep_neigh_scale = 0.6
 gm_goalrep_neigh_decay_scale = 1.0e400
 gm_goalrep_neigh_bl = 0.01
 gm_goalrep_weight_bl = 0.001
+

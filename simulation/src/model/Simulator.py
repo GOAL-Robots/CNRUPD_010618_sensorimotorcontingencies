@@ -9,6 +9,7 @@ from gauss_utils import clipped_exp
 from gauss_utils import TwoDimensionalGaussianMaker as GM
 import kinematics as KM
 
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -615,12 +616,13 @@ class BodySimulator(object):
         self.rarm_angles_target = rarm_angles_target
 
         self.single_step_forward()
- 
+        
         # compute collisions
         self.autocollision, curr_chain = self.collisionManager.manage_collisions(
             prev_chain=np.vstack(self.prev_body_tokens),
             curr_chain=np.vstack(self.curr_body_tokens), 
-            substeps=15.0, min_distance=np.pi/4.0,
+            substeps=body_simulator_substeps, 
+            min_distance=body_simulator_substep_min_angle,
             move_back_fun=self.Single_step_backward(
                 actuator=self.actuator,
                 larm_angles=self.larm_angles,
@@ -633,7 +635,7 @@ class BodySimulator(object):
         larm = curr_chain[:(self.actuator.NUMBER_OF_JOINTS + 1)]
         rarm = curr_chain[(self.actuator.NUMBER_OF_JOINTS + 1):]
         self.actuator.set_angles_basedon_positions(larm, rarm) 
-         
+        
         #######################################################################
 
         # VISUAL POSITION
