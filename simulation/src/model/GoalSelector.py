@@ -395,7 +395,7 @@ class GoalSelector(object):
                 target = self.target_position[goalwin_idx]
                 x = self.inp
                 y = self.tout
-                eta = self.ETA*comp
+                eta = self.ETA * comp
                 w = self.curr_echo2out_w
                 w += eta * np.outer((1 - y**2) * (target - y), x)
         #------------------------------------------------

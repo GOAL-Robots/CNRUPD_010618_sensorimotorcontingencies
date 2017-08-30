@@ -19,11 +19,11 @@ declare -a dirs=(sm_singleecho_25g_p1 sm_singleecho_25g_p2)
 declare -a params
 params[0]="
 simulation_im_decay = 0.2
-body_simulator_touch_sigma = 0.1
+body_simulator_touch_sigma = 0.2
 body_simulator_num_touch_sensors = 30
 gs_eta = 4.0
 gs_n_echo_units = 200
-gs_match_decay = 0.95
+gs_match_decay = 0.9
 gs_sm_temp = 0.01
 gs_goal_window = 100
 gs_goal_learn_start = 10
@@ -35,16 +35,17 @@ gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
 GOAL_NUMBER = 25
+body_simulator_touch_grow = False
 HERE_PARAMS
 "
 
 params[1]="
 simulation_im_decay = 0.2
-body_simulator_touch_sigma = 0.1
+body_simulator_touch_sigma = 0.2
 body_simulator_num_touch_sensors = 30
 gs_eta = 4.0
 gs_n_echo_units = 200
-gs_match_decay = 0.99
+gs_match_decay = 0.9
 gs_sm_temp = 0.01
 gs_goal_window = 100
 gs_goal_learn_start = 10
@@ -56,6 +57,7 @@ gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
 GOAL_NUMBER = 25
+body_simulator_touch_grow = True
 HERE_PARAMS
 "
 

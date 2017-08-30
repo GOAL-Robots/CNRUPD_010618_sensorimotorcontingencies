@@ -9,10 +9,11 @@ body_simulator_pixels = [20, 20]
 body_simulator_lims = [[-5, 5], [-2, 4.]]
 body_simulator_touch_th = 0.1
 body_simulator_num_touch_sensors = 30
-body_simulator_touch_sigma = 0.15
+body_simulator_touch_sigma = 0.5
 body_simulator_actuator_NUMBER_OF_JOINTS = 3
-body_simulator_substeps = 20
-body_simulator_substep_min_angle = np.pi
+body_simulator_substeps = 10
+body_simulator_substep_min_angle = np.pi/4.0
+body_simulator_touch_grow = False
 
 pm_proprioceptive_retina_sigma = 0.1
 pm_touch_retina_sigma = 0.1
@@ -24,17 +25,17 @@ pm_image_resolution = 12
 ka_num_joints = body_simulator_actuator_NUMBER_OF_JOINTS
 ka_left_origin = [-1.5, 0.0]
 ka_left_lims = [
-        [0, 1.2*np.pi],    # first joint limits
-        [0, 1.3*np.pi],    # second joint limits
-        [0, 1.3*np.pi]     # third joint limits
+        [0, 1.3*np.pi],    # first joint limits
+        [0, 1.1*np.pi],    # second joint limits
+        [0, 1.*np.pi]     # third joint limits
         ]
 assert(len(ka_left_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
 ka_right_origin = [1.5, 0.0]
 ka_right_lims = [
-        [0, 1.2*np.pi],    # first joint limits
-        [0, 1.3*np.pi],    # second joint limits
-        [0, 1.3*np.pi]     # third joint limits
+        [0, 1.3*np.pi],    # first joint limits
+        [0, 1.1*np.pi],    # second joint limits
+        [0, 1.*np.pi]     # third joint limits
         ]
 assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
@@ -45,14 +46,14 @@ gs_dt = 0.001
 gs_tau = 0.04
 gs_alpha = 0.04
 gs_epsilon = 1.0e-10
-gs_eta = 20.0
+gs_eta = 4.0
 gs_n_input = body_simulator_pixels[0]*body_simulator_pixels[1]
 gs_n_goal_units = GOAL_NUMBER
 gs_n_echo_units = 200
 gs_n_rout_units = body_simulator_actuator_NUMBER_OF_JOINTS*2
-gs_match_decay = 0.5
+gs_match_decay = 0.9
 gs_noise = 1.0
-gs_noise_scale = 18.0
+gs_noise_scale = 30.0
 gs_sm_temp = 0.01
 gs_g2e_spars = 0.01
 gs_echo_ampl = 5.0
@@ -61,7 +62,7 @@ gs_goal_learn_start = 10
 gs_reset_window = 10
 gs_multiple_echo = False
 
-gp_eta = 0.35
+gp_eta = 0.4
 
 robot_stime = 10000
 

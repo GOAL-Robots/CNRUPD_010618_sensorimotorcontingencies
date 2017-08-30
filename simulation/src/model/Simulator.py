@@ -630,11 +630,21 @@ class BodySimulator(object):
                 larm_delta_angles=self.larm_delta_angles,
                 rarm_delta_angles=self.rarm_delta_angles))
   
-        chain = KM.Polychain()
-  
+    
         larm = curr_chain[:(self.actuator.NUMBER_OF_JOINTS + 1)]
         rarm = curr_chain[(self.actuator.NUMBER_OF_JOINTS + 1):]
         self.actuator.set_angles_basedon_positions(larm, rarm) 
+        
+        if self.autocollision:
+            if any(self.actuator.angles_l>0): 
+                self.larm_angles = self.actuator.angles_l
+            else:
+                self.larm_angles = larm_angles
+            
+            if any(self.actuator.angles_r>0): 
+                self.rarm_angles = self.actuator.angles_r
+            else:
+                self.rarm_angles = rarm_angles
         
         #######################################################################
 

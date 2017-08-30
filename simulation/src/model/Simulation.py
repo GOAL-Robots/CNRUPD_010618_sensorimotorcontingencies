@@ -2,6 +2,12 @@ import numpy as np
 from model import *
 from model.GoalPredictor import match
 
+def linear(x, x_low, x_up, y_low = 0, y_up = 1):
+    
+    return  np.maximum(y_low, np.minimum(y_up, 
+        ((y_up - y_low) / (x_up - x_low)) * 
+        (x - x_low)))
+
 class Simulation(object) :
 
     def __init__(self) :
@@ -386,6 +392,12 @@ class Simulation(object) :
         ########################################################################
         ########################################################################
 
+        if body_simulator_touch_grow == True:
+            self.body_simulator.perc.touch_sigma = (
+                            body_simulator_touch_sigma * 0.99 *
+                            (1 - self.gp.w.mean()) + 
+                            body_simulator_touch_sigma * 0.001)
+
         # Simulation step
         collision = self.body_simulator.step(
                 larm_angles_unscaled = larm_angles,
@@ -426,7 +438,7 @@ class Simulation(object) :
 
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
-                self.gs.learn(comp = 1)
+                self.gs.learn(comp = 1.0)
 
             # update counters
 
