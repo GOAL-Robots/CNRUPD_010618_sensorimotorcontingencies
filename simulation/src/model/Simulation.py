@@ -426,7 +426,7 @@ class Simulation(object) :
 
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
-                self.gs.learn(comp = 1 - self.gp.getCurrPred())
+                self.gs.learn(comp = 1)
 
             # update counters
 
