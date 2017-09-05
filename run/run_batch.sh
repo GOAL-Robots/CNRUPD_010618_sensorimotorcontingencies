@@ -134,7 +134,7 @@ do
     tag=$(date +%Y%m%d%H%M%S)
     for f in $WORK_DIR/*;
     do
-        rm -fr $(find store|grep dump|sort|head -n -2)
+        rm -fr $(find store|grep dump|sort|head -n -6)
         cp $f store/"$(basename $f)-$tag"
     done
 

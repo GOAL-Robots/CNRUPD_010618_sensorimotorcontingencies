@@ -35,7 +35,7 @@ EOF
 
 CURR_DIR=$(pwd)
 TEMPLATE=${HOME}/working/sensorimotor-development/simulation
-TIMESTEPS=200000
+TIMESTEPS=20000
 ITER=1
 START=0
 DUMPED=false

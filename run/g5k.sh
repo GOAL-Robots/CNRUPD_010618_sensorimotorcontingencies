@@ -28,6 +28,7 @@ gs_sm_temp = 0.01
 gs_goal_window = 100
 gs_goal_learn_start = 10
 gs_reset_window = 10
+gs_eta_decay = False
 gs_multiple_echo = False
 gp_eta = 0.35
 gm_goalrep_lr = 0.25
@@ -50,6 +51,7 @@ gs_sm_temp = 0.01
 gs_goal_window = 100
 gs_goal_learn_start = 10
 gs_reset_window = 10
+gs_eta_decay = True
 gs_multiple_echo = False
 gp_eta = 0.35
 gm_goalrep_lr = 0.25
@@ -57,7 +59,7 @@ gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
 GOAL_NUMBER = 25
-body_simulator_touch_grow = True
+body_simulator_touch_grow = False
 HERE_PARAMS
 "
 
@@ -90,7 +92,7 @@ run_cmd()
 
     run="
     cd ~/working/$wdir
-    \${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 50000 -n 1000 -b -P params
+    \${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 20000 -n 1000 -b -P params
     "
 
     echo "$run" > ${HOME}/working/${wdir}/run
