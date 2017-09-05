@@ -60,6 +60,7 @@ gs_echo_ampl = 5.0
 gs_goal_window = 100
 gs_goal_learn_start = 10
 gs_reset_window = 10
+gs_eta_decay = False
 gs_multiple_echo = False
 
 gp_eta = 0.4
