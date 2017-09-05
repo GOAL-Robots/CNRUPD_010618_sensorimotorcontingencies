@@ -19,7 +19,7 @@ declare -a dirs=(sm_singleecho_25g_p1 sm_singleecho_25g_p2)
 declare -a params
 params[0]="
 simulation_im_decay = 0.2
-body_simulator_touch_sigma = 0.2
+body_simulator_touch_sigma = 0.05
 body_simulator_num_touch_sensors = 30
 gs_eta = 4.0
 gs_n_echo_units = 200
@@ -41,7 +41,7 @@ HERE_PARAMS
 
 params[1]="
 simulation_im_decay = 0.2
-body_simulator_touch_sigma = 0.2
+body_simulator_touch_sigma = 0.05
 body_simulator_num_touch_sensors = 30
 gs_eta = 4.0
 gs_n_echo_units = 200
