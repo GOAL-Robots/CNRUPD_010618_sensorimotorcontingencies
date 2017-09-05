@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# VERIFY sensorimotor
+[[ -z "$(cat ${HOME}/.grid_deploy/info | grep " sensorimotor_data ")" ]] && \
+    (echo "sensorimotor simulations not running" && exit 0)
+
 # CLEAR NON RUNNING SIMULATIOMS
 
 RUN_DIR=$(echo $0 | sed -e"s/\/$(basename $0)$//")
