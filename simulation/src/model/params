@@ -1,4 +1,6 @@
 simulation_im_decay = 0.2
+body_simulator_touch_sigma = 0.05
+body_simulator_num_touch_sensors = 30
 gs_eta = 4.0
 gs_n_echo_units = 200
 gs_match_decay = 0.9
@@ -13,7 +15,5 @@ gm_goalrep_lr = 0.25
 gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
-body_simulator_touch_sigma = 0.05
-body_simulator_num_touch_sensors = 12
+GOAL_NUMBER = 25
 body_simulator_touch_grow = False
-GOAL_NUMBER = 9

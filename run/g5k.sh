@@ -66,10 +66,10 @@ rm -fr log_resources
 ${HOME}/g5kutils/autodeploy.sh -c $MIN_CORES -n $N_MACHINES -r $MIN_RAM -w $WALLTIME -l $LABEL 
 
 # exit if no resources 
-[[ -z $(cat $GRID_INFO|grep "\<$LABEL\>" | grep deploy) ]] && echo "no deployment made." && exit 1 
+[[ -z $(cat $GRID_INFO|grep " $LABEL " | grep deploy) ]] && echo "no deployment made." && exit 1 
 
 # get job_id
-JOB_ID=$(cat $GRID_INFO|grep  "\<${LABEL}\>" | awk '{print $2}')
+JOB_ID=$(cat $GRID_INFO|grep  " $LABEL " | awk '{print $2}')
 
 # save it in log dir
 echo -n ''> ${HOME}/.sensorimotor/$JOB_ID
