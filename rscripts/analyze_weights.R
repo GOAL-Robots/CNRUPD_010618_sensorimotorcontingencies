@@ -94,18 +94,18 @@ for(row in 1:rows)
         axis.title.y = element_blank(), 
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        panel.border = element_blank(),
+        #panel.border = element_blank(),
         legend.title = element_blank(),
         legend.background = element_blank(),
         panel.grid.major = element_blank(),
-        plot.margin = unit(c(.0,.0,.0,.0), "in"),
+        plot.margin = unit(c(.1,.1,.0,.0), "in"),
         panel.grid.minor = element_blank()
     )
     grbs[[row]] = ggplotGrob(gp)
 
 }
 
-pdf("weights_grid.pdf", width=6, height=6)
+pdf("weights_grid.pdf", width=6, height=6*0.55)
 p = grid.arrange(grobs = grbs, nrow=5, ncol=5, 
              layout_matrix=matrix(1:rows,rgoals,rgoals))
 dev.off()
@@ -138,7 +138,7 @@ for (row in 1:rows)
         axis.title.y = element_blank(),
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        panel.border = element_blank(),
+        #panel.border = element_blank(),
         legend.title = element_blank(),
         legend.background = element_blank(),
         panel.grid.major = element_blank(),
@@ -148,7 +148,7 @@ for (row in 1:rows)
     grbs[[row]] = ggplotGrob(gp)
 }
 
-pdf("positions_grid.pdf", width=6, height=6)
-p = grid.arrange(grobs = grbs, nrow=5, ncol=5,
+pdf("positions_grid.pdf", width=6, height=6*0.5571429)
+p = grid.arrange(grobs = grbs, nrow=5, ncol=5, 
                  layout_matrix=matrix(1:rows,rgoals,rgoals))
 dev.off()

@@ -157,23 +157,22 @@ fi
 run()
 {
     
-    cd $CURR
-    TMP_DIR=$(mktemp -d)
-
+    TMP_DIR="$(mktemp -d)"
+    cd $TMP_DIR
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
     cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
     cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
     cat $(find $DIR | grep log_weights) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
     [[ -f "${DIR}/main_data/test/dumped_robot" ]] && (cp ${DIR}/main_data/test/dumped_robot $TMP_DIR/dumped_robot)
-
+    
     if [ $GRAPHS == true ]; then
         if [[ -f dumped_robot ]]; then
             cd ${BASE}/simulation/src
-            python get_data.py -s $TMP_DIR         
-            cd $TMP_DIR
+            python get_data.py -s $TMP_DIR &> get_data_log        
+            cd -
         fi
-    
+        
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
@@ -181,8 +180,6 @@ run()
         R CMD BATCH ${BASE}/rscripts/analyze_weights.R 
         R CMD BATCH ${BASE}/rscripts/analyze_pred_history.R 
         
-
-
         echo "convert images to png..."
         for f in *.pdf; do
             convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
