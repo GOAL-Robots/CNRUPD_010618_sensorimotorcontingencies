@@ -1,4 +1,4 @@
-toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot", "grid")
+toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot", "grid", "gridExtra")
 for(pkg in toInstall)
 {
     if(!require(pkg, character.only=TRUE) )
@@ -9,6 +9,7 @@ for(pkg in toInstall)
 
 require(data.table)
 require(ggplot2)
+require(gridExtra)
 require(cowplot)
 library(extrafont)
 

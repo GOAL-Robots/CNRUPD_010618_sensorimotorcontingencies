@@ -19,7 +19,7 @@ This script builds the online plots
 
 OPTIONS:
 echo $DIR
-echo $TMP_DIR
+echo $LOCAL_DIR
 exit
    -d --dir PATH    where to find data
    -g --graph       make graphs   
@@ -99,18 +99,18 @@ BASE=$(manage_path $BASE)
 DIR=$(manage_path $DIR)
 
 CURR=$(pwd)
-TMP_DIR=/tmp/$(basename "$DIR")_plots
-[ $LOCAL == true ] && TMP_DIR=$CURR
+LOCAL_DIR=/tmp/$(basename "$DIR")_plots
+[ $LOCAL == true ] && LOCAL_DIR=$CURR
 
-[ ! -d "$TMP_DIR" ] && mkdir $TMP_DIR
-rm -fr $TMP_DIR/*
+[ ! -d "$LOCAL_DIR" ] && mkdir $LOCAL_DIR
+rm -fr $LOCAL_DIR/*
 
 echo "data dir: $DIR"
 echo "source dir: $BASE"
-echo "out dir: $TMP_DIR"
+echo "out dir: $LOCAL_DIR"
 if [ $GRAPHS == true ]; then
 
-cat << EOF > $TMP_DIR/plots.html
+cat << EOF > $LOCAL_DIR/plots.html
 <!DOCTYPE html>
 <html>
 <head>
@@ -135,7 +135,11 @@ cat << EOF > $TMP_DIR/plots.html
   </tr>
   <tr>
     <td><img src="weights.png"   width="100%"></td>
-    <td><img src="positions.png"   width="100%"></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><img src="weights_grid.png"   width="100%"></td>
+    <td><img src="positions_grid.png"   width="100%"></td>
   </tr>
 </table>
 
@@ -146,20 +150,22 @@ EOF
 fi
 
 if [ $WWW == true ] && [ $GRAPHS == true ]; then
-    x-www-browser $TMP_DIR/plots.html &
+    x-www-browser $LOCAL_DIR/plots.html &
     sleep 2
 fi
 
 run()
 {
-    cd $TMP_DIR
+    
+    cd $CURR
+    TMP_DIR=$(mktemp -d)
 
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
     cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
     cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
     cat $(find $DIR | grep log_weights) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
-    [[ -f "${DIR}/main_data/test/dumped_robot" ]] && (cp ${DIR}/main_data/test/dumped_robot dumped_robot)
+    [[ -f "${DIR}/main_data/test/dumped_robot" ]] && (cp ${DIR}/main_data/test/dumped_robot $TMP_DIR/dumped_robot)
 
     if [ $GRAPHS == true ]; then
         if [[ -f dumped_robot ]]; then
@@ -183,6 +189,10 @@ run()
         done
         echo "done"
     fi
+
+    cp $TMP_DIR/* $LOCAL_DIR
+    rm -fr $TMP_DIR
+    cd $CURR
 }
 
 run
