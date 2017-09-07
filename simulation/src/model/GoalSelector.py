@@ -25,7 +25,7 @@ def my_argwhere(x):
 
 
 class Oscillator(object):
-    def __init__(self, scale, freqs):
+    def __init__(self, scale, freqs, res = None):
         '''
         :param scale: scaling factor for the frequency
         :type scale: float
@@ -36,41 +36,29 @@ class Oscillator(object):
 
         self.scale = scale
         self.freqs = np.array(freqs)
-        self.trajectories_num = freqs.size
+        self.trajectories_num = self.freqs.size  
+        
         self.t = 0
+
+        self.res = 0 if res is None else res
 
     def __call__(self):
         """ Calls an oscillator's step
 
         :return: the current angles after one step
-        :rtype: numpy.array(trajectories_num, dtype=float)s
+        :rtype: numpy.array(trajectories_num, dtype=float)
         """
         
-        res = -(np.sin(2.0 * np.pi * self.freqs * self.t / 
+        self.res += -0.3*(np.sin(2.0 * np.pi * self.freqs * self.t / 
                        self.scale + np.pi)) * 0.5
-
+        self.res = np.tanh(self.res)
         self.t += 1
 
-        return res
+        return self.res
 
     def reset(self):
 
         self.t = 0
-
-
-def oscllator(x, scale, freqs):
-    '''
-    :param  x       list of timesteps
-    :param  scale   scaling factor for the frequency
-    :param  freqs   list of frequencies (one for each trjectory)
-    '''
-
-    x = np.array(x)  # timeseries
-    trajectories_num = freqs.size
-    freqs = np.array(freqs)
-    x = np.outer(x, np.ones(trajectories_num))
-
-    return (np.cos(2.0 * np.pi * freqs * x / scale + np.pi) + 1.0) * 0.5
 
 
 class GoalSelector(object):
@@ -213,9 +201,9 @@ class GoalSelector(object):
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
     
-    def reset_oscillator(self):
+    def reset_oscillator(self, pos=None):
         self.random_oscil = self.rng.rand(self.N_ROUT_UNITS)
-        self.oscillator = Oscillator(self.scale, self.random_oscil)
+        self.oscillator = Oscillator(self.scale, self.random_oscil, pos)
 
     def goal_index(self):
 
@@ -360,8 +348,6 @@ class GoalSelector(object):
                 inp,
                 self.goal_selection_vec * self.is_goal_selected
             )))
-
-        goalwin_idx = self.goal_index()
 
         echo_inp = (inp2echo_inp +  goal2echo_inp)
         self.curr_echonet.step(self.ECHO_AMPL * echo_inp)
