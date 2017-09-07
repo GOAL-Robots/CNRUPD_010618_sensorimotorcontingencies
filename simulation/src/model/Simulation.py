@@ -10,7 +10,12 @@ def linear(x, x_low, x_up, y_low = 0, y_up = 1):
 
 class Simulation(object) :
 
-    def __init__(self) :
+    def __init__(self, rng = None) :
+        
+        self.rng = rng
+        if rng is None:
+            self.seed = np.fromstring(os.urandom(4), dtype=np.uint32)[0]
+            self.rng = np.random.RandomState(self.seed) 
 
         self.GOAL_NUMBER = GOAL_NUMBER
 
@@ -41,7 +46,8 @@ class Simulation(object) :
                 goal_window = gs_goal_window,
                 goal_learn_start = gs_goal_learn_start,
                 reset_window = gs_reset_window,
-                multiple_echo = gs_multiple_echo
+                multiple_echo = gs_multiple_echo,
+                rng = self.rng
                 )
 
         self.gp = GoalPredictor(
@@ -338,6 +344,7 @@ class Simulation(object) :
 
     def step(self) :
 
+        print self.gp.w
         self.timestep += 1
 
         self.gm_input = np.zeros([3, self.body_simulator.pixels[0] *

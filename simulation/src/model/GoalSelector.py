@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import numpy as np
 from model.esn import ESN
 import model.kinematics as KM
@@ -79,7 +79,7 @@ class GoalSelector(object):
                  n_goal_units, n_echo_units, n_rout_units,
                  match_decay, noise, scale, sm_temp, g2e_spars,
                  goal_window, goal_learn_start, reset_window, echo_ampl=1000,
-                 multiple_echo=True):
+                 multiple_echo=True, rng=None):
         '''
         :param dt: integration time of the ESN
         :param tau: decay of the ESN
@@ -100,7 +100,13 @@ class GoalSelector(object):
         :param reset_window: duration of reset
         :param echo_ampl: amplitude of the input to the echo-state
         :param multiple_echo: if True each goal calls its own esn
+        :param rng: random number generator object (np.random.RandomState)
         '''
+
+        self.rng = rng
+        if rng is None:
+            self.seed = np.fromstring(os.urandom(4), dtype=np.uint32)[0]
+            self.rng = np.random.RandomState(self.seed) 
 
         self.DT = dt
         self.TAU = tau
@@ -135,7 +141,8 @@ class GoalSelector(object):
                 tau=self.TAU,
                 alpha=self.ALPHA,
                 beta=1 - self.ALPHA,
-                epsilon=self.EPSILON
+                epsilon=self.EPSILON,
+                rng=self.rng
             ) for x in xrange(self.N_GOAL_UNITS + 1)]
 
         #----------------------------------------------------
@@ -147,15 +154,15 @@ class GoalSelector(object):
         rows = self.N_ECHO_UNITS
         self.INP2ECHO_W = np.zeros([rows, cols])
 
-        # set all weights to random values
-        self.INP2ECHO_W[:esn_input_units, :] = \
-            0.0*np.random.randn(esn_input_units,
-                            self.N_INPUT + self.N_GOAL_UNITS)
-
-        # weights are sparse, set all other weights to zero
-        self.INP2ECHO_W[:esn_input_units, :] *= \
-            (np.random.rand(esn_input_units,
-                            self.N_INPUT + self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
+        # # set all weights to random values
+        # self.INP2ECHO_W[:esn_input_units, :] = \
+        #     0.0*self.rng.randn(esn_input_units,
+        #                     self.N_INPUT + self.N_GOAL_UNITS)
+        # 
+        # # weights are sparse, set all other weights to zero
+        # self.INP2ECHO_W[:esn_input_units, :] *= \
+        #     (self.rng.rand(esn_input_units,
+        #                     self.N_INPUT + self.N_GOAL_UNITS) < self.GOAL2ECHO_SPARSENESS)
 
         #----------------------------------------------------
         # goal_layer -> ESN
@@ -186,7 +193,7 @@ class GoalSelector(object):
         # ESN readouts
 
         self.echo2out_w = [
-            0.1 * np.random.randn(self.N_ROUT_UNITS,
+            0.1 * self.rng.randn(self.N_ROUT_UNITS,
                                   self.N_ECHO_UNITS) for x in
             xrange(self.N_GOAL_UNITS * self.MULTIPLE_ECHO + 1)]
 
@@ -207,7 +214,7 @@ class GoalSelector(object):
         self.curr_echo2out_w = self.echo2out_w[-1]
     
     def reset_oscillator(self):
-        self.random_oscil = np.random.rand(self.N_ROUT_UNITS)
+        self.random_oscil = self.rng.rand(self.N_ROUT_UNITS)
         self.oscillator = Oscillator(self.scale, self.random_oscil)
 
     def goal_index(self):
@@ -261,7 +268,7 @@ class GoalSelector(object):
             cum_prob = np.hstack((0, np.cumsum(self.sm)))
 
             # flip the coin
-            coin = np.random.rand()
+            coin = self.rng.rand()
 
             # the winner between avaliable goals based on the flipped coin
             cur_goal_win = np.logical_and(cum_prob[:-1] < coin,

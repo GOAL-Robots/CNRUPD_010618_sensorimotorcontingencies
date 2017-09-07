@@ -27,8 +27,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 import numpy as np
-import math
+from numpy.random import RandomState as RNG
 import time
+import os 
 
 
 def evaluate_rho(m):
@@ -75,7 +76,8 @@ class ESN(object):
             radius_amp   = 1.0,
             trunk        = True,
             noise        = False,
-            noise_std    = 0.1
+            noise_std    = 0.1,
+            rng          = None
             ) :
         """
             name         string:    name of the object 
@@ -94,7 +96,13 @@ class ESN(object):
             trunk        bool:      output function trunctation
             noise        bool:      internal gaussian noise
             noise_std    float:     standard deviation of internal noise
+            rng          self.rng.RandomState: random number generator
         """
+
+        self.rng = rng
+        if rng is None:
+            self.seed = np.fromstring(os.urandom(4), dtype=np.uint32)[0]
+            self.rng = np.random.RandomState(self.seed) 
 
         # Consts
         self.NAME = name 
@@ -185,8 +193,8 @@ class ESN(object):
         '''
         
         # random sparse weigths 
-        M = (np.random.randn(self.N, self.N) + self.WEIGHT_MEAN )* ( 
-                (np.random.rand(self.N, self.N) < self.SPARSENESS) )
+        M = (self.rng.randn(self.N, self.N) + self.WEIGHT_MEAN )* ( 
+                (self.rng.rand(self.N, self.N) < self.SPARSENESS) )
         
         # decompose rotation and translation
         M = self.ALPHA*(M+ M.T) + self.BETA*(M - M.T) 
@@ -219,7 +227,7 @@ class ESN(object):
         increment = np.dot(self.w, self.out) + inp 
    
         if  self.NOISE :
-            increment +=  self.NOISE_STD*np.random.rand(self.N)
+            increment +=  self.NOISE_STD*self.rng.rand(self.N)
 
         # Integrate
         self.pot += (self.DT/self.TAU) * \
@@ -280,7 +288,7 @@ if __name__ == "__main__":
         epsilon = 1.0e-5
         )
 
-    ro_w = 0.01*np.random.randn(N_OUT,N)
+    ro_w = 0.01*self.rng.randn(N_OUT,N)
     
     ro_d = np.zeros([echo.STIME, N_OUT])
 
@@ -307,7 +315,7 @@ if __name__ == "__main__":
     
     l_target = len(target)
 
-    inp_w = 0.5*np.ones([N, l_target])*(np.random.rand(N, l_target)<0.1)
+    inp_w = 0.5*np.ones([N, l_target])*(self.rng.rand(N, l_target)<0.1)
     sigma = 0.6
     rout = np.zeros(N_OUT)
     rout_mean = np.zeros(N_OUT)
@@ -329,7 +337,7 @@ if __name__ == "__main__":
             echo.store(t)
         
             rout = echo.out[:N_OUT] 
-            rout_real = rout + 0.5*np.random.rand(2)
+            rout_real = rout + 0.5*self.rng.rand(2)
             rout_mean += 0.1*(rout_real - rout_mean)
             ro_d[t] = rout_real
            
