@@ -56,12 +56,15 @@ def main(args):
         with gzip.open(dumpfile, 'rb') as f:
             simulation = pickle.load(f)
     else :
-        rng = np.random.RandomState(SEED)
-        simulation = model.Simulation(rng)
+        if SEED is not None:
+            rng = np.random.RandomState(SEED)  
+            simulation = model.Simulation(rng)
+        else :
+            simulation = model.Simulation()
+            SEED = simulation.seed
+
         with open(SDIR+"seed", "w") as f:
-            f.write("%d" % SEED 
-                    if SEED is not None 
-                    else simulation.seed )
+            f.write("%d" % SEED)
 
     simulation.log_sensors = log_sensors
     simulation.log_cont_sensors = log_cont_sensors

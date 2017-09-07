@@ -1,9 +1,10 @@
 simulation_im_decay = 0.2
-body_simulator_touch_sigma = 0.06
+body_simulator_touch_th = 0.05
+body_simulator_touch_epsilon = 0.05
 body_simulator_num_touch_sensors = 30
-body_simulator_touch_epsilon = 0.01
-body_simulator_substeps = 30
-body_simulator_substep_min_angle = 6.0 
+body_simulator_touch_sigma = 0.05
+body_simulator_substeps = 10
+body_simulator_substep_min_angle = 0.5 
 gs_eta = 4.0
 gs_n_echo_units = 200
 gs_match_decay = 0.9
