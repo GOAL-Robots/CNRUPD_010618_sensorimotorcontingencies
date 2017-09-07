@@ -2,66 +2,72 @@ import numpy as np
 from model import *
 from model.GoalPredictor import match
 
-def linear(x, x_low, x_up, y_low = 0, y_up = 1):
+def linear(x, x_low, x_up, y_low=0, y_up=1):
     
-    return  np.maximum(y_low, np.minimum(y_up, 
+    return  np.maximum(y_low, np.minimum(y_up,
         ((y_up - y_low) / (x_up - x_low)) * 
         (x - x_low)))
 
 class Simulation(object) :
 
-    def __init__(self) :
+    def __init__(self, rng=None) :
+        
+        self.rng = rng
+        if rng is None:
+            self.seed = np.fromstring(os.urandom(4), dtype=np.uint32)[0]
+            self.rng = np.random.RandomState(self.seed) 
 
         self.GOAL_NUMBER = GOAL_NUMBER
 
         self.body_simulator = BodySimulator(
-                pixels = body_simulator_pixels,
-                lims = body_simulator_lims,
-                touch_th = body_simulator_touch_th,
-                num_touch_sensors = body_simulator_num_touch_sensors,
-                touch_sigma = body_simulator_touch_sigma,
+                pixels=body_simulator_pixels,
+                lims=body_simulator_lims,
+                touch_th=body_simulator_touch_th,
+                num_touch_sensors=body_simulator_num_touch_sensors,
+                touch_sigma=body_simulator_touch_sigma,
                 )
 
         self.gs = GoalSelector(
-                dt = gs_dt,
-                tau = gs_tau,
-                alpha = gs_alpha,
-                epsilon = gs_epsilon,
-                eta = gs_eta,
-                n_input = gs_n_input,
-                n_goal_units = gs_n_goal_units,
-                n_echo_units = gs_n_echo_units,
-                n_rout_units = gs_n_rout_units,
-                match_decay = gs_match_decay,
-                noise = gs_noise,
-                scale = gs_noise_scale,
-                sm_temp = gs_sm_temp,
-                g2e_spars = gs_g2e_spars,
-                echo_ampl = gs_echo_ampl,
-                goal_window = gs_goal_window,
-                goal_learn_start = gs_goal_learn_start,
-                reset_window = gs_reset_window,
-                multiple_echo = gs_multiple_echo
+                dt=gs_dt,
+                tau=gs_tau,
+                alpha=gs_alpha,
+                epsilon=gs_epsilon,
+                eta=gs_eta,
+                n_input=gs_n_input,
+                n_goal_units=gs_n_goal_units,
+                n_echo_units=gs_n_echo_units,
+                n_rout_units=gs_n_rout_units,
+                match_decay=gs_match_decay,
+                noise=gs_noise,
+                scale=gs_noise_scale,
+                sm_temp=gs_sm_temp,
+                g2e_spars=gs_g2e_spars,
+                echo_ampl=gs_echo_ampl,
+                goal_window=gs_goal_window,
+                goal_learn_start=gs_goal_learn_start,
+                reset_window=gs_reset_window,
+                multiple_echo=gs_multiple_echo,
+                rng=self.rng
                 )
 
         self.gp = GoalPredictor(
-                n_goal_units = self.GOAL_NUMBER,
-                eta = gp_eta
+                n_goal_units=self.GOAL_NUMBER,
+                eta=gp_eta
                 )
 
         self.gm = GoalMaker(
-                n_input_layers = gm_n_input_layers,
-                n_singlemod_layers = gm_n_singlemod_layers,
-                n_hidden_layers = gm_n_hidden_layers,
-                n_out = gm_n_out,
-                n_goalrep = gm_n_goalrep,
-                singlemod_lrs = gm_singlemod_lrs,
-                hidden_lrs = gm_hidden_lrs,
-                output_lr = gm_output_lr,
-                goalrep_lr = gm_goalrep_lr,
-                goal_th = gm_goal_th,
-                stime = gm_stime,
-                single_kohonen = gm_single_kohonen
+                n_input_layers=gm_n_input_layers,
+                n_singlemod_layers=gm_n_singlemod_layers,
+                n_hidden_layers=gm_n_hidden_layers,
+                n_out=gm_n_out,
+                n_goalrep=gm_n_goalrep,
+                singlemod_lrs=gm_singlemod_lrs,
+                hidden_lrs=gm_hidden_lrs,
+                output_lr=gm_output_lr,
+                goalrep_lr=gm_goalrep_lr,
+                goal_th=gm_goal_th,
+                stime=gm_stime,
+                single_kohonen=gm_single_kohonen
             )
 
         self.IM_AMP = simulation_im_amp
@@ -69,7 +75,7 @@ class Simulation(object) :
         self.IM_DECAY = simulation_im_decay
 
         self.COMPETENCE_IMPROVEMENT_PROP = (
-            simulation_competence_improvement_prop )
+            simulation_competence_improvement_prop)
 
         self.INCOMPETENCE_PROP = simulation_incompetence_prop
 
@@ -94,6 +100,8 @@ class Simulation(object) :
         self.timestep = 0
         self.kohonen_weights = None
         self.echo_weights = None
+        
+        self.current_target = None
 
     def init_streams(self):
 
@@ -119,14 +127,14 @@ class Simulation(object) :
         if len(goal_keys) != 0:
             acquired_targets = self.gs.target_position.keys()
 
-        matched_targets = np.array([ 1.0*(target in acquired_targets)
+        matched_targets = np.array([ 1.0 * (target in acquired_targets)
             for target in np.arange(self.gs.N_GOAL_UNITS) ])
 
         targets = self.gp.w
 
         esn_data = self.gs.curr_echonet.data[self.gs.curr_echonet.out_lab]
 
-        return (gmask, gv, gw, gr,matched_targets,
+        return (gmask, gv, gw, gr, matched_targets,
                 targets, self.gs.target_position, esn_data)
 
 
@@ -156,7 +164,7 @@ class Simulation(object) :
         real_l_pos *= sel
         real_r_pos *= sel
 
-        goalwin_idx =  self.gs.goal_index()
+        goalwin_idx = self.gs.goal_index()
         target_l_pos = self.body_simulator.target_actuator.position_l
         target_r_pos = self.body_simulator.target_actuator.position_r
         if  not self.gs.target_position.has_key(goalwin_idx) :
@@ -172,7 +180,7 @@ class Simulation(object) :
         sensors = self.body_simulator.perc.sensors * sel
 
         return (real_l_pos, real_r_pos, target_l_pos,
-                target_r_pos, theor_l_pos, theor_r_pos, sensors )
+                target_r_pos, theor_l_pos, theor_r_pos, sensors)
 
     def get_weights_metrics(self):
 
@@ -194,7 +202,7 @@ class Simulation(object) :
         if self.kohonen_weights is None :
             res["kohonen_weights"] = np.linalg.norm(w)
         else:
-            res["kohonen_weights"] = np.linalg.norm(w-self.kohonen_weights)
+            res["kohonen_weights"] = np.linalg.norm(w - self.kohonen_weights)
 
         self.kohonen_weights = w.copy()
 
@@ -203,7 +211,7 @@ class Simulation(object) :
         if self.echo_weights is None :
             res["echo_weights"] = np.linalg.norm(w)
         else:
-            res["echo_weights"] = np.linalg.norm(w-self.echo_weights)
+            res["echo_weights"] = np.linalg.norm(w - self.echo_weights)
 
         self.echo_weights = w.copy()
 
@@ -225,7 +233,7 @@ class Simulation(object) :
             # add goal index
             log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec))
             # save to file
-            self.log_cont_sensors.write( log_string + "\n")
+            self.log_cont_sensors.write(log_string + "\n")
             self.log_cont_sensors.flush()
 
     def save_match_logs(self) :
@@ -244,7 +252,7 @@ class Simulation(object) :
             # add goal index
             log_string += "{:6d}".format(np.argmax(self.gs.goal_selection_vec))
             # save to file
-            self.log_sensors.write( log_string + "\n")
+            self.log_sensors.write(log_string + "\n")
             self.log_sensors.flush()
 
         if self.log_position is not None :
@@ -256,7 +264,7 @@ class Simulation(object) :
             # add timing
             log_string += "{:8d} ".format(self.timestep)
             # add position info
-            curr_position =  np.vstack(
+            curr_position = np.vstack(
                 self.body_simulator.curr_body_tokens).ravel()
             for pos in  curr_position:
                 log_string += "{:6.4f} ".format(pos)
@@ -264,7 +272,7 @@ class Simulation(object) :
             log_string += "{:6d}".format(np.argmax(
                 self.gs.goal_selection_vec))
             # save to file
-            self.log_position.write( log_string + "\n")
+            self.log_position.write(log_string + "\n")
             self.log_position.flush()
 
         if self.log_predictions is not None :
@@ -283,7 +291,7 @@ class Simulation(object) :
             log_string += "{:6d}".format(np.argmax(
                 self.gs.goal_selection_vec))
             # save to file
-            self.log_predictions.write( log_string + "\n")
+            self.log_predictions.write(log_string + "\n")
             self.log_predictions.flush()
 
         if self.log_targets is not None :
@@ -296,11 +304,11 @@ class Simulation(object) :
             log_string += "{:8d} ".format(self.timestep)
             # add targets info
             keys = sorted(self.gs.target_position.keys())
-            all_goals = np.NaN*np.ones( [self.gs.N_GOAL_UNITS,
-                                         self.gs.N_ROUT_UNITS] )
+            all_goals = np.NaN * np.ones([self.gs.N_GOAL_UNITS,
+                                         self.gs.N_ROUT_UNITS])
 
             for key in sorted(self.gs.target_position.keys()):
-                all_goals[key,:] = self.gs.target_position[key]
+                all_goals[key, :] = self.gs.target_position[key]
 
             for angle in all_goals.ravel():
                     log_string += "{:6.4f} ".format(angle)
@@ -309,7 +317,7 @@ class Simulation(object) :
             log_string += "{:6d}".format(
                 np.argmax(self.gs.goal_selection_vec))
             # save to file
-            self.log_targets.write( log_string + "\n")
+            self.log_targets.write(log_string + "\n")
             self.log_targets.flush()
 
     def save_weight_logs(self):
@@ -320,10 +328,10 @@ class Simulation(object) :
             # add timing
             log_string += "{:8d} ".format(self.timestep)
             wm = self.get_weights_metrics()
-            log_string += "{:6.4} ".format( wm["kohonen_weights"] )
-            log_string += "{:6.4} ".format( wm["echo_weights"] )
+            log_string += "{:6.4} ".format(wm["kohonen_weights"])
+            log_string += "{:6.4} ".format(wm["echo_weights"])
 
-            self.log_weights.write( log_string + "\n")
+            self.log_weights.write(log_string + "\n")
             self.log_weights.flush()
 
     def competence_improvement_update(self, im_value, goal_selection_vec):
@@ -332,85 +340,93 @@ class Simulation(object) :
         win_indx = np.argmax(goal_selection_vec)
 
         # update the movin' average for that goal
-        self.competence_improvement_vec[win_indx] += self.IM_DECAY*(
-                - self.competence_improvement_vec[win_indx]
-                + self.IM_AMP*im_value)
+        self.competence_improvement_vec[win_indx] += self.IM_DECAY * (
+                -self.competence_improvement_vec[win_indx]
+                + self.IM_AMP * im_value)
 
     def step(self) :
 
         self.timestep += 1
 
-        self.gm_input = np.zeros([3, self.body_simulator.pixels[0] *
+        self.gm_input = np.zeros([3, self.body_simulator.pixels[0] * 
                                   self.body_simulator.pixels[1] ])
 
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask,
-                                           (self.gm.goalrep_layer > 0) )
+                                           (self.gm.goalrep_layer > 0))
 
             # Selection
-            self.gs.goal_selection( self.goal_mask,
-                    competence_improvement_vec =
-                            self.COMPETENCE_IMPROVEMENT_PROP *
+            self.gs.goal_selection(self.goal_mask,
+                    competence_improvement_vec=
+                            self.COMPETENCE_IMPROVEMENT_PROP * 
                             self.competence_improvement_vec,
-                    incompetence_vec = ( self.INCOMPETENCE_PROP *
-                                         (1.0 - self.gp.w) ) )
+                    incompetence_vec=(self.INCOMPETENCE_PROP * 
+                                         (1.0 - self.gp.w)))
 
             # Prediction
             if self.gs.goal_window_counter == 0:
                 self.gp.step(self.gs.goal_selection_vec)
 
-            ## add vision
-            self.gm_input[0] = self.body_simulator.pos_delta.ravel()*0
-            ## add proprioception
-            self.gm_input[1] = self.body_simulator.prop_delta.ravel()*0
+            # # add vision
+            self.gm_input[0] = self.body_simulator.pos_delta.ravel() * 0
+            # # add proprioception
+            self.gm_input[1] = self.body_simulator.prop_delta.ravel() * 0
             # add touch
-            self.gm_input[2] = 5000.0*self.body_simulator.touch_delta.ravel()
+            self.gm_input[2] = 5000.0 * self.body_simulator.touch_delta.ravel()
 
             self.static_inp *= 0
             for inp in self.gm_input :
-                self.static_inp += ( 0.0001*np.array(inp) /
-                                    float(len(self.gm_input)) )
+                self.static_inp += (0.0001 * np.array(inp) / 
+                                    float(len(self.gm_input)))
         else:
             if self.gs.reset_window_counter == 0:
                 self.static_inp = np.random.rand(*self.static_inp.shape)
 
         # movement body_simulator step
 
-        self.gs.step( self.static_inp )
+        self.gs.step(self.static_inp)
 
         # convert the vector of readout units from the selector into two
         # vectors (left arm , right arm)
-        larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS/2):]
-        larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS/2):]
-        larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS/2)]
-        rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS/2):]
+        larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS / 2)]
+        rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS / 2):]
+        larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS / 2)]
+        rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS / 2):]
+        larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS / 2)]
+        rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS / 2):]
 
         ########################################################################
         ########################################################################
 
         if body_simulator_touch_grow == True:
             self.body_simulator.perc.touch_sigma = (
-                            body_simulator_touch_sigma * 0.99 *
+                            body_simulator_touch_sigma * 0.99 * 
                             (1 - self.gp.w.mean()) + 
                             body_simulator_touch_sigma * 0.001)
 
         # Simulation step
         collision = self.body_simulator.step(
-                larm_angles_unscaled = larm_angles,
-                rarm_angles_unscaled = rarm_angles,
-                larm_angles_theoric_unscaled = larm_angles_theoric,
-                rarm_angles_theoric_unscaled = rarm_angles_theoric,
-                larm_angles_target_unscaled = larm_angles_target,
-                rarm_angles_target_unscaled = rarm_angles_target,
-                active = (self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
+                larm_angles_unscaled=larm_angles,
+                rarm_angles_unscaled=rarm_angles,
+                larm_angles_theoric_unscaled=larm_angles_theoric,
+                rarm_angles_theoric_unscaled=rarm_angles_theoric,
+                larm_angles_target_unscaled=larm_angles_target,
+                rarm_angles_target_unscaled=rarm_angles_target,
+                active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
                 )
 
         if collision == True:
             self.save_cont_logs()
+            angles = np.hstack(
+                self.body_simulator.actuator.unscale_angles(
+                    self.body_simulator.larm_angles,
+                    self.body_simulator.rarm_angles))
+            self.gs.reset_oscillator(angles, t=self.rng.randint(0,100))
+   
+            self.current_target = angles.copy()
+                
 
         ########################################################################
         ########################################################################
@@ -419,15 +435,15 @@ class Simulation(object) :
 
             # Train goal maker
             self.gm.step(self.gm_input,
-                         #neigh_scale = self.gp.w.copy())
-                         neigh_scale = 1 - self.gp.w.mean())
-                         #neigh_scale = 1 - self.gp.getCurrPred())
+                         # neigh_scale = self.gp.w.copy())
+                         neigh_scale=1 - self.gp.w.mean())
+                         # neigh_scale = 1 - self.gp.getCurrPred())
 
             ####################################################################
             ####################################################################
 
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()), pred = (1.0 - self.gp.w) ) # MIXED
-            self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred = (1.0 - self.gp.w) ) # MIXED-2
+            self.gm.learn(eta_scale=(1 - self.gp.getCurrPred()), pred=(1.0 - self.gp.w))  # MIXED-2
             # self.gm.learn(eta_scale=(1 - self.gp.getCurrMatch()), pred = (1.0 - self.gs.match_mean) ) # MIXED-3
             # self.gm.learn(pred = (1.0 - self.gp.w) ) # PRED
             # self.gm.learn(eta_scale=(1 - self.gs.getCurrMatch()) ) # MATCH
@@ -439,7 +455,7 @@ class Simulation(object) :
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
                 comp = 1 - gs_eta_decay * self.gp.w.mean()
-                self.gs.learn(comp = comp)
+                self.gs.learn(comp=comp)
 
             # update counters
 
@@ -464,16 +480,11 @@ class Simulation(object) :
 
                 # set current target in case of match
                 if self.match_value == 1:
-
-                    unscaled_larm_angles, unscaled_rarm_angles = \
-                            self.body_simulator.actuator.unscale_angles(
-                                    self.body_simulator.larm_angles,
-                                    self.body_simulator.rarm_angles )
-
-                    self.gs.update_target(
-                            np.hstack((
-                                unscaled_larm_angles,
-                                unscaled_rarm_angles)) )
+                    angles = np.hstack(
+                        self.body_simulator.actuator.unscale_angles(
+                            self.body_simulator.larm_angles,
+                            self.body_simulator.rarm_angles))
+                    self.gs.update_target(angles)
 
                 # log weight metrics
                 self.save_weight_logs()
@@ -486,12 +497,12 @@ class Simulation(object) :
 
 
                 self.gs.is_goal_selected = False
-                self.gs.reset(match = self.match_value)
+                self.gs.reset(match=self.match_value)
                 self.body_simulator.reset()
 
         else:
 
             # Train goal maker (empty input)
-            self.gm.step( self.gm_input )
+            self.gm.step(self.gm_input)
 
             self.gs.reset_window_counter += 1

@@ -27,6 +27,7 @@ sys.excepthook = my_excepthook
 
 import progressbar
 import model
+import numpy as np
 
 ## Start Qt event loop unless running in interactive mode.
 def main(args):
@@ -38,6 +39,7 @@ def main(args):
      
     DUMP = int(args.dump) 
     LOAD = int(args.load) 
+    SEED = int(args.seed) if args.seed is not None else None
    
     log_sensors = open(SDIR+"log_sensors", "w")
     log_cont_sensors = open(SDIR+"log_cont_sensors", "w")
@@ -54,7 +56,12 @@ def main(args):
         with gzip.open(dumpfile, 'rb') as f:
             simulation = pickle.load(f)
     else :
-        simulation = model.Simulation()
+        rng = np.random.RandomState(SEED)
+        simulation = model.Simulation(rng)
+        with open(SDIR+"seed", "w") as f:
+            f.write("%d" % SEED 
+                    if SEED is not None 
+                    else simulation.seed )
 
     simulation.log_sensors = log_sensors
     simulation.log_cont_sensors = log_cont_sensors
@@ -113,6 +120,9 @@ if __name__ == "__main__" :
     parser.add_argument('-t','--stime',
             help="Simulation time (only for graphics off)",
             action="store", default=2000)  
+    parser.add_argument('-S','--seed',
+            help="Seed of the simulation",
+            action="store")  
     args = parser.parse_args()
 
     import cProfile, pstats, StringIO

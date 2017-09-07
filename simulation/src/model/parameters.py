@@ -7,11 +7,12 @@ simulation_incompetence_prop = 0.0
 
 body_simulator_pixels = [20, 20]
 body_simulator_lims = [[-5, 5], [-2, 4.]]
-body_simulator_touch_th = 0.01
+body_simulator_touch_th = 0.05
+body_simulator_touch_epsilon = 0.05
 body_simulator_num_touch_sensors = 30
-body_simulator_touch_sigma = 0.5
+body_simulator_touch_sigma = 0.1
 body_simulator_actuator_NUMBER_OF_JOINTS = 3
-body_simulator_substeps = 10
+body_simulator_substeps =  20
 body_simulator_substep_min_angle = np.pi/4.0
 body_simulator_touch_grow = False
 
@@ -23,19 +24,19 @@ pm_proprioceptive_angle_threshold = 1e-5
 pm_image_resolution = 12
 
 ka_num_joints = body_simulator_actuator_NUMBER_OF_JOINTS
-ka_left_origin = [-1.5, 0.0]
+ka_left_origin = [-1., 0.0]
 ka_left_lims = [
-        [0, 1.3*np.pi],    # first joint limits
-        [0, 1.1*np.pi],    # second joint limits
-        [0, 1.*np.pi]     # third joint limits
+        [0, 1.4*np.pi],    # first joint limits
+        [0, 1.2*np.pi],    # second joint limits
+        [0, 1.2*np.pi]     # third joint limits
         ]
 assert(len(ka_left_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
-ka_right_origin = [1.5, 0.0]
+ka_right_origin = [1., 0.0]
 ka_right_lims = [
-        [0, 1.3*np.pi],    # first joint limits
-        [0, 1.1*np.pi],    # second joint limits
-        [0, 1.*np.pi]     # third joint limits
+        [0, 1.4*np.pi],    # first joint limits
+        [0, 1.2*np.pi],    # second joint limits
+        [0, 1.2*np.pi]     # third joint limits
         ]
 assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 
@@ -53,17 +54,17 @@ gs_n_echo_units = 200
 gs_n_rout_units = body_simulator_actuator_NUMBER_OF_JOINTS*2
 gs_match_decay = 0.9
 gs_noise = 1.0
-gs_noise_scale = 30.0
+gs_noise_scale = 50.0
 gs_sm_temp = 0.01
 gs_g2e_spars = 0.01
 gs_echo_ampl = 5.0
-gs_goal_window = 100
+gs_goal_window = 50
 gs_goal_learn_start = 10
 gs_reset_window = 10
 gs_eta_decay = False
 gs_multiple_echo = False
 
-gp_eta = 0.4
+gp_eta = 0.35
 
 robot_stime = 10000
 
@@ -75,7 +76,7 @@ gm_n_goalrep = GOAL_NUMBER
 gm_singlemod_lrs = [0.05, 0.01, 0.1]
 gm_hidden_lrs = [0.001, 0.001]
 gm_output_lr = 0.001
-gm_goalrep_lr = 0.8
+gm_goalrep_lr = 0.25
 gm_goal_th = 0.1
 gm_stime = robot_stime
 gm_single_kohonen = True
@@ -115,8 +116,8 @@ gm_single_kohonen_weight_bl = 0.001
 gm_goalrep_n_dim_out = 1
 gm_goalrep_eta_bl_scale = 4.0
 gm_goalrep_eta_decay_scale = 4.0
-gm_goalrep_neigh_scale = 0.6
-gm_goalrep_neigh_decay_scale = 1.0e400
 gm_goalrep_neigh_bl = 0.01
+gm_goalrep_neigh_scale = 0.99
+gm_goalrep_neigh_decay_scale = 1.0e400
 gm_goalrep_weight_bl = 0.001
 
