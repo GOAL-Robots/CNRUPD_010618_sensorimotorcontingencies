@@ -7,7 +7,7 @@ simulation_incompetence_prop = 0.0
 
 body_simulator_pixels = [20, 20]
 body_simulator_lims = [[-5, 5], [-2, 4.]]
-body_simulator_touch_th = 0.1
+body_simulator_touch_th = 0.01
 body_simulator_num_touch_sensors = 30
 body_simulator_touch_sigma = 0.5
 body_simulator_actuator_NUMBER_OF_JOINTS = 3

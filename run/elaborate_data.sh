@@ -161,10 +161,24 @@ run()
     cd $TMP_DIR
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
-    cat $(find $DIR | grep predictions) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
-    cat $(find $DIR | grep log_sensors) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
-    cat $(find $DIR | grep log_weights) | sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | sort -k 1 -n | sed -e "s/^/SIM 1 /" | sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
-    [[ -f "${DIR}/main_data/test/dumped_robot" ]] && (cp ${DIR}/main_data/test/dumped_robot $TMP_DIR/dumped_robot)
+    
+    cat $(find $DIR | grep predictions) | \
+    	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
+    	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
+    	sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
+    	
+    cat $(find $DIR | grep log_sensors) | \
+    	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
+    	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
+    	sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
+    	
+    cat $(find $DIR | grep log_weights) | \
+    	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
+    	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
+    	sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
+    	
+    [[ -f "${DIR}/main_data/test/dumped_robot" ]] && \
+    	(cp ${DIR}/main_data/test/dumped_robot $TMP_DIR/dumped_robot)
     
     if [ $GRAPHS == true ]; then
         if [[ -f dumped_robot ]]; then
