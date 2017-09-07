@@ -100,6 +100,8 @@ class Simulation(object) :
         self.timestep = 0
         self.kohonen_weights = None
         self.echo_weights = None
+        
+        self.current_target = None
 
     def init_streams(self):
 
@@ -417,12 +419,14 @@ class Simulation(object) :
 
         if collision == True:
             self.save_cont_logs()
-            reset_angles = np.hstack(
+            angles = np.hstack(
                 self.body_simulator.actuator.unscale_angles(
                     self.body_simulator.larm_angles,
                     self.body_simulator.rarm_angles))
+            self.gs.reset_oscillator(angles, t=self.rng.randint(0,100))
+   
+            self.current_target = angles.copy()
                 
-            self.gs.reset_oscillator(reset_angles)
 
         ########################################################################
         ########################################################################
@@ -476,16 +480,11 @@ class Simulation(object) :
 
                 # set current target in case of match
                 if self.match_value == 1:
-
-                    unscaled_larm_angles, unscaled_rarm_angles = \
-                            self.body_simulator.actuator.unscale_angles(
-                                    self.body_simulator.larm_angles,
-                                    self.body_simulator.rarm_angles)
-
-                    self.gs.update_target(
-                            np.hstack((
-                                unscaled_larm_angles,
-                                unscaled_rarm_angles)))
+                    angles = np.hstack(
+                        self.body_simulator.actuator.unscale_angles(
+                            self.body_simulator.larm_angles,
+                            self.body_simulator.rarm_angles))
+                    self.gs.update_target(angles)
 
                 # log weight metrics
                 self.save_weight_logs()

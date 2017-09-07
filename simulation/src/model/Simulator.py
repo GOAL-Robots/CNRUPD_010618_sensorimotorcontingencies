@@ -211,8 +211,8 @@ class PerceptionManager(object):
             rel_chain.set_chain(self.sensors[sensor_range])     
             
             # find the hand touch-points (1d distances on the relative chain)
-            #TODO: epsilon as parameter
-            curr_touches = rel_chain.isPointInChain(hand)  
+            # TODO: epsilon as parameter
+            curr_touches = rel_chain.isPointInChain(hand, body_simulator_touch_epsilon)  
             
             # for each sensor compute its distance form the touching points
             for y, sensor in zip(sensor_range, self.sensors[sensor_range]):
@@ -221,9 +221,10 @@ class PerceptionManager(object):
                 
                 for curr_touch in curr_touches:     
                     
-                    
-                    # touch is measured as a radial basis of the distance from the sensor in the 1D chain 
-                    stouch = clipped_exp(-(curr_touch - dsensor)**2 / (2 * self.touch_sigma**2))
+                    # touch is measured as a radial basis of the distance 
+                    #     from the sensor in the 1D chain 
+                    stouch = clipped_exp(-(curr_touch - dsensor)**2 / 
+                                         (2 * self.touch_sigma**2))
     
                     touches[y] += stouch
 
@@ -616,7 +617,7 @@ class BodySimulator(object):
         self.rarm_angles_target = rarm_angles_target
 
         self.single_step_forward()
-        
+                
         # compute collisions
         self.autocollision, curr_chain = self.collisionManager.manage_collisions(
             prev_chain=np.vstack(self.prev_body_tokens),

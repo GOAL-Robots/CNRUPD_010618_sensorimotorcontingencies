@@ -5,6 +5,7 @@ from model.esn import ESN
 import model.kinematics as KM
 from gauss_utils import OptimizedGaussianMaker as GaussianMaker
 from gauss_utils import pseudo_diag
+from numpy.random.mtrand import randint
 
 
 def softmax(x, t=0.1):
@@ -25,7 +26,7 @@ def my_argwhere(x):
 
 
 class Oscillator(object):
-    def __init__(self, scale, freqs, res = None):
+    def __init__(self, scale, freqs,  t = None, res = None, dt = 0.01):
         '''
         :param scale: scaling factor for the frequency
         :type scale: float
@@ -37,8 +38,9 @@ class Oscillator(object):
         self.scale = scale
         self.freqs = np.array(freqs)
         self.trajectories_num = self.freqs.size  
+        self.dt = dt
         
-        self.t = 0
+        self.t = 0 if t is None else t
 
         self.res = 0 if res is None else res
 
@@ -49,8 +51,10 @@ class Oscillator(object):
         :rtype: numpy.array(trajectories_num, dtype=float)
         """
         
-        self.res += -0.3*(np.sin(2.0 * np.pi * self.freqs * self.t / 
-                       self.scale + np.pi)) * 0.5
+        self.res += self.dt*(
+            -self.res 
+            -(1.0/(self.dt*20.0))*np.sin(2.0 * np.pi * self.freqs * self.t / 
+                                  self.scale + np.pi)) 
         self.res = np.tanh(self.res)
         self.t += 1
 
@@ -201,9 +205,9 @@ class GoalSelector(object):
         self.curr_echonet = self.echonet[-1]
         self.curr_echo2out_w = self.echo2out_w[-1]
     
-    def reset_oscillator(self, pos=None):
+    def reset_oscillator(self, pos=None, t=None):
         self.random_oscil = self.rng.rand(self.N_ROUT_UNITS)
-        self.oscillator = Oscillator(self.scale, self.random_oscil, pos)
+        self.oscillator = Oscillator(self.scale, self.random_oscil, t, pos)
 
     def goal_index(self):
 
