@@ -18,7 +18,7 @@ if (!("Verdana" %in% fonts()) )
 
 ###############################################################################################################################
 
-TS_ALL = 120e+3
+TS_ALL = 250e+3
 TS_GAP =  20e+3
 
 all_weights <- fread("all_weights")
@@ -69,11 +69,12 @@ cols = dim(weights)[2]
 rretina = sqrt(cols)
 
 weights$goal=1:rows
-weights = melt(weights, measure.vars = 1:cols)
+weights = melt(weights, variable.name="cell", 
+               measure.vars = 1:cols)
 
-weights$variable = as.numeric(sub("V","",weights$variable)) -1
-weights$r_row = weights$variable%/%rretina + 1
-weights$r_col = weights$variable%%rretina + 1
+weights$cell = as.numeric(sub("V","",weights$cell)) -1
+weights$r_row = weights$cell%/%rretina + 1
+weights$r_col = weights$cell%%rretina + 1
 
 grbs = list()
 

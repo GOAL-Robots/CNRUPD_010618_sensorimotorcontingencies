@@ -7,12 +7,6 @@ for(pkg in toInstall)
     }
 }
 
-require(data.table)
-require(ggplot2)
-require(gridExtra)
-require(cowplot)
-library(extrafont)
-
 if (!("Verdana" %in% fonts()) )
 {
     font_import()
