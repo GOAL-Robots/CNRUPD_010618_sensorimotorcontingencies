@@ -131,7 +131,7 @@ cat << EOF > $LOCAL_DIR/plots.html
     <td><img src="g_means.png"  width="100%"></td>
   </tr>
   <tr>
-    <td><img src="gs_means1.png"   width="100%"></td>
+    <td><img src="sensors_per_goal.png"   width="100%"></td>
     <td><img src="touches.png"  width="100%"></td>
   </tr>
   <tr>
