@@ -139,7 +139,8 @@ run()
             # data are complete and we do not want to accumulate new data
             echo "simulation already completed" 
             return 0
-        elif [ $DUMPED == true ]; then 
+        eli
+        f [ $DUMPED == true ]; then 
             # we want to continue from previous dumping and accumulate
             DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)" 
             DUMP_OPT="-s $(pwd)/$DUMPED_FILE"
@@ -153,8 +154,6 @@ run()
     cp $TEMPLATE/src/model/parameters.py $sim_dir/src/model/parameters.py
 
     cd $sim_dir
-
-
 
     local wdir=test
     echo "starting the simulation..."
