@@ -24,6 +24,7 @@ exit
    -d --dir PATH    where to find data
    -g --graph       make graphs   
    -c -local        local directory
+   -b -blocks       storage blocks to recover (from the begin of simulation)
    -s -weights      include weights data
    -w --www         open browser
    -l --loop SEC    run recursivelly to follow online course
@@ -38,11 +39,12 @@ DIR=
 LOOP=
 VISUALIZE=false
 GRAPHS=false
+BLOCKS=all
 LOCAL=false
 WEIGHTS=false
 
 # getopt
-GOTEMP="$(getopt -o "d:gcwl:sh" -l "dir:,graphs,local,www,loop,weights,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "d:gcb:wl:sh" -l "dir:,graphs,blocks:,local,www,loop,weights,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -59,6 +61,9 @@ do
         -g | --graphs)
             GRAPHS=true
             shift;;
+        -b | --blocks)
+            BLOCKS="$2"
+            shift 2;;
         -c | --local)
             LOCAL=true
             shift;;
@@ -162,17 +167,20 @@ run()
     echo "collect data..."
     cat $(find $DIR | grep cont) > $TMP_DIR/log_cont_sensors
     
-    cat $(find $DIR | grep predictions) | \
+    SELECT_BLOCKS=
+    [[ $BLOCKS != all ]] && SELECT_BLOCKS=" | grep store | sort -n |head -$BLOCKS "
+
+    cat $(find $DIR | eval "grep predictions $SELECT_BLOCKS" ) | \
     	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_predictions
     	
-    cat $(find $DIR | grep log_sensors) | \
+    cat $(find $DIR | eval "grep log_sensors $SELECT_BLOCKS" ) | \
     	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_sensors
     	
-    cat $(find $DIR | grep log_weights) | \
+    cat $(find $DIR | eval "grep log_weights $SELECT_BLOCKS" ) | \
     	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
@@ -189,13 +197,14 @@ run()
         
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
-        R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
+        R CMD BATCH ${BASE}/rscripts/analyze_predictions_final.R
         R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
         R CMD BATCH ${BASE}/rscripts/analyze_weights.R 
         R CMD BATCH ${BASE}/rscripts/analyze_pred_history.R 
         
         echo "convert images to png..."
         for f in *.pdf; do
+            echo "converting $f ..."
             convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
         done
         echo "done"

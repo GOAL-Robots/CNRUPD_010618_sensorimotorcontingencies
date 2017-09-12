@@ -100,7 +100,7 @@ run_cmd()
 
     run="
     cd ~/working/$wdir
-    \${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 20000 -n 1000 -b -P params
+    \${HOME}/working/sensorimotor-development/run/g5k_batteries.sh -t 10000 -n 100 -b -P params
     "
 
     echo "$run" > ${HOME}/working/${wdir}/run

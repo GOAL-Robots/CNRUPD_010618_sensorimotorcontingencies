@@ -18,14 +18,16 @@ if (!("Verdana" %in% fonts()) )
 
 ###############################################################################################################################
 
-TS_ALL = 250e+3
-TS_GAP =  20e+3
+TS_ALL = 1000e+3
+TS_GAP =   20e+3
 
 all_weights <- fread("all_weights")
 names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS",
                             "kohonen", "echo")
 
 all_weights = subset(all_weights, TIMESTEPS <= TS_ALL)
+TS = max(all_weights$TIMESTEPS)
+TS_ALL=TS
 
 gp1 = ggplot(all_weights, aes(x = TIMESTEPS))
 gp1 = gp1 + geom_line(aes(y=kohonen))

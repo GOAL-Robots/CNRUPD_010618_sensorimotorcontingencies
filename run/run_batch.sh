@@ -23,13 +23,14 @@ usage: $0 options
 This script runs the robot simulation in batch mode and collects data
 
 OPTIONS:
-   -t --stime       number of timesteps of a single simulation block
-   -g --graph       graphics on
-   -w --wdir        working directory
-   -s --start       dumped_robot to start from
-   -c --clean       clean dumped start file after copy
-   -n --n_blocks    number of simulation blocks
-   -h --help        show this help
+   -t --stime           number of timesteps of a single simulation block
+   -g --graph           graphics on
+   -w --wdir            working directory
+   -s --start           dumped_robot to start from
+   -S --safe-storage    maintain only the last 6 blocks
+   -c --clean           clean dumped start file after copy
+   -n --n_blocks        number of simulation blocks
+   -h --help            show this help
 
 EOF
 }
@@ -42,9 +43,10 @@ STIME=100000
 N_BLOCKS=1
 GRAPH=false
 CLEAN=false
+SAFE_STORAGE=false
 
 # getopt
-GOTEMP="$(getopt -o "t:w:cn:s:gh" -l "stime:,wdir:,clean,n_blocks:,start:,graph,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:w:cn:s:Sgh" -l "stime:,wdir:,clean,n_blocks:,start:,safe-storage,graph,help"  -n '' -- "$@")"
 
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
@@ -71,6 +73,9 @@ do
         -s | --start)
             START="$2"
             shift 2;;
+        -S | --safe-storage)
+            SAFE_STORAGE=true
+            shift;;
         -g | --graph)
             GRAPH=true
             shift;;
@@ -134,7 +139,7 @@ do
     tag=$(date +%Y%m%d%H%M%S)
     for f in $WORK_DIR/*;
     do
-        rm -fr $(find store|grep dump|sort|head -n -6)
+        [[ $SAFE_STORAGE == true ]] && rm -fr $(find store|grep dump|sort|head -n -6)
         cp $f store/"$(basename $f)-$tag"
     done
 

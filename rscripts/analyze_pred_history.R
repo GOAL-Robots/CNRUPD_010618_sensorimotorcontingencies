@@ -51,7 +51,7 @@ predictions = melt(all_predictions,
              value.name="prediction" )
 
 ts = all_predictions$TIMESTEPS
-l = as.integer(length(ts)*(3/20))
+l = as.integer(length(ts))
 ts = ts[seq(1, l, length.out = 5)]
 m = subset(predictions, TIMESTEPS %in% ts)
 m$r=(strtoi(sub("G","", m$GOAL))-1)%%5

@@ -34,8 +34,8 @@ which_dec_scale <- function(x)
     scales[which(test_scales == TRUE)]
 }
 
-TS_ALL = 120e+3
-TS_GAP =  20e+3
+TS_ALL = 1000e+3
+TS_GAP =   20e+3
 
 
 
@@ -47,6 +47,7 @@ names(all_predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N
 all_weights <- fread("all_weights")
 names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
 TS = max(all_weights$TIMESTEPS)
+TS_ALL=TS
 scale = which_dec_scale(TS)
 trials = 1:length(all_weights$TIMESTEPS)
 tlbrk = trials[trials%%(scale/400) == 0]
