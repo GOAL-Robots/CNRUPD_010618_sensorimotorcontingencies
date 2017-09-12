@@ -185,6 +185,11 @@ run()
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_weights
     	
+     cat $(find $DIR | eval "grep log_trials $SELECT_BLOCKS" ) | \
+    	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
+    	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
+    	sed -e"s/\s\+/ /g" > $TMP_DIR/all_trials  
+    	 	
     [[ -f "${DIR}/main_data/test/dumped_robot" ]] && \
     	(cp ${DIR}/main_data/test/dumped_robot $TMP_DIR/dumped_robot)
     
