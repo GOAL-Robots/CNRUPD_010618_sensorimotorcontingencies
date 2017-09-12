@@ -139,7 +139,7 @@ run()
             # data are complete and we do not want to accumulate new data
             echo "simulation already completed" 
             return 0
-        eli
+        elif
         f [ $DUMPED == true ]; then 
             # we want to continue from previous dumping and accumulate
             DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)" 

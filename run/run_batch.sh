@@ -102,7 +102,7 @@ done
 #################################################################################
 
 # the execution command
-CMD="python $CURR_DIR/src/main.py"
+ROOT_CMD="python $CURR_DIR/src/main.py"
 
 # run  n-th blocks
 for((n=0;n<N_BLOCKS;n++));
@@ -112,7 +112,7 @@ do
 
     GR_OPT=;[[ $GRAPH == true ]] && GR_OPT="-g"
     [[ ! -z $SEED ]] && SEED_OPT="-S $SEED"
-    CMD="$CMD $GR_OPT $SEED_OPT"
+    CMD="$ROOT_CMD $GR_OPT $SEED_OPT"
     # run first block
     if [[ $n -eq 0 ]]; then
 
@@ -138,7 +138,7 @@ do
         CMD="$CMD -t $STIME -d -l -s $(pwd)/$WORK_DIR"
 
     fi
-    echo "$CMD"
+    echo -e "\ncommand:\n$CMD\n\n"
     eval "$CMD"
 
     # store block
