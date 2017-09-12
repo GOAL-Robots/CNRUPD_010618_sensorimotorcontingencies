@@ -26,8 +26,9 @@ OPTIONS:
    -t --stime           number of timesteps of a single simulation block
    -g --graph           graphics on
    -w --wdir            working directory
+   -S --seed            seed
    -s --start           dumped_robot to start from
-   -S --safe-storage    maintain only the last 6 blocks
+   -D --safe-storage    maintain only the last 6 blocks
    -c --clean           clean dumped start file after copy
    -n --n_blocks        number of simulation blocks
    -h --help            show this help
@@ -38,6 +39,7 @@ EOF
 
 
 WORK_DIR=
+SEED=
 START=
 STIME=100000
 N_BLOCKS=1
@@ -46,7 +48,7 @@ CLEAN=false
 SAFE_STORAGE=false
 
 # getopt
-GOTEMP="$(getopt -o "t:w:cn:s:Sgh" -l "stime:,wdir:,clean,n_blocks:,start:,safe-storage,graph,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:w:cn:S:s:Dgh" -l "stime:,wdir:,clean,n_blocks:,seed:,start:,safe-storage,graph,help"  -n '' -- "$@")"
 
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
@@ -70,10 +72,13 @@ do
         -n | --n_blocks)
             N_BLOCKS="$2"
             shift 2;;
+        -S | --seed)
+            SEED="$2"
+            shift 2;;
         -s | --start)
             START="$2"
             shift 2;;
-        -S | --safe-storage)
+        -D | --safe-storage)
             SAFE_STORAGE=true
             shift;;
         -g | --graph)
@@ -105,10 +110,11 @@ do
 
     snum="$(printf "%06d" $n)"
 
-    GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
-    CMD="$CMD $GR_OPT"
+    GR_OPT=;[[ $GRAPH == true ]] && GR_OPT="-g"
+    [[ ! -z $SEED ]] && SEED_OPT="-S $SEED"
+    CMD="$CMD $GR_OPT $SEED_OPT"
     # run first block
-    if [ $n -eq 0 ]; then
+    if [[ $n -eq 0 ]]; then
 
         if [ -f "$START" ]; then  # THERE IS a previous dump from which to start
 

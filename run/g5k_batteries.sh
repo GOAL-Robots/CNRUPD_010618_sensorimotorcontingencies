@@ -24,6 +24,7 @@ OPTIONS:
    -n --num         number of simulations
    -g --graph       graphics on
    -s --start       start index of simulation
+   -S --seed        seed
    -d --template    template folder containing the exec environment
    -b --dumped      start from a dumped file
    -p --params      set initial parameters interactivelly
@@ -38,13 +39,14 @@ TEMPLATE=${HOME}/working/sensorimotor-development/simulation
 TIMESTEPS=20000
 ITER=1
 START=0
+SEED=
 DUMPED=false
 PARAMS=false
 PARAMFILE=
 GRAPH=false
 
 # getopt
-GOTEMP="$(getopt -o "t:n:gs:d:bpP:h" -l "stime:,num:,graph,start:,template:,dumped,params,paramfile,help"  -n '' -- "$@")"
+GOTEMP="$(getopt -o "t:n:gS:s:d:bpP:h" -l "stime:,num:,graph,seed:,start:,template:,dumped,params,paramfile,help"  -n '' -- "$@")"
 
 if ! [ "$(echo -n $GOTEMP |sed -e"s/\-\-.*$//")" ]; then
     usage; exit;
@@ -64,6 +66,9 @@ do
         -g | --graph) 
             GRAPH=true
             shift;;
+        -S | --seed) 
+            SEED="$2"
+            shift 2;;        
         -s | --start) 
             START="$2"
             shift 2;;
@@ -155,8 +160,10 @@ run()
     echo "starting the simulation..."
 
     CUM_OPT="-n $ITER"   
-    GR_OPT=;[ $GRAPH == true ] && GR_OPT="-g"
-    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -c -t $TIMESTEPS $GR_OPT -w $wdir $CUM_OPT $DUMP_OPT"
+    GR_OPT=;[[ $GRAPH == true ]] && GR_OPT="-g"
+    [[ ! -z $SEED ]] && SEED_OPT="-S $SEED"
+    
+    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -c -t $TIMESTEPS $GR_OPT $SEED_OPT -w $wdir $CUM_OPT $DUMP_OPT"
     
     eval "$MAIN_CMD"
 
