@@ -1,6 +1,8 @@
 rm(list=ls())
 
-toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot", "grid", "gridExtra")
+toInstall <- c("extrafont", "ggplot2", 
+               "data.table", "cowplot", 
+               "grid", "gridExtra")
 
 for(pkg in toInstall)
 {

@@ -35,7 +35,9 @@ which_dec_scale <- function(x)
 }
 
 TS_ALL = 1000e+3
-TS_GAP =   20e+3
+
+TS_LAST =  410e+3
+TS_GAP =    20e+3
 
 
 
@@ -48,12 +50,16 @@ all_weights <- fread("all_weights")
 names(all_weights) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", "KOHONEN", "ECHO")
 TS = max(all_weights$TIMESTEPS)
 TS_ALL=TS
-scale = which_dec_scale(TS)
+scale = which_dec_scale(TS_GAP)
 trials = 1:length(all_weights$TIMESTEPS)
-tlbrk = trials[trials%%(scale/400) == 0]
+tlbrk = trials[trials%%(scale/10) == 0]
 tsbrk = all_weights$TIMESTEPS[tlbrk]
 TSS = 1:TS
-tslbrk = TSS[TSS%%(scale)==0]
+tslbrk = c(0,TSS[TSS%%(scale)==0])
+
+scale_dense=which_dec_scale(TS)
+tslbrk_dense = TSS[TSS%%(scale_dense)==0]
+
 tlbrk_medium = trials[trials%%500 == 0]
 tsbrk_medium = all_weights$TIMESTEPS[tlbrk_medium]
 tlbrk_dense = trials[trials%%100 == 0]
@@ -176,14 +182,14 @@ gp1 = gp1 + geom_line(data=means, size = .5, colour = "#000000")
 gp1 = gp1 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1, 
                     inherit.aes = FALSE, show.legend = F )
 gp1 = gp1 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
-                             labels=c("0.0","0.5","1.5"))
+                             labels=c("0.0","0.5","1.0"))
 gp1 = gp1 + scale_x_continuous(limits=c(0, TS), 
                                breaks=tsbrk,
                                labels=tlbrk,
                                sec.axis = sec_axis(~., 
                                                    name = "Timesteps", 
-                                                   breaks = tslbrk, 
-                                                   labels = tslbrk))
+                                                   breaks = tslbrk_dense, 
+                                                   labels = tslbrk_dense))
 gp1 = gp1 + xlab("Trials") 
 gp1 = gp1 + ylab("") 
 gp1 = gp1 + theme_bw() 
@@ -227,7 +233,7 @@ gp2 = gp2 + geom_line(data=first_means, size = .5, colour = "#000000")
 gp2 = gp2 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1, 
                     inherit.aes = FALSE, show.legend = F )
 gp2 = gp2 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
-                             labels=c("0.0","0.5","1.5"))
+                             labels=c("0.0","0.5","1.0"))
 gp2 = gp2 + scale_x_continuous(limits=c(0, TS_SEC), 
                                breaks=tsbrk_dense,
                                labels=tlbrk_dense,
@@ -262,7 +268,7 @@ dev.off()
 
 
 TS_SEC2 = TS_GAP
-START = TS_ALL -TS_GAP*3/2
+START = TS_LAST -TS_GAP
 first_g_means = subset(g_means, TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2  )
 first_predictions = subset(all_predictions, TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
 first_means = subset(means,  TIMESTEPS > START  & TIMESTEPS < START + TS_SEC2)
@@ -280,7 +286,7 @@ gp3 = gp3 + geom_line(data=first_means, size = .5, colour = "#000000")
 gp3 = gp3 + geom_line(aes(x = TIMESTEPS, y = th), size=0.1, 
                       inherit.aes = FALSE, show.legend = F )
 gp3 = gp3 + scale_y_continuous(limits=c(0, 1.5), breaks= c(0,.5, 1), 
-                               labels=c("0.0","0.5","1.5"))
+                               labels=c("0.0","0.5","1.0"))
 
 gp3 = gp3 + scale_x_continuous(limits=c(START, START+TS_SEC2), 
                                breaks=tsbrk_dense, 
@@ -319,12 +325,12 @@ pp = pp + draw_plot(gp1, 0, 0.5, 1, 0.5)
 pp = pp + draw_plot(gp2, 0, 0, 0.48, 0.5)
 pp = pp + draw_plot(gp3, 0.5, 0, 0.48, 0.5)
 print(pp)
-pdf("means_comp.pdf", width=7, height=4)
+pdf("prediction_history.pdf", width=7, height=4)
 print(pp)
 dev.off()
-png("means_comp.png", width=700, height=400)
+png("prediction_history.png", width=700, height=400)
 print(pp)
 dev.off()
-svg("means_comp.svg", width=7, height=4)
+svg("prediction_history.svg", width=7, height=4)
 print(pp)
 dev.off()

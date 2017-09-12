@@ -107,7 +107,7 @@ for(idx in unique(means$INDEX))
                     panel.grid.minor = element_blank()
                     )
     
-    basename = paste("gs_means",format(idx),sep="")
+    basename = "sensors"
     pdf(paste(
         basename,".pdf",sep=""),
         width = 7,
@@ -147,9 +147,7 @@ for(idx in unique(means$INDEX))
                     panel.grid.minor = element_blank()
                     )
     
-    basename = paste("gs_means_goal",format(idx),sep="")
-    pdf(paste(
-        basename,".pdf",sep=""),
+    pdf("sensors_per_goal.pdf",
         width = 7,
         height = 7,
         family="Verdana")

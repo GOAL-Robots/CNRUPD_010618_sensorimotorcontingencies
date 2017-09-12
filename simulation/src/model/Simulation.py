@@ -327,13 +327,30 @@ class Simulation(object) :
             log_string = ""
             # add timing
             log_string += "{:8d} ".format(self.timestep)
+            # add weight metrics
             wm = self.get_weights_metrics()
             log_string += "{:6.4} ".format(wm["kohonen_weights"])
             log_string += "{:6.4} ".format(wm["echo_weights"])
 
             self.log_weights.write(log_string + "\n")
             self.log_weights.flush()
+            
+    def save_trial_logs(self):
 
+        if self.log_trials is not None :
+            # create log line
+            log_string = ""
+            # add timing
+            log_string += "{:8d} ".format(self.timestep)
+            # add goal index
+            curr_goal = -1
+            if not all(self.gs.goal_selection_vec == 0):
+                curr_goal =np.argmax(self.gs.goal_selection_vec)      
+            log_string += "{:6d}".format(curr_goal)
+               
+            self.log_trials.write(log_string + "\n")
+            self.log_trials.flush()
+            
     def competence_improvement_update(self, im_value, goal_selection_vec):
 
         # the index of the current highest goal
@@ -488,6 +505,7 @@ class Simulation(object) :
 
                 # log weight metrics
                 self.save_weight_logs()
+                self.save_trial_logs()
 
                 # update variables
                 self.intrinsic_motivation_value = self.gp.prediction_error

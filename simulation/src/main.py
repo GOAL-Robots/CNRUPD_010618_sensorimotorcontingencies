@@ -47,6 +47,7 @@ def main(args):
     log_predictions = open(SDIR+"log_predictions", "w")
     log_targets = open(SDIR+"log_targets", "w")
     log_weights = open(SDIR+"log_weights", "w")
+    log_trials = open(SDIR+"log_trials", "w")
     
 
     dumpfile = SDIR+"dumped_robot"
@@ -71,7 +72,7 @@ def main(args):
     simulation.log_position = log_position
     simulation.log_predictions = log_predictions
     simulation.log_targets = log_targets
-    simulation.log_weights = log_weights
+    simulation.log_trials = log_trials
     
     print "simulating ..."
     if GRAPHICS :
