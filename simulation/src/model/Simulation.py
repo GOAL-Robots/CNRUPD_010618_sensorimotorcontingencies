@@ -111,6 +111,7 @@ class Simulation(object) :
         self.log_predictions = None
         self.log_targets = None
         self.log_weights = None
+        self.log_trials = None
 
     def get_selection_arrays(self) :
 
