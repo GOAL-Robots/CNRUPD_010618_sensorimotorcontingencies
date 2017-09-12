@@ -135,7 +135,7 @@ cat << EOF > $LOCAL_DIR/plots.html
     <td><img src="touches.png"  width="100%"></td>
   </tr>
   <tr>
-    <td><img src="gs_means_goal1.png"   width="100%"></td>
+    <td><img src="sensors.png"   width="100%"></td>
     <td></td>
   </tr>
   <tr>
@@ -197,6 +197,7 @@ run()
         
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
+        R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions_final.R
         R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
         R CMD BATCH ${BASE}/rscripts/analyze_weights.R 

@@ -72,6 +72,7 @@ def main(args):
     simulation.log_position = log_position
     simulation.log_predictions = log_predictions
     simulation.log_targets = log_targets
+    simulation.log_weights = log_weights
     simulation.log_trials = log_trials
     
     print "simulating ..."
