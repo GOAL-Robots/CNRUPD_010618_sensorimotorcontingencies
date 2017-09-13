@@ -195,6 +195,7 @@ run()
     
     if [ $GRAPHS == true ]; then
         if [[ -f dumped_robot ]]; then
+            echo "run Python script..."
             cd ${BASE}/simulation/src
             python get_data.py -s $TMP_DIR &> $TMP_DIR/get_data_log        
             cd -
