@@ -204,15 +204,11 @@ gp1 = gp1 + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
 )
-png("means_all.png", width=700, height=300)
-print(gp1)
-dev.off()
+
 pdf("means_all.pdf", width=7, height=3)
 print(gp1)
 dev.off()
-svg("means_all.svg", width=7, height=3)
-print(gp1)
-dev.off()
+
 
 TS_SEC = TS_GAP
 first_g_means = subset(g_means, TIMESTEPS < TS_SEC)
@@ -258,13 +254,6 @@ gp2 = gp2 + theme(
 pdf("means_firsts.pdf", width=7, height=3)
 print(gp2)
 dev.off()
-png("means_firsts.png", width=700, height=300)
-print(gp2)
-dev.off()
-svg("means_firsts.svg", width=7, height=3)
-print(gp2)
-dev.off()
-
 
 
 TS_SEC2 = TS_GAP
@@ -313,12 +302,6 @@ gp3 = gp3 + theme(
 pdf("means_firsts1.pdf", width=7, height=3)
 print(gp3)
 dev.off()
-png("means_firsts1.png", width=700, height=300)
-print(gp3)
-dev.off()
-svg("means_firsts1.svg", width=7, height=3)
-print(gp3)
-dev.off()
 
 pp = ggdraw() 
 pp = pp + draw_plot(gp1, 0, 0.5, 1, 0.5)
@@ -327,9 +310,4 @@ pp = pp + draw_plot(gp3, 0.5, 0, 0.48, 0.5)
 pdf("prediction_history.pdf", width=7, height=4)
 print(pp)
 dev.off()
-png("prediction_history.png", width=700, height=400)
-print(pp)
-dev.off()
-svg("prediction_history.svg", width=7, height=4)
-print(pp)
-dev.off()
+

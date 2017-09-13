@@ -163,19 +163,3 @@ for(idx in unique(means$INDEX))
     dev.off()
 }  
 
-
-
-TS = max(sensors$TIMESTEPS)
-TS_TICS = seq(1, TS, length.out = 5)
-
-for(tic in 2:5)
-{
-  curr_sensors = subset(sensors, TIMESTEP < TS_TICS[tic] )
-  amps = curr_sensors[, .(mamp = mean(amp),
-                     s = curr_sensors[amp == max(amp)]),
-                 by = .(CURR_GOAL)]
-  amps = amps[order(s)]
-  gp = ggplot(amps, aes(x = as.numeric(s), y = mamp))
-  gp = gp + geom_bar(stat = "identity")
-  print(gp)
-}
