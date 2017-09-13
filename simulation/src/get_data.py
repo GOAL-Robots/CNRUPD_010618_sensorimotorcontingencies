@@ -20,7 +20,7 @@ if pathname: os.chdir(pathname)
 
 import model
 from model.Simulator import KinematicActuator
-from model.plotter import reshape_weights, angles2positions
+from utils import reshape_weights, angles2positions
 
 ## Start Qt event loop unless running in interactive mode.
 def main(args):
@@ -57,26 +57,6 @@ def main(args):
             )) )
     pos_db = np.vstack(pos_db)
     np.savetxt(SDIR+"/positions", pos_db)
-
-    # plt.figure()
-    # rng = np.linspace(-0.5, 99.5, 6)
-    # plt.imshow(weights, aspect="auto", cmap=plt.cm.binary)
-    # for y in rng:
-    #     for x in rng:
-    #         plt.plot([-0.5,99.5], [y,y], color="black")
-    #         plt.plot([x,x], [-0.5,99.5], color="black")
-    # plt.savefig(SDIR+"/weights.png")        
-    #         
-    # plt.figure() 
-    # for idx,pos in simulation.gs.target_position.iteritems():
-    #     plt.subplot(5,5,idx+1, aspect="equal")
-    #     positions = pos_db[pos_db[:,0] == idx,1:]
-    #     plt.plot(*positions.T)
-    #     plt.scatter(*positions.T, s=10)
-    #     plt.xlim([-4,4])
-    #     plt.ylim([-.1,3])
-    #     plt.axis("off") 
-    # plt.savefig(SDIR+"/positions.png")        
 
 if __name__ == "__main__" :
 
