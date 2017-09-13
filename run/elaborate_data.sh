@@ -200,7 +200,7 @@ run()
             python get_data.py -s $TMP_DIR &> $TMP_DIR/get_data_log        
             cd -
         fi
-        
+        	
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
