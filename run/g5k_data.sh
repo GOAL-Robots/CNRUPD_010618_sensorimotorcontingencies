@@ -47,6 +47,7 @@ run_cmd()
     cd ~/working/$wdir
 
     sudo service apache2 restart
+    pip install pyqtgraph
     mkdir -p \${HOME}/public_html
 
     cp kill_g.sh  \${HOME}/public_html
