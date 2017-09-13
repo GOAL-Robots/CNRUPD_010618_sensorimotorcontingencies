@@ -20,7 +20,7 @@ if pathname: os.chdir(pathname)
 
 import model
 from model.Simulator import KinematicActuator
-from utils import reshape_weights, angles2positions
+from model.utils import reshape_weights, angles2positions
 
 ## Start Qt event loop unless running in interactive mode.
 def main(args):
