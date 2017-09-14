@@ -113,6 +113,7 @@ do
     GR_OPT=;[[ $GRAPH == true ]] && GR_OPT="-g"
     [[ ! -z $SEED ]] && SEED_OPT="-S $SEED"
     CMD="$ROOT_CMD $GR_OPT $SEED_OPT"
+    
     # run first block
     if [[ $n -eq 0 ]]; then
 

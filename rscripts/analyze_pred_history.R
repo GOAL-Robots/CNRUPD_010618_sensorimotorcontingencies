@@ -52,7 +52,8 @@ predictions = melt(all_predictions,
 
 ts = all_predictions$TIMESTEPS
 l = as.integer(length(ts))
-ts = ts[seq(1, l, length.out = 5)]
+n_blocks=5
+ts = ts[seq(1, l, length.out = n_blocks)]
 m = subset(predictions, TIMESTEPS %in% ts)
 m$r=(strtoi(sub("G","", m$GOAL))-1)%%5
 m$c=(strtoi(sub("G","", m$GOAL))-1)%/%5
@@ -95,5 +96,5 @@ for(row in 1:length(ts))
 }
 
 pdf("pred_hist.pdf", width=6, height=1.2)
-grid.arrange(grobs = gps, nrow=1, ncol=5)
+grid.arrange(grobs = gps, nrow=1, ncol=n_blocks)
 dev.off()

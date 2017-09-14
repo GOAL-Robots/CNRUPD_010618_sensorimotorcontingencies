@@ -170,6 +170,8 @@ run()
     SELECT_BLOCKS=
     [[ $BLOCKS != all ]] && SELECT_BLOCKS=" | grep store | sort -n |head -$BLOCKS "
 
+	echo "		block option: $SELECT_BLOCKS"
+
     cat $(find $DIR | eval "grep predictions $SELECT_BLOCKS" ) | \
     	sed -e"s/\s\+/ /g; s/[^[:print:]]//g" | \
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
@@ -190,16 +192,24 @@ run()
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_trials  
     	 	
-    [[ -f "${DIR}/main_data/test/dumped_robot" ]] && \
-    	(cp ${DIR}/main_data/test/dumped_robot $TMP_DIR/dumped_robot)
+    if [[ ! -z "$SELECT_BLOCKS" ]]; then
+	    if [[ -d "${DIR}/main_data/store" ]]; then
+	        last_dumped=$(find $DIR | eval "grep dump | grep store $SELECT_BLOCKS | tail -1")
+	    	cp $last_dumped $TMP_DIR/dumped_robot
+	    fi
+	elif [[ -d "${DIR}/main_data/test/dump_robot" ]]; then
+		cp ${DIR}/main_data/test/dump_robot $TMP_DIR/
+	fi
     
-    if [ $GRAPHS == true ]; then
-        if [[ -f dumped_robot ]]; then
-            echo "run Python script..."
-            cd ${BASE}/simulation/src
-            python get_data.py -s $TMP_DIR &> $TMP_DIR/get_data_log        
-            cd -
-        fi
+    if [[ -f dumped_robot ]]; then
+    	echo "run Python script..."
+        cd ${BASE}/simulation/src
+        python get_data.py -s $TMP_DIR &> $TMP_DIR/get_data_log        
+        cd -
+    fi
+    
+    if [[  $GRAPHS == true ]]; then
+
         	
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
@@ -212,7 +222,7 @@ run()
         echo "convert images to png..."
         for f in *.pdf; do
             echo "converting $f ..."
-            convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
+           convert -density 300 -trim $f -quality 100 $(echo $f|sed -e"s/\.pdf/.png/")
         done
         echo "done"
     fi
