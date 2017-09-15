@@ -60,12 +60,17 @@ df = rbindlist(dfs)
 
 # - plot
 
+pdf("trial_duration_per_goal.pdf", width=3.5, height=3)
 # plot trial duration histories for each trial
 gp = ggplot(df, aes(x = trial, 
                     y = TRIAL_DURATION, 
                     group = factor(goal), 
                     color = factor(goal) ) )
 gp = gp + geom_line(show.legend = FALSE)
+gp = gp + xlab("Trials")
+gp = gp + ylab("Trial duration\n(timesteps)")
+print(gp)
+dev.off()
 print(gp)
 
 # - compute the mean and standard deviation of trial durations
@@ -76,9 +81,15 @@ df_mean = df[,
              by = .(trial)]
 
 # - plot the mean and standard deviation of trial durations
+pdf("trial_duration_per.pdf", width=3.5, height=3)
 gp = ggplot(df_mean, aes(x = trial,  y = TRIAL_DURATION))
 gp = gp + geom_ribbon(aes(
     ymax = TRIAL_DURATION + trial_time_sd,
     ymin = TRIAL_DURATION - trial_time_sd), fill = "#aaaaaa")
 gp = gp + geom_line(show.legend = FALSE, color = "#000000")
+gp = gp + xlab("Trials")
+gp = gp + ylab("Trial duration\n(timesteps)")
 print(gp)
+dev.off()
+print(gp)
+
