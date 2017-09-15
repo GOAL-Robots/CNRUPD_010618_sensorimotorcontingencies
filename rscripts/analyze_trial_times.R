@@ -1,68 +1,84 @@
-rm(list=ls())
+rm(list = ls())
 
-toInstall <- c("extrafont", "ggplot2", 
-               "data.table", "cowplot", 
-               "grid", "gridExtra")
+# listo fo required packages
+toInstall <- c("extrafont",
+               "ggplot2",
+               "data.table",
+               "cowplot",
+               "grid",
+               "gridExtra")
 
-for(pkg in toInstall)
-{
-    if(!require(pkg, character.only=TRUE) )
-    {
-        install.packages(pkg, repos = "http://cran.us.r-project.org")
-    }
-}
+# verify and install uninstalled packages
+for (pkg in toInstall)
+    if (!require(pkg, character.only = TRUE))
+        install.packages(pkg,
+                         repos = "http://cran.us.r-project.org")
 
-if (!("Verdana" %in% fonts()) )
+# load Verdana font
+if (!("Verdana" %in% fonts()))
 {
     font_import()
     loadfonts()
 }
 
-###############################################################################################################################
+#--------------------------------------------------------------------
 
-N_GOALS=25
+# - load data
+N_GOALS = 25
 all_trials <- fread("all_trials")
-names(all_trials) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS","GOAL")
-
+names(all_trials) <- c("LEARNING_TYPE", "INDEX", "TIMESTEPS", "GOAL")
 TS = max(all_trials$TIMESTEPS)
 N = length(all_trials$TIMESTEPS)
+
+# - compute the duration of each trial in timesteps
 attach(all_trials)
-all_trials$TRIAL_TIME = c(TIMESTEPS[1], TIMESTEPS[2:N]-TIMESTEPS[1:(N-1)])
+all_trials$TRIAL_DURATION = c(TIMESTEPS[1], 
+                          TIMESTEPS[2:N] - TIMESTEPS[1:(N - 1)])
 detach(all_trials)
 
-gg_m = list()
+# - Create dataset with histories of trial 
+#   durations for each goal
+dfs = list()
 for (g in 1:N_GOALS)
 {
-  g_trials = subset(all_trials, GOAL == g-1)
-  f = filter(g_trials$TRIAL_TIME, rep(1, 70)/70)
-  f = f[!is.na(f)]
-  gg_m[[g]] = f
-  cat(g_trials$TRIAL_TIME)
+    # data for a single goal
+    g_trials = subset(all_trials, GOAL == g - 1)
+    # smoothing of the history of trial durations
+    f = filter(
+        g_trials$TRIAL_DURATION, rep(1, 50) / 50)
+    f = f[!is.na(f)]
+    # create a data.table for the goal
+    df = data.table(
+        goal = rep(g, length(f)), 
+        trial = 1:length(f),
+        TRIAL_DURATION = f)
+    dfs[[g]] = df
 }
 
-dev.new()
-plot(1e10,1e10,xlim=c(0,400), ylim=c(0,100))
+# merge all goal data.tables into a single dataset
+df = rbindlist(dfs)
 
-for(gl in  gg_m)
-{
-  lines(gl)
-}
+# - plot
 
-# gp = ggplot(g_trials, aes(x=IDX, y=TRIAL_TIME) )
-# gp = gp + geom_line()
-# print(gp)
-            
-# 
-# attach(all_trials)
-# TRIAL_TIME = c(TIMESTEPS[1], TIMESTEPS[2:N]-TIMESTEPS[1:(N-1)])
-# detach(all_trials)
-# all_trials$TRIAL_TIME = TRIAL_TIME
-# gp = ggplot(subset(all_trials, TIMESTEPS>15000), 
-#             aes(x=TIMESTEPS, 
-#                 y=TRIAL_TIME+GOAL*200,
-#                 label=factor(GOAL),
-#                 group=factor(GOAL),
-#                 color=factor(GOAL)))
-# gp = gp + geom_line(show.legend = FALSE)
-# gp = gp + geom_text(aes(x=10,y=GOAL*200 ), show.legend = FALSE)
-# print(gp)
+# plot trial duration histories for each trial
+gp = ggplot(df, aes(x = trial, 
+                    y = TRIAL_DURATION, 
+                    group = factor(goal), 
+                    color = factor(goal) ) )
+gp = gp + geom_line(show.legend = FALSE)
+print(gp)
+
+# - compute the mean and standard deviation of trial durations
+df_mean = df[,
+             .(TRIAL_DURATION = mean(TRIAL_DURATION),
+               trial_time_sd
+               = sd(TRIAL_DURATION)),
+             by = .(trial)]
+
+# - plot the mean and standard deviation of trial durations
+gp = ggplot(df_mean, aes(x = trial,  y = TRIAL_DURATION))
+gp = gp + geom_ribbon(aes(
+    ymax = TRIAL_DURATION + trial_time_sd,
+    ymin = TRIAL_DURATION - trial_time_sd), fill = "#aaaaaa")
+gp = gp + geom_line(show.legend = FALSE, color = "#000000")
+print(gp)
