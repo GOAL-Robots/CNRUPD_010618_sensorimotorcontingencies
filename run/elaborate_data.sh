@@ -197,8 +197,11 @@ run()
 	        last_dumped=$(find $DIR | eval "grep dump | grep store $SELECT_BLOCKS | tail -1")
 	    	cp $last_dumped $TMP_DIR/dumped_robot
 	    fi
-	elif [[ -d "${DIR}/main_data/test/dump_robot" ]]; then
-		cp ${DIR}/main_data/test/dump_robot $TMP_DIR/
+    else
+	    if [[ -d "${DIR}/main_data/store" ]]; then
+	        last_dumped=$(find $DIR | eval "grep dump | grep store| sort | tail -1")
+	    	cp $last_dumped $TMP_DIR/dumped_robot
+	    fi
 	fi
     
     if [[ -f dumped_robot ]]; then
