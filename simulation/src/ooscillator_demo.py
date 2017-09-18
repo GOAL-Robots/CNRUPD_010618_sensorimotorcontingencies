@@ -46,6 +46,11 @@ o = Oscillator(6, np.random.uniform(-1,1,f_n), np.random.uniform(-1,1,f_n))
 
 y = np.zeros([f_n,stime])
 for t in range(stime):
+    if t == stime/2:
+        res = o.res.copy()
+        o = Oscillator(6, 
+                np.random.uniform(-1,1,f_n), 
+                res=res)
     y[:, t] = o()
 
 plt.plot(y.T)
