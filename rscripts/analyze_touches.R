@@ -18,11 +18,12 @@ if (!("Verdana" %in% fonts()) )
     loadfonts()
 }
 
-d = fread("log_cont_sensors")
-n_sensors=dim(d)[2] - 2
-names(d) = c('ts', paste("S",1:n_sensors,sep=""),"goal")
-dd = melt(d, id.vars=c("ts","goal"), variable.name="sensor", value.name="touch")
-dd = dd[,.(touch=sum(touch>0.1)), by = .(sensor)]
+cont_sensors = fread("log_cont_sensors")
+n_sensors=dim(cont_sensors)[2] - 2
+names(cont_sensors) = c('ts', paste("S",1:n_sensors,sep=""),"goal")
+melted_cont_sensors = melt(cont_sensors, id.vars=c("ts","goal"), variable.name="sensor", value.name="touch")
+melted_cont_sensors = melted_cont_sensors[,.(touch=sum(touch>0.1)), by = .(sensor)]
 
-gp = ggplot(dd, aes(x=sensor, y=touch)) + geom_bar(stat="identity")
+gp = ggplot(melted_cont_sensors, aes(x=sensor, y=touch)) + geom_bar(stat="identity")
+print(gp)
 ggsave("touches.pdf")
