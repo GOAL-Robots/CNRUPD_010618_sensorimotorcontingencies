@@ -33,6 +33,7 @@ exit
 EOF
 }
 
+EXE=$0
 WWW=false
 CURR=$(pwd)
 DIR=
@@ -102,7 +103,7 @@ manage_path()
 start_elab()
 {
     echo $DIR
-    BASE=$(echo $0|sed -e"s/\/run\/$(basename $0)//")
+    BASE=$(echo $EXE|sed -e"s/\/run\/$(basename $EXE)//")
     BASE=$(manage_path $BASE)
     DIR=$(manage_path $DIR)
 
@@ -203,7 +204,8 @@ run()
     if [[ $BLOCKS != all ]]; then
 	    if [[ -d "${DIR}/main_data/store" ]]; then
 	        last_dumped=$(find $DIR | eval "grep dump | grep store $SELECT_BLOCKS | tail -1")
-	    	cp $last_dumped $TMP_DIR/dumped_robot
+	    	[[ -f "$last_dumped" ]] && \
+	    			cp $last_dumped $TMP_DIR/dumped_robot
 	    fi
     else
 	    if [[ -d "${DIR}/main_data/store" ]]; then
