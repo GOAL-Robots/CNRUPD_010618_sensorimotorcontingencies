@@ -42,6 +42,7 @@ GRAPHS=false
 BLOCKS=all
 LOCAL=false
 WEIGHTS=false
+BLOCKS=all
 
 # getopt
 GOTEMP="$(getopt -o "d:gcb:wl:sh" -l "dir:,graphs,blocks:,local,www,loop,weights,help"  -n '' -- "$@")"
@@ -192,7 +193,7 @@ run()
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_trials  
     	 	
-    if [[ ! -z "$SELECT_BLOCKS" ]]; then
+    if [[ $BLOCKS != all ]]; then
 	    if [[ -d "${DIR}/main_data/store" ]]; then
 	        last_dumped=$(find $DIR | eval "grep dump | grep store $SELECT_BLOCKS | tail -1")
 	    	cp $last_dumped $TMP_DIR/dumped_robot

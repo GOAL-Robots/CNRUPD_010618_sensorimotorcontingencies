@@ -32,11 +32,11 @@ N = length(all_trials$TIMESTEPS)
 
 # - compute the duration of each trial in timesteps
 attach(all_trials)
-all_trials$TRIAL_DURATION = c(TIMESTEPS[1], 
+all_trials$TRIAL_DURATION = c(TIMESTEPS[1],
                           TIMESTEPS[2:N] - TIMESTEPS[1:(N - 1)])
 detach(all_trials)
 
-# - Create dataset with histories of trial 
+# - Create dataset with histories of trial
 #   durations for each goal
 dfs = list()
 for (g in 1:N_GOALS)
@@ -45,11 +45,11 @@ for (g in 1:N_GOALS)
     g_trials = subset(all_trials, GOAL == g - 1)
     # smoothing of the history of trial durations
     f = filter(
-        g_trials$TRIAL_DURATION, rep(1, 50) / 50)
+        g_trials$TRIAL_DURATION, rep(1, 150) / 150)
     f = f[!is.na(f)]
     # create a data.table for the goal
     df = data.table(
-        goal = rep(g, length(f)), 
+        goal = rep(g, length(f)),
         trial = 1:length(f),
         TRIAL_DURATION = f)
     dfs[[g]] = df
@@ -62,9 +62,9 @@ df = rbindlist(dfs)
 
 pdf("trial_duration_per_goal.pdf", width=3.5, height=3)
 # plot trial duration histories for each trial
-gp = ggplot(df, aes(x = trial, 
-                    y = TRIAL_DURATION, 
-                    group = factor(goal), 
+gp = ggplot(df, aes(x = trial,
+                    y = TRIAL_DURATION,
+                    group = factor(goal),
                     color = factor(goal) ) )
 gp = gp + geom_line(show.legend = FALSE)
 gp = gp + xlab("Trials")
