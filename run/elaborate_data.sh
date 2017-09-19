@@ -42,6 +42,7 @@ GRAPHS=false
 BLOCKS=all
 LOCAL=false
 WEIGHTS=false
+BLOCKS=all
 
 # getopt
 GOTEMP="$(getopt -o "d:gcb:wl:sh" -l "dir:,graphs,blocks:,local,www,loop,weights,help"  -n '' -- "$@")"
@@ -98,66 +99,73 @@ manage_path()
     echo -n $path
 }
 
-echo $DIR
-BASE=$(echo $0|sed -e"s/\/run\/$(basename $0)//")
-BASE=$(manage_path $BASE)
-DIR=$(manage_path $DIR)
+start_elab()
+{
+    echo $DIR
+    BASE=$(echo $0|sed -e"s/\/run\/$(basename $0)//")
+    BASE=$(manage_path $BASE)
+    DIR=$(manage_path $DIR)
 
-CURR=$(pwd)
-LOCAL_DIR=/tmp/$(basename "$DIR")_plots
-[ $LOCAL == true ] && LOCAL_DIR=$CURR
+    CURR=$(pwd)
+    LOCAL_DIR=/tmp/$(basename "$DIR")_plots
+    [ $LOCAL == true ] && LOCAL_DIR=$CURR
 
-[ ! -d "$LOCAL_DIR" ] && mkdir $LOCAL_DIR
-rm -fr $LOCAL_DIR/*
+    [ ! -d "$LOCAL_DIR" ] && mkdir $LOCAL_DIR
+    rm -fr $LOCAL_DIR/*
 
-echo "data dir: $DIR"
-echo "source dir: $BASE"
-echo "out dir: $LOCAL_DIR"
-if [ $GRAPHS == true ]; then
+    echo "data dir: $DIR"
+    echo "source dir: $BASE"
+    echo "out dir: $LOCAL_DIR"
+    if [ $GRAPHS == true ]; then
 
-cat << EOF > $LOCAL_DIR/plots.html
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title> $(basename $DIR) </title>
-</head>
+        plots_file="
 
-<body>
-<h1>$(basename $DIR)</h1>
-<table style="width:100%">
-  <tr>
-    <td><img src="means_all.png"  width="100%"></td>
-    <td><img src="g_means.png"  width="100%"></td>
-  </tr>
-  <tr>
-    <td><img src="sensors_per_goal.png"   width="100%"></td>
-    <td><img src="touches.png"  width="100%"></td>
-  </tr>
-  <tr>
-    <td><img src="sensors.png"   width="100%"></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td><img src="weights.png"   width="100%"></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td><img src="weights_grid.png"   width="100%"></td>
-    <td><img src="positions_grid.png"   width="100%"></td>
-  </tr>
-</table>
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset=\"UTF-8\">
+        <title> $(basename $DIR) </title>
+        </head>
 
-</body>
+        <body>
+        <h1>$(basename $DIR)</h1>
+        <table style=\"width:100%\">
+        <tr>
+        <td><img src=\"means_all.png\"  width=\"100%\"></td>
+        <td><img src=\"g_means.png\"  width=\"100%\"></td>
+        </tr>
+        <tr>
+        <td><img src=\"sensors_per_goal.png\"   width=\"100%\"></td>
+        <td><img src=\"touches.png\"  width=\"100%\"></td>
+        </tr>
+        <tr>
+        <td><img src=\"sensors.png\"   width=\"100%\"></td>
+        <td></td>
+        </tr>
+        <tr>
+        <td><img src=\"weights.png\"   width=\"100%\"></td>
+        <td></td>
+        </tr>
+        <tr>
+        <td><img src=\"weights_grid.png\"   width=\"100%\"></td>
+        <td><img src=\"positions_grid.png\"   width=\"100%\"></td>
+        </tr>
+        </table>
 
-</html>
-EOF
-fi
+        </body>
 
-if [ $WWW == true ] && [ $GRAPHS == true ]; then
-    x-www-browser $LOCAL_DIR/plots.html &
-    sleep 2
-fi
+        </html>
+        
+        " 
+        
+        echo "$plots_file" > $LOCAL_DIR/plots.html
+    fi
+
+    if [ $WWW == true ] && [ $GRAPHS == true ]; then
+        x-www-browser $LOCAL_DIR/plots.html &
+        sleep 2
+    fi
+}
 
 run()
 {
@@ -192,7 +200,7 @@ run()
     	sort -k 1 -n | sed -e "s/^/SIM 1 /" | \
     	sed -e"s/\s\+/ /g" > $TMP_DIR/all_trials  
     	 	
-    if [[ ! -z "$SELECT_BLOCKS" ]]; then
+    if [[ $BLOCKS != all ]]; then
 	    if [[ -d "${DIR}/main_data/store" ]]; then
 	        last_dumped=$(find $DIR | eval "grep dump | grep store $SELECT_BLOCKS | tail -1")
 	    	cp $last_dumped $TMP_DIR/dumped_robot
@@ -207,7 +215,7 @@ run()
     if [[ -f dumped_robot ]]; then
     	echo "run Python script..."
         cd ${BASE}/simulation/src
-        python get_data.py -s $TMP_DIR &> $TMP_DIR/get_data_log        
+        python get_data.py -s "$TMP_DIR" &> $TMP_DIR/get_data_log        
         cd -
     fi
     
@@ -235,7 +243,9 @@ run()
     cd $CURR
 }
 
+start_elab
 run
+
 if [ ! -z "$LOOP" ]; then
-    for((;;)); do run; sleep $LOOP; done
+    for((;;)); do sleep $LOOP; run; done
 fi

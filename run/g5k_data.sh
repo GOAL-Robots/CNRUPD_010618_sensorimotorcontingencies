@@ -48,6 +48,8 @@ run_cmd()
 
     sudo service apache2 restart
     pip install pyqtgraph
+    sudo sed -i -e\"s/\(ps:alpha.*-dGraphicsAlphaBits=%u\)/\1 -dGraphicsAlphaBits=1/\" /etc/ImageMagick-6/delegates.xml
+
     mkdir -p \${HOME}/public_html
 
     cp kill_g.sh  \${HOME}/public_html
