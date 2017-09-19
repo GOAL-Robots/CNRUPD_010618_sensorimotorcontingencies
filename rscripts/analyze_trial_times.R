@@ -27,6 +27,8 @@ if (!("Verdana" %in% fonts()))
 N_GOALS = 25
 all_trials <- fread("all_trials")
 names(all_trials) <- c("LEARNING_TYPE", "INDEX", "TIMESTEPS", "GOAL")
+
+all_trials = subset(all_trials, TIMESTEPS < 400000)
 TS = max(all_trials$TIMESTEPS)
 N = length(all_trials$TIMESTEPS)
 
