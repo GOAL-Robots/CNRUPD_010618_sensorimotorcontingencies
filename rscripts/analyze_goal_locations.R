@@ -44,7 +44,7 @@ last.non.occurr <- function(x, a)
 
     res <- rep(0, length(x))
 
-    if(length(idx) > 0) {
+    if (length(idx) > 0) {
         after <- c(rep(0, idx - 1),   # zeros before idx
                    rep(1, length(x) - (idx - 1)))   # ones after idx
         res <- c(0, diff(after)) * (x > 0)    # ositive difference
@@ -64,7 +64,7 @@ first.occurr <- function(x, a)
 
     res <- rep(0, length(x))
 
-    if(length(idx) > 0) {
+    if (length(idx) > 0) {
         res[idx] = 1
     }
 
@@ -97,7 +97,8 @@ predictions$goal = factor(predictions$goal)
 
 # convert goal.current into a factor
 predictions$goal.current <-
-    factor(predictions$goal.current,
+    factor( goals.labels[predictions$goal.current + 1],
+           levels = levels(predictions$goal),
            labels = levels(predictions$goal))
 
 # select only current goals
@@ -141,67 +142,48 @@ sensors <- sensors[, .(timesteps,
                        sensor,
                        activation) ]
 
-# select only the sensor with maximal activity for
-#   each goal.current x prediction x timesteps
-sensors <- sensors[,
-                   .(activation = max(activation),
-                     sensor = sensor[activation == max(activation)]),
-                   by = .(goal.current, prediction, timesteps)]
 
-# add info abotut the init of maximal stable prediction
-#   (moment of end of learning)
-sensors <- sensors[,
-                   .(timesteps,
-                     goal = goal.current,
-                     prediction,
-                     sensor,
-                     prediction.switch = first.occurr(prediction,1)),
-                   by = .(goal.current)]
-
-# select rows where switch takes place
-sensors.switch <- subset(sensors, prediction.switch == 1)
-
-# TOUCHES ----------------------------------------------------------------------
-
-# __ load touches dataset ====
-touches <- fread("log_cont_sensors")
-touches_sensors.number <- dim(touches)[2] - 2 # first 2 columns are not sensors
-names(touches) <- c('timesteps',
-                   paste("sensor.",
-                         1:touches_sensors.number,
-                         sep = ""),
-                   "goal")
-
-# __ melt by sensor columns making a sensor factor ====
-touches <- melt(touches,
-               id.vars = c("timesteps", "goal"),
-               variable.name = "sensor",
-               value.name = "touch.count")
+sensors <- sensors[,.(timesteps,
+           prediction,
+           activation,
+           seq = order(timesteps)
+           ),
+        by = .(goal.current, sensor)]
 
 
 
-# INNER JOIN sensors x touches -------------------------------------------------
-
-# __ set the keys ====
-setkey(sensors, timesteps, goal)
-setkey(touches, timesteps, goal)
-
-# __ inner join ====
-touches.sensors <- touches[subset(sensors,
-                                  prediction.switch == 1),
-                           nomatch = 0]
-
-
-gp <- ggplot(touches.sensors,
-            aes(x = sensor,
-                y = touch.count + goal*3,
-                group = goal))
-gp <- gp + geom_line()
-print(gp)
-
-gp <- ggplot(sensors.switch,
-             aes(x = as.numeric(sensor),
-                 y = order(timesteps)))
-gp <- gp + geom_bar(stat = "identity")
-print(gp)
-
+#
+# # thow off zero activatons
+# sensors <- subset(sensors, activation > 0.1)
+#
+# # select only the sensor with maximal activity for
+# #   each goal.current x prediction x timesteps
+# sensors <- sensors[,
+#                    .(activation = max(activation),
+#                      sensor = sensor[activation == max(activation)]),
+#                    by = .(goal.current, prediction, timesteps)]
+#
+# # add info about the init of maximal stable prediction
+# #   (moment of end of learning)
+# sensors <- sensors[,
+#                    .(timesteps,
+#                      prediction,
+#                      sensor,
+#                      activation,
+#                      prediction.switch = first.occurr(prediction,1)),
+#                    by = .(goal.current)]
+#
+#
+# # select rows where switch takes place
+# # sensors.switch <- subset(sensors, prediction.switch == 1)
+#
+# # PLOTS ------------------------------------------------------------------------
+#
+# gp <- ggplot(sensors,
+#              aes(y = as.numeric(sensor),
+#                  x = timesteps,
+#                  group = factor(goal.current),
+#                  color = factor(goal.current)))
+# gp <- gp + geom_line(show.legend = FALSE)
+# print(gp)
+#

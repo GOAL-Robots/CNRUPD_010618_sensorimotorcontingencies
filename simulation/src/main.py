@@ -55,7 +55,11 @@ def main(args):
     if LOAD :
         print "loading ..."
         with gzip.open(dumpfile, 'rb') as f:
-            simulation = pickle.load(f)
+            (simulation, state) = pickle.load(f)
+            rng = np.random.RandomState(simulation.seed)  
+            rng.set_state(state)
+            simulation.rng = rng
+                
     else :
         if SEED is not None:
             rng = np.random.RandomState(SEED)  
@@ -98,8 +102,10 @@ def main(args):
         
         print "dumping ..."
         with gzip.open(dumpfile, 'wb') as f:
+            state = simulation.rng.get_state()
             simulation.init_streams()
-            simulation = pickle.dump(simulation, f)
+            pickle.dump((simulation, state), f)
+            
 
 
 if __name__ == "__main__" :

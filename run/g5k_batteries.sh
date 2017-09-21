@@ -107,7 +107,7 @@ TEMPLATE=$TMP_TEMPLATE
 
 
 # prepare parameters
-if [ $PARAMS == true ] && [ -z "$PARAMFILE" ]; then
+if [[ "$PARAMS" == true ]] && [[ -z "$PARAMFILE" ]]; then
     vim $TEMPLATE/src/model/parameters.py
     echo "done parameter setting"
 elif [ ! -z "$PARAMFILE" ]; then 
@@ -129,24 +129,25 @@ fi
 run()
 {
     local sim_dir=$1
-
+		
     cd ${CURR_DIR}
-   
+   	
     DUMP_OPT= 
-    if [ -d $sim_dir ]; then 
+    if [[ -d "$sim_dir" ]]; then 
         # manage the presence of previous data 
-        if [ ! -z "$(find $sim_dir| grep pdf)" ] && [ $DUMPED == false ]; then
-            # data are complete and we do not want to accumulate new data
-            echo "simulation already completed" 
-            return 0
-        elif
-        f [ $DUMPED == true ]; then 
+        if [[ "$DUMPED" == false ]]; then 
+        	if [[ "$(find $sim_dir| grep dumped | wc -l)" -eq "$ITER" ]]; then
+            	# data are complete and we do not want to accumulate new data
+            	echo "simulation already completed" 
+            	return 0
+            fi
+        elif [[ "$DUMPED" == true ]]; then
             # we want to continue from previous dumping and accumulate
-            DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)" 
-            DUMP_OPT="-s $(pwd)/$DUMPED_FILE"
+            DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)"   
+            DUMP_OPT="-s $(realpath $DUMPED_FILE)"
             echo "starting from $DUMPED_FILE"
         fi
-    else
+    elif [[ ! -d "$sim_dir" ]]; then
         # there are no previous data, create from template
         cp -r $TEMPLATE $sim_dir
         echo "populating $sim_dir"
@@ -159,10 +160,10 @@ run()
     echo "starting the simulation..."
 
     CUM_OPT="-n $ITER"   
-    GR_OPT=;[[ $GRAPH == true ]] && GR_OPT="-g"
-    [[ ! -z $SEED ]] && SEED_OPT="-S $SEED"
+    GR_OPT=;[[ "$GRAPH" == true ]] && GR_OPT="-g"
+    [[ ! -z "$SEED" ]] && SEED_OPT="-S $SEED"
     
-    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -c -t $TIMESTEPS $GR_OPT $SEED_OPT -w $wdir $CUM_OPT $DUMP_OPT"
+    MAIN_CMD="${MAIN_DIR}/run/run_batch.sh -t $TIMESTEPS $GR_OPT $SEED_OPT -w $wdir $CUM_OPT $DUMP_OPT"
     
     eval "$MAIN_CMD"
 

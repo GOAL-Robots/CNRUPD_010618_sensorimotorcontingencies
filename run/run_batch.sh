@@ -65,7 +65,7 @@ do
             shift 2;;
         -w | --wdir)
             WORK_DIR="$2"
-            shift 2;;
+            shift 2;;            
         -c | --clean)
             CLEAN=true
             shift;;
@@ -117,9 +117,9 @@ do
     # run first block
     if [[ $n -eq 0 ]]; then
 
-        if [ -f "$START" ]; then  # THERE IS a previous dump from which to start
-
-            if [ $CLEAN == true ]; then
+        if [[ -f "$START" ]]; then  # THERE IS a previous dump from which to start
+			
+            if [[ "$CLEAN" == true ]]; then
                 mv $START $WORK_DIR/dumped_robot
             else
                 cp $START $WORK_DIR/dumped_robot

@@ -219,7 +219,7 @@ class Simulation(object) :
         return res
 
     def save_cont_logs(self) :
-
+        
         if self.log_cont_sensors is not None :
 
             # save sensor info on file
@@ -238,7 +238,7 @@ class Simulation(object) :
             self.log_cont_sensors.flush()
 
     def save_match_logs(self) :
-
+        
         if self.log_sensors is not None :
 
             # save sensor info on file
