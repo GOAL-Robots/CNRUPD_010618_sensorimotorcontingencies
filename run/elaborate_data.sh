@@ -210,7 +210,7 @@ run()
     else
 	    if [[ -d "${DIR}/main_data/store" ]]; then
 	        last_dumped=$(find $DIR | eval "grep dump | grep store| sort | tail -1")
-	    	cp $last_dumped $TMP_DIR/dumped_robot
+	    	[[ ! -z "$last_dumped" ]] && cp $last_dumped $TMP_DIR/dumped_robot
 	    fi
 	fi
     
