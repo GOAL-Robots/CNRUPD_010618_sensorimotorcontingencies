@@ -33,7 +33,7 @@ def main(args):
     try :
         print "loading ..."
         with gzip.open(dumpfile, 'rb') as f:
-            simulation = pickle.load(f)
+            simulation,_ = pickle.load(f)
         #TODO:extract and save data   
     except :  
         raise Exception("{} does not exist".format(dumpfile))

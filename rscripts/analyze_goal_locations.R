@@ -24,7 +24,7 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-offline.plot <- FALSE
+offline.plot <- TRUE
 
 # UTILS ------------------------------------------------------------------------
 
@@ -72,48 +72,71 @@ first.occurr <- function(x, a)
 }
 
 # PREDICTIONS ------------------------------------------------------------------
+
 # __ load prediction dataset ====
 predictions <- fread("all_predictions")
-goals.number <- dim(predictions)[2] - 4 # first 4 columns are not goals
+goals.number <-
+    dim(predictions)[2] - 4 # first 4 columns are not goals
 goals.labels <- paste("goal.", 1:goals.number, sep = "")
 names(predictions) <- c("learning.type",
-                       "index",
-                       "timesteps",
-                       goals.labels,
-                       "goal.current")
+                        "index",
+                        "timesteps",
+                        goals.labels,
+                        "goal.current")
 
 # __ melt by goal columns making a goal factor ====
-predictions <- melt(predictions,
-                    id.vars = c("learning.type",
-                                "index",
-                                "timesteps",
-                                "goal.current"),
-                    measure.vars = goals.labels,
-                    variable.name = "goal",
-                    value.name = "prediction" )
+predictions <- melt(
+    predictions,
+    id.vars = c("learning.type",
+                "index",
+                "timesteps",
+                "goal.current"),
+    measure.vars = goals.labels,
+    variable.name = "goal",
+    value.name = "prediction")
 
 # convert goal into a factor
 predictions$goal = factor(predictions$goal)
 
 # convert goal.current into a factor
 predictions$goal.current <-
-    factor( goals.labels[predictions$goal.current + 1],
-           levels = levels(predictions$goal),
-           labels = levels(predictions$goal))
+    factor(
+        goals.labels[predictions$goal.current + 1],
+        levels = levels(predictions$goal),
+        labels = levels(predictions$goal)
+    )
 
 # select only current goals
 predictions <- subset(predictions, goal == goal.current)
 
 # maintain only needed variables
 predictions <- predictions[, .(timesteps,
-                              goal.current,
-                              prediction) ]
+                               goal.current,
+                               prediction)]
+# SENSORS ----------------------------------------------------------------------
+
+touches <- fread("log_cont_sensors")
+touches.number = dim(touches)[2] - 2
+names(touches) = c("timesteps",
+                   1:touches.number,
+                   "goal")
+
+touches <- melt(
+    touches,
+    id.vars = c("timesteps", "goal"),
+    variable.name = "sensor",
+    value.name = "touch"
+)
+
+touches <- touches[, .(touch = sum(touch > 0.1)),
+                   by = .(sensor)]
 
 # SENSORS ----------------------------------------------------------------------
 
 # __ load prediction dataset ====
 sensors <- fread('all_sensors')
-sensors.number <- dim(sensors)[2] - 4 # first 4 columns are not sensors
+sensors.number <-
+    dim(sensors)[2] - 4 # first 4 columns are not sensors
 sensors.labels <- paste("sensor.",
                         1:sensors.number,
                         sep = "")
@@ -125,65 +148,87 @@ names(sensors) <- c("learning.type",
 
 # __ melt by sensor columns making a sensor factor ====
 sensors$prediction =  predictions$prediction
-sensors = melt(sensors,
-               id.vars = c("learning.type",
-                           "index",
-                           "timesteps",
-                           "goal.current",
-                           "prediction"),
-               measure.vars = sensors.labels,
-               variable.name = "sensor",
-               value.name = "activation")
+sensors = melt(
+    sensors,
+    id.vars = c(
+        "learning.type",
+        "index",
+        "timesteps",
+        "goal.current",
+        "prediction"
+    ),
+    measure.vars = sensors.labels,
+    variable.name = "sensor",
+    value.name = "activation"
+)
 
 # maintain only needed variables
 sensors <- sensors[, .(timesteps,
                        goal.current,
                        prediction,
                        sensor,
-                       activation) ]
+                       activation)]
 
 
-sensors <- sensors[,.(timesteps,
-           prediction,
-           activation,
-           seq = order(timesteps)
-           ),
-        by = .(goal.current, sensor)]
+sensors <- sensors[, .(timesteps,
+                       prediction,
+                       activation,
+                       seq = order(timesteps)), # <---- added ordinal sequences of matches
+                   by = .(goal.current, sensor)]
+
+sensors.max  <-
+    sensors[, .(sensor = sensor[activation == max(activation)],
+                timesteps = timesteps[activation == max(activation)],
+                prediction = prediction[activation == max(activation)],
+                activation = activation[activation == max(activation)]),
+            by = .(goal.current, seq)]
+
+sensors.max <- sensors.max[activation != 0]
+
+sensors.max  <- sensors.max[, .(seq = order(seq),
+                                sensor = sensor,
+                                timesteps = timesteps,
+                                prediction = prediction,
+                                activation = activation),
+                            by = .(goal.current)]
 
 
+sensors.smoothed <- sensors.max[,.(
+    goal.current = goal.current,
+    seq = seq,
+    timesteps = timesteps,
+    sensor = filter(as.numeric(sensor), rep(1,200)/200))]
 
-#
-# # thow off zero activatons
-# sensors <- subset(sensors, activation > 0.1)
-#
-# # select only the sensor with maximal activity for
-# #   each goal.current x prediction x timesteps
-# sensors <- sensors[,
-#                    .(activation = max(activation),
-#                      sensor = sensor[activation == max(activation)]),
-#                    by = .(goal.current, prediction, timesteps)]
-#
-# # add info about the init of maximal stable prediction
-# #   (moment of end of learning)
-# sensors <- sensors[,
-#                    .(timesteps,
-#                      prediction,
-#                      sensor,
-#                      activation,
-#                      prediction.switch = first.occurr(prediction,1)),
-#                    by = .(goal.current)]
-#
-#
-# # select rows where switch takes place
-# # sensors.switch <- subset(sensors, prediction.switch == 1)
-#
-# # PLOTS ------------------------------------------------------------------------
-#
-# gp <- ggplot(sensors,
-#              aes(y = as.numeric(sensor),
-#                  x = timesteps,
+# PLOTS ------------------------------------------------------------------------
+
+
+# # __ Plot the sequences of max match touches for each goal ====
+# gp <- ggplot(sensors.max,
+#              aes(
+#                  y = as.numeric(sensor),
+#                  x = seq,
 #                  group = factor(goal.current),
-#                  color = factor(goal.current)))
-# gp <- gp + geom_line(show.legend = FALSE)
-# print(gp)
+#                  color = factor(goal.current)
+#              ))
 #
+# gp <- gp + geom_line(size = 0.5, show.legend = FALSE)
+# gp <- gp + geom_path(
+#     data = touches,
+#     aes(x = touch / max(touch) * 32000 - 35000,
+#         y = as.numeric(sensor)),
+#     size = 4,
+#     color = "#000000",
+#     inherit.aes = FALSE
+# )
+
+
+gp <- ggplot(sensors.smoothed,
+             aes(
+                 y = sensor,
+                 x = timesteps,
+                 group = factor(goal.current),
+                 color = factor(goal.current)
+             ))
+
+gp <- gp + geom_line(size = 0.5, show.legend = FALSE)
+print(gp)

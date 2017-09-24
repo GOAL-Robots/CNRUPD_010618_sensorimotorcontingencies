@@ -100,7 +100,7 @@ prediction.trials.mean <-
                       by = .(trial.seq.num)]
 
 # __ smooted trial durations ====
-window = 50
+window = 10
 prediction.trials.smoothed <- trials[predictions, nomatch = 0]
 
 prediction.trials.smoothed <-
@@ -218,7 +218,7 @@ gp <- gp + scale_color_gradientn(colours = c("#000000",
                                             "#ff4400",
                                             "#ffff00"))
 gp <- gp + xlab("Mean of Predictions")
-gp <- gp + ylab("Mean of Trials")
+gp <- gp + ylab("Mean of trial durations")
 gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
                                        title = "Trial\nsequence\nnumber"))
 
