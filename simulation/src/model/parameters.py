@@ -58,10 +58,10 @@ gs_noise_scale = 50.0
 gs_sm_temp = 0.01
 gs_g2e_spars = 0.01
 gs_echo_ampl = 5.0
-gs_goal_window = 50
+gs_goal_window = 100
 gs_goal_learn_start = 10
 gs_reset_window = 10
-gs_eta_decay = False
+gs_eta_decay = True
 gs_multiple_echo = False
 
 gp_eta = 0.35

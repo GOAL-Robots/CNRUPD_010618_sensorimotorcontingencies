@@ -6,7 +6,7 @@ import model.kinematics as KM
 from gauss_utils import OptimizedGaussianMaker as GaussianMaker
 from gauss_utils import pseudo_diag
 from numpy.random.mtrand import randint
-
+from utils import expSaturatedDecay
 
 def softmax(x, t=0.1):
     '''
@@ -392,7 +392,7 @@ class GoalSelector(object):
                 target = self.target_position[goalwin_idx]
                 x = self.inp
                 y = self.tout
-                eta = self.ETA * 0.25 + self.ETA * 0.75 * comp
+                eta = self.ETA * expSaturatedDecay(comp)
                 w = self.curr_echo2out_w
                 w += eta * np.outer((1 - y**2) * (target - y), x)
         #------------------------------------------------

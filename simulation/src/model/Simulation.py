@@ -473,7 +473,7 @@ class Simulation(object) :
             # Train experts
             if  self.gs.goal_window_counter > self.gs.GOAL_LEARN_START :
                 comp = 1 - gs_eta_decay * self.gp.w.mean()
-                self.gs.learn(comp=comp)
+                self.gs.learn(comp = comp)
 
             # update counters
 
