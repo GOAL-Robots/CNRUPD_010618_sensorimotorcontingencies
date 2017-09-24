@@ -75,7 +75,6 @@ def angles2positions(angles_array, act = None):
 
 def expSaturatedDecay(x, temp = 50.0):
     ret = 2.0 / (np.exp(-temp * x) + 1.0) - 1.0
-    print x,ret
     #ret = 1.0*(x<0.99) 
     return ret
         
