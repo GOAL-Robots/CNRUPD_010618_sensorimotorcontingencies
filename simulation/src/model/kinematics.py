@@ -28,6 +28,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from __future__ import division
 
 import copy
+import math
 import numpy as np
 import numpy.random as rnd
 np.set_printoptions(suppress=True, precision=5, linewidth=9999999)
@@ -45,15 +46,30 @@ def cross(a, b):
     """ Calculate the cross product between two vectors in a
         2D space (redefined for speed)
 
-    :param v1: first vector
-    :type v1: numpy.array(n, dtype=float)
+    :param a: first vector
+    :type a: numpy.array(n, dtype=float)
 
-    :param v2: second vector
-    :type v2: numpy.array(n, dtype=float)
+    :param b: second vector
+    :type b: numpy.array(n, dtype=float)
 
     """
 
     return a[0] * b[1] - a[1] * b[0]
+
+def norm(a):
+    """ Calculate the norm of a vecto in a
+        2D space (redefined for speed)
+
+    :param a: the vector
+    :type a: numpy.array(n, dtype=float)
+
+    """
+
+    return math.sqrt(a[0]**2 + a[1]**2)
+
+
+
+
 
 def project(a, b, c):
     """ Projects the point c into the segment ab
@@ -79,9 +95,9 @@ def project(a, b, c):
     
     # if sum of the distances of d form a and b is equal to 
     # the distance of a from b then d belongs to the segment ab
-    between = ((np.linalg.norm(a - d) + 
-                np.linalg.norm(b - d) ) / 
-               np.linalg.norm(b - a))
+    between = ((norm(a - d) + 
+                norm(b - d) ) / 
+               norm(b - a))
     
     if between == 1 :
         return d
@@ -106,8 +122,11 @@ def get_angle(v1, v2):
     """
 
     # must be both segments (not points)
-    if (np.linalg.norm(v1) * np.linalg.norm(v2)) != 0:
-        cosangle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    nv1 = norm(v1)
+    nv2 = norm(v2)
+    nv1v2 = nv1*nv2
+    if (nv1v2) != 0:
+        cosangle = np.dot(v1, v2) / nv1v2
         cosangle = np.maximum(-1, np.minimum(1, cosangle))
         angle = np.arccos(cosangle)
         # reflex angle
@@ -167,7 +186,7 @@ class Polychain(object):
 
         # calculate segments lengths
         self.segment_lengths = [
-            np.linalg.norm(self.chain[x] - self.chain[x - 1])
+            norm(self.chain[x] - self.chain[x - 1])
             for x in xrange(1, self.vertices_number)]
 
         # calculate angles at the vertices
@@ -207,14 +226,14 @@ class Polychain(object):
 
             # check if the  point is within the same line
             if np.any(c != a) and np.any(c != b):
-                if np.linalg.norm(cross(b - a, c - a)) < epsilon:
+                if math.fabs(cross(b - a, c - a)) < epsilon:
 
                     projected_point = project(a,b,c)
 
                     if projected_point is not None:
                         
                         distance = np.sum(self.segment_lengths[:(x - 1)])
-                        distance += np.linalg.norm(projected_point - self.chain[x - 1])
+                        distance += norm(projected_point - self.chain[x - 1])
                         distance = distance / sum(self.segment_lengths)
                         distances.append(distance)
                         
