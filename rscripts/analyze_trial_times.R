@@ -160,7 +160,8 @@ gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
                                         title = "Goal"))
 
 if(offline.plot == TRUE) {
-    pdf("trial_duration_sequence_per_goal_smoothed.pdf", width = 5, height = 3)
+    pdf("trial_duration_sequence_per_goal_smoothed.pdf",
+        width = 5, height = 3)
     print(gp)
     dev.off()
 } else {
