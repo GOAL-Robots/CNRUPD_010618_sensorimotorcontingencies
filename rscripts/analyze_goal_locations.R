@@ -176,11 +176,17 @@ sensors <- sensors[, .(timesteps,
                        seq = order(timesteps)), # <---- added ordinal sequences of matches
                    by = .(goal.current, sensor)]
 
+
+which_weight_mean <- function(x) {
+    errs <- abs(x - mean(x))
+    idx <- which(errs == min(errs))
+    idx
+}
 sensors.max  <-
-    sensors[, .(sensor = sensor[activation == max(activation)],
-                timesteps = timesteps[activation == max(activation)],
-                prediction = prediction[activation == max(activation)],
-                activation = activation[activation == max(activation)]),
+    sensors[, .(sensor = sensor[which_weight_mean(activation)],
+                timesteps = timesteps[which_weight_mean(activation)],
+                prediction = prediction[which_weight_mean(activation)],
+                activation = activation[which_weight_mean(activation)]),
             by = .(goal.current, seq)]
 
 sensors.max <- sensors.max[activation != 0]
@@ -193,33 +199,15 @@ sensors.max  <- sensors.max[, .(seq = order(seq),
                             by = .(goal.current)]
 
 
+window = 30
 sensors.smoothed <- sensors.max[,.(
     goal.current = goal.current,
     seq = seq,
     timesteps = timesteps,
-    sensor = filter(as.numeric(sensor), rep(1,200)/200))]
+    sensor = filter(as.numeric(sensor), rep(1,window)/window))]
 
 # PLOTS ------------------------------------------------------------------------
 
-
-# # __ Plot the sequences of max match touches for each goal ====
-# gp <- ggplot(sensors.max,
-#              aes(
-#                  y = as.numeric(sensor),
-#                  x = seq,
-#                  group = factor(goal.current),
-#                  color = factor(goal.current)
-#              ))
-#
-# gp <- gp + geom_line(size = 0.5, show.legend = FALSE)
-# gp <- gp + geom_path(
-#     data = touches,
-#     aes(x = touch / max(touch) * 32000 - 35000,
-#         y = as.numeric(sensor)),
-#     size = 4,
-#     color = "#000000",
-#     inherit.aes = FALSE
-# )
 
 
 gp <- ggplot(sensors.smoothed,

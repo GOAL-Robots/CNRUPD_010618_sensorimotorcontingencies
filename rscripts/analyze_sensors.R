@@ -1,166 +1,291 @@
-toInstall <- c("extrafont", "ggplot2", "data.table", "cowplot")
-for(pkg in toInstall)
-{
-    if(!require(pkg, character.only=TRUE) )
-    {
-        install.packages(pkg, repos = "http://cran.us.r-project.org")
+# INTRO ------------------------------------------------------------------------
+
+rm(list = ls())
+
+# __ list of required packages ====
+toInstall <- c("extrafont",
+               "ggplot2",
+               "data.table",
+               "cowplot",
+               "grid",
+               "gridExtra")
+
+# __ verify and install uninstalled packages ====
+for (pkg in toInstall) {
+    if (!require(pkg, character.only = TRUE)) {
+        install.packages(pkg,
+                         repos = "http://cran.us.r-project.org")
     }
 }
 
-require(data.table)
-require(ggplot2)
-require(cowplot)
-library(extrafont)
-
-if (!("Verdana" %in% fonts()) )
-{
+# __ load Verdana font ====
+if (!("Verdana" %in% fonts())) {
     font_import()
     loadfonts()
 }
-###############################################################################################################################
 
-sem<-function(x) sd(x)/sqrt(length(x))
+offline.plot <- TRUE
 
-###############################################################################################################################
+# UTILS ------------------------------------------------------------------------
 
-LASTIMESTEPS = 000
-AMP_TH = 0.1
-
-predictions <- fread("all_predictions")
-N_GOALS = dim(predictions)[2] - 4
-names(predictions) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", paste("G", 1:N_GOALS, sep=""),"CURR_GOAL")
-
-goal_labels = paste("G", 1:N_GOALS, sep = "")
-gpredictions = melt(predictions,
-             id.vars = c("LEARNING_TYPE",  "INDEX", "TIMESTEPS", "CURR_GOAL"),
-             measure.vars = goal_labels,
-             variable.name="GOAL",
-             value.name="prediction" )
-gpredictions$CGOAL = paste("G", gpredictions$CURR_GOAL+1, sep="")
-gpredictions$CCGOAL = gpredictions$CGOAL == gpredictions$GOAL
-gpredictions = subset(gpredictions, CCGOAL==TRUE)
-gpredictions = gpredictions[with(gpredictions, order(LEARNING_TYPE,INDEX,TIMESTEPS)),]
-
-sensors = fread('all_sensors')
-N_SENSORS = (dim(sensors)[2] - 4)
-sens_labels = paste("S", 1:N_SENSORS, sep = "")
-names(sensors) <- c("LEARNING_TYPE", "INDEX","TIMESTEPS", sens_labels, "CURR_GOAL")
-sensors = sensors[with(sensors, order(LEARNING_TYPE,INDEX,TIMESTEPS)),]
-sensors$prediction =  gpredictions$prediction
-
-TH_PREDICTION = 0.9
-START_TIMESTEPS = 300000
-TH_TIMESTEPS = 350000 # max(sensors$TIMESTEPS)
-sensors = subset(sensors, prediction >= TH_PREDICTION)
-sensors = subset(sensors, TIMESTEPS >= START_TIMESTEPS & TIMESTEPS < TH_TIMESTEPS)
-
-sensors = melt(sensors,
-             id.vars = c("LEARNING_TYPE", "INDEX", "TIMESTEPS", "CURR_GOAL"),
-             measure.vars = sens_labels,
-             variable.name="sensor",
-             value.name="amp" )
-
-means = sensors[,.(a_mean = mean(amp),
-                         a_count = sum(amp>AMP_TH),
-                         a_sd = sd(amp),
-                         a_err = sem(amp)), by=.(LEARNING_TYPE, INDEX, sensor)]
-
-
-means_goal = sensors[,.(a_mean = mean(amp),
-                         a_count = sum(amp>AMP_TH),
-                         a_sd = sd(amp),
-                         a_err = sem(amp)), by=.(LEARNING_TYPE, INDEX, sensor, CURR_GOAL)]
-
-
-#---------------------------------------------------------------------
-# find the sensor with maximum touch for each goal
-maxes = means_goal[,.(mx=max(a_mean)), by=.(CURR_GOAL) ]
-idcs = c()
-for(mx in maxes$mx)  idcs = c(idcs, which(means_goal$a_mean==mx)[1])
-maxes$sensor = means_goal[idcs]$sensor
-maxes = maxes[order(maxes$sensor)]
-
-means_goal$CURR_GOAL_ORDERED=factor(means_goal$CURR_GOAL, levels=maxes$CURR_GOAL)
-#---------------------------------------------------------------------
-
-count_tot = sum(means$a_count)
-
-for(idx in unique(means$INDEX))
-{
-
-    gp1 = ggplot(subset(means, INDEX==idx ), aes(x = sensor, y = a_mean, group = LEARNING_TYPE))
-    gp1 = gp1 + geom_ribbon(aes(ymin = 0, ymax = a_mean + a_sd), colour = "#666666", fill = "#dddddd")
-    gp1 = gp1 + geom_line(size = 1.5, colour = "#000000")
-    gp1 = gp1 + geom_bar(aes(y=5*a_count/count_tot),stat="identity", alpha=.2)
-    gp1 = gp1 + xlab("Sensors")
-    gp1 = gp1 + ylab("Means of sensor activation")
-    gp1 = gp1 + scale_y_continuous(sec.axis = sec_axis(trans = ~./5, name = "Proportion of touches"))
-
-    gp1 = gp1 + theme_bw()
-    gp1 = gp1 + theme(
-                    text=element_text(size=11, family="Verdana"),
-                    axis.text.x = element_text(size=8, angle = 90, hjust = 1),
-                    axis.text.y = element_text(size=10),
-                    panel.border=element_blank(),
-                    legend.title = element_blank(),
-                    legend.background = element_blank(),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank()
-                    )
-
-    basename = "sensors"
-    pdf(paste(
-        basename,".pdf",sep=""),
-        width = 7,
-        height = 3,
-        family="Verdana")
-    print(gp1)
-    dev.off()
-    bitmap(
-           type="png256",
-           paste(basename,".png",sep=""),
-           width = 7,
-           height = 3,
-           family = "Verdana")
-    print(gp1)
-    dev.off()
-
-
-    gp2 = ggplot(subset(means_goal, INDEX==idx & LEARNING_TYPE=="SIM"), aes(x = sensor, y = a_mean))
-    gp2 = gp2 + geom_bar(aes(y=a_count),stat="identity")
-    gp2 = gp2 + facet_grid(CURR_GOAL_ORDERED~.)
-    gp2 = gp2 + scale_y_continuous(limits=c(0, 90), breaks= c(0, 60),
-                                   sec.axis = sec_axis(trans = ~., breaks=c(),
-                                                       name = "Goals"))
-    gp2 = gp2 + xlab("Sensors")
-    gp2 = gp2 + ylab("Number of touches")
-    gp2 = gp2 + theme_bw()
-    gp2 = gp2 + theme(
-                    text=element_text(size=11, family="Verdana"),
-                    panel.border=element_blank(),
-                    axis.text.x = element_text(size=8, angle = 90, hjust = 1),
-                    axis.text.y = element_text(size=8),
-                    strip.text.y = element_text(size=8, angle = 0, face = "bold"),
-                    strip.background = element_rect(colour="#FFFFFF", fill="#FFFFFF"),
-                    legend.title = element_blank(),
-                    legend.background = element_blank(),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank()
-                    )
-
-    pdf("sensors_per_goal.pdf",
-        width = 7,
-        height = 7,
-        family="Verdana")
-    print(gp2)
-    dev.off()
-    bitmap(
-           type="png256",
-           paste(basename,".png",sep=""),
-           width = 7,
-           height = 7,
-           family = "Verdana")
-    print(gp2)
-    dev.off()
+# standard error
+std.error <- function(x) {
+    sd(x) / sqrt(length(x))
 }
-print(gp2)
+
+# CONSTS -----------------------------------------------------------------------
+
+prediction.th <- 0.9
+timesteps.start <- 200000
+timesteps.stop <- 250000
+sensors.activation.th <- 0.1
+
+# PREDICTIONS ------------------------------------------------------------------
+
+# __ load prediction dataset ====
+predictions <- fread("all_predictions")
+goals.number <-
+    dim(predictions)[2] - 4 # first 4 columns are not goals
+goals.labels <- paste("goal.", 1:goals.number, sep = "")
+names(predictions) <- c("learning.type",
+                        "index",
+                        "timesteps",
+                        goals.labels,
+                        "goal.current")
+
+# __ melt by goal columns making a goal factor ====
+predictions <- melt(
+    predictions,
+    id.vars <- c("learning.type",
+                "index",
+                "timesteps",
+                "goal.current"),
+    measure.vars <- goals.labels,
+    variable.name <- "goal",
+    value.name <- "prediction"
+)
+
+# __ convert goal.current into a factor ====
+predictions$goal.current <-
+    factor(
+        goals.labels[predictions$goal.current + 1],
+        levels = levels(predictions$goal),
+        labels = levels(predictions$goal)
+    )
+
+predictions <- subset(predictions, goal == goal.current)
+predictions$goal.current <- as.numeric(predictions$goal.current) - 1
+
+# __ maintain only needed variables ====
+predictions <- predictions[, .(timesteps,
+                               goal.current,
+                               prediction)]
+
+# SENSORS ----------------------------------------------------------------------
+sensors <- fread('all_sensors')
+sensors.number <- dim(sensors)[2] - 4  # first 4 columns are not goals
+sensors.labels <- paste("S", 1:sensors.number, sep = "")
+names(sensors) <- c("learning.type",
+                    "index",
+                    "timesteps",
+                    sensors.labels,
+                    "goal.current")
+
+# __ melt by goal columns making a sensor factor ====
+sensors <- melt(
+    sensors,
+    id.vars = c("learning.type",
+                "index",
+                "timesteps",
+                "goal.current"),
+    measure.vars = sensors.labels,
+    variable.name = "sensor",
+    value.name = "activation"
+)
+
+# __ Maintain only needed variables and add prediction ====
+sensors <- sensors[, .(
+    timesteps,
+    goal.current,
+    sensor,
+    activation,
+    prediction = predictions[predictions$goal.current == goal.current]$prediction),
+by = .(goal.current)]
+
+
+# __ Define sensors subset ====
+sensors <- subset(sensors, prediction >= prediction.th)
+sensors <- subset(sensors,
+                 timesteps >= timesteps.start &
+                     timesteps < timesteps.stop)
+
+# __  sensors means ====
+sensors.means <- sensors[, .(
+    activation.mean = mean(activation),
+    activation.count = sum(activation > sensors.activation.th),
+    activation.sd = sd(activation),
+    activation.error = std.error(activation)
+),
+by = .(sensor)]
+
+# __  sensors means per goal ====
+sensors.goal.means <- sensors[, .(
+    activation.mean = mean(activation),
+    activation.count = sum(activation > sensors.activation.th),
+    activation.sd = sd(activation),
+    activation.error = std.error(activation)
+),
+by = .(sensor, goal.current)]
+
+#---------------------------------------------------------------------
+
+# Order goals per maximum
+sensors.goal.means.max <-
+    sensors.goal.means[, .(
+        activation.max = max(activation.mean)),
+        by = .(goal.current)]
+
+activation.max.indices <- c()
+for(activation.max in sensors.goal.means.max$activation.max) {
+    activation.max.indices <-
+        c(activation.max.indices,
+          which(sensors.goal.means$activation.mean ==
+                    activation.max)[1])
+}
+
+sensors.goal.means.max$sensor <-
+    sensors.goal.means[activation.max.indices]$sensor
+sensors.goal.means.max = sensors.goal.means.max[order(sensors.goal.means.max$sensor)]
+
+sensors.goal.means$goal.current.ordered <-
+    factor(sensors.goal.means$goal.current,
+           levels = sensors.goal.means.max$goal.current)
+
+#---------------------------------------------------------------------
+
+sensors.activation.count.tot = sum(sensors.means$activation.count)
+
+gp <- ggplot(sensors.means,
+             aes(x = sensor,
+                 y = activation.mean, group=1))
+
+
+gp <- gp + geom_ribbon(
+    aes(ymin = 0, ymax = activation.mean + activation.sd),
+    colour = "#666666",
+    fill = "#dddddd"
+)
+gp <- gp + geom_line(size = 1.5, colour = "#000000")
+
+gp <- gp + geom_bar(
+    aes(y = 5 * activation.count /
+            sensors.activation.count.tot),
+    stat = "identity",
+    alpha = .2
+)
+
+gp <- gp + xlab("Sensors")
+gp <- gp + ylab("Means of sensor activation")
+gp <- gp + scale_y_continuous(
+    sec.axis = sec_axis(trans = ~ . / 5,
+                        name = "Proportion of touches"))
+
+gp <- gp + theme_bw()
+gp <- gp + theme(
+    text = element_text(size = 11, family = "Verdana"),
+    axis.text.x = element_text(
+        size = 8,
+        angle = 90,
+        hjust = 1
+    ),
+    axis.text.y = element_text(size = 10),
+    panel.border = element_blank(),
+    legend.title = element_blank(),
+    legend.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+)
+
+gp_sensors <- gp
+
+basename <- "sensors"
+pdf(
+    paste(basename, ".pdf", sep = ""),
+    width = 7,
+    height = 3,
+    family = "Verdana"
+)
+print(gp_sensors)
+dev.off()
+bitmap(
+    type = "png256",
+    paste(basename, ".png", sep = ""),
+    width = 7,
+    height = 3,
+    family = "Verdana"
+)
+print(gp_sensors)
+dev.off()
+print(gp_sensors)
+
+
+gp <- ggplot(
+    subset(sensors.goal.means),
+    aes(x = sensor, y = activation.mean)
+)
+gp <- gp + geom_bar(aes(y = activation.count), stat = "identity")
+gp <- gp + facet_grid(goal.current.ordered ~ .)
+gp <- gp + scale_y_continuous(
+    limits = c(0, 90),
+    breaks = c(0, 60),
+    sec.axis = sec_axis(
+        trans = ~ .,
+        breaks = c(),
+        name = "Goals"
+    )
+)
+gp <- gp + xlab("Sensors")
+gp <- gp + ylab("Number of touches")
+gp <- gp + theme_bw()
+gp <- gp + theme(
+    text = element_text(size = 11, family = "Verdana"),
+    panel.border = element_blank(),
+    axis.text.x = element_text(
+        size = 8,
+        angle = 90,
+        hjust = 1
+    ),
+    axis.text.y = element_text(size = 8),
+    strip.text.y = element_text(size = 8,
+                                angle = 0,
+                                face = "bold"),
+    strip.background = element_rect(colour = "#FFFFFF", fill =
+                                        "#FFFFFF"),
+    legend.title = element_blank(),
+    legend.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+)
+
+
+gp_sensors <- gp
+
+pdf(
+    "sensors_per_goal.pdf",
+    width = 7,
+    height = 7,
+    family = "Verdana"
+)
+print(gp_sensors)
+dev.off()
+bitmap(
+    type = "png256",
+    paste(basename, ".png", sep = ""),
+    width = 7,
+    height = 7,
+    family = "Verdana"
+)
+print(gp_sensors)
+dev.off()
+print(gp_sensors)
+

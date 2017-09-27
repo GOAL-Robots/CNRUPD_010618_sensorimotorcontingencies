@@ -24,7 +24,7 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-offline.plot <- FALSE
+offline.plot <- TRUE
 
 # TRIALS -----------------------------------------------------------------------
 
