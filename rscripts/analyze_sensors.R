@@ -1,6 +1,6 @@
-# INTRO ------------------------------------------------------------------------
-
 rm(list = ls())
+
+# INTRO ------------------------------------------------------------------------
 
 # __ list of required packages ====
 toInstall <- c("extrafont",
@@ -24,7 +24,8 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-offline.plot <- TRUE
+plot.offline = FALSE
+if (file.exists("OFFLINE")) { plot.offline = TRUE }
 
 # UTILS ------------------------------------------------------------------------
 
@@ -36,8 +37,6 @@ std.error <- function(x) {
 # CONSTS -----------------------------------------------------------------------
 
 prediction.th <- 0.9
-timesteps.start <- 200000
-timesteps.stop <- 250000
 sensors.activation.th <- 0.1
 
 # PREDICTIONS ------------------------------------------------------------------
@@ -115,177 +114,198 @@ by = .(goal.current)]
 
 # __ Define sensors subset ====
 sensors <- subset(sensors, prediction >= prediction.th)
-sensors <- subset(sensors,
-                 timesteps >= timesteps.start &
-                     timesteps < timesteps.stop)
-
-# __  sensors means ====
-sensors.means <- sensors[, .(
-    activation.mean = mean(activation),
-    activation.count = sum(activation > sensors.activation.th),
-    activation.sd = sd(activation),
-    activation.error = std.error(activation)
-),
-by = .(sensor)]
-
-# __  sensors means per goal ====
-sensors.goal.means <- sensors[, .(
-    activation.mean = mean(activation),
-    activation.count = sum(activation > sensors.activation.th),
-    activation.sd = sd(activation),
-    activation.error = std.error(activation)
-),
-by = .(sensor, goal.current)]
-
-#---------------------------------------------------------------------
-
-# Order goals per maximum
-sensors.goal.means.max <-
-    sensors.goal.means[, .(
-        activation.max = max(activation.mean)),
-        by = .(goal.current)]
-
-activation.max.indices <- c()
-for(activation.max in sensors.goal.means.max$activation.max) {
-    activation.max.indices <-
-        c(activation.max.indices,
-          which(sensors.goal.means$activation.mean ==
-                    activation.max)[1])
-}
-
-sensors.goal.means.max$sensor <-
-    sensors.goal.means[activation.max.indices]$sensor
-sensors.goal.means.max = sensors.goal.means.max[order(sensors.goal.means.max$sensor)]
-
-sensors.goal.means$goal.current.ordered <-
-    factor(sensors.goal.means$goal.current,
-           levels = sensors.goal.means.max$goal.current)
-
-#---------------------------------------------------------------------
-
-sensors.activation.count.tot = sum(sensors.means$activation.count)
-
-gp <- ggplot(sensors.means,
-             aes(x = sensor,
-                 y = activation.mean, group=1))
 
 
-gp <- gp + geom_ribbon(
-    aes(ymin = 0, ymax = activation.mean + activation.sd),
-    colour = "#666666",
-    fill = "#dddddd"
-)
-gp <- gp + geom_line(size = 1.5, colour = "#000000")
+# TOUCHES ----------------------------------------------------------------------
 
-gp <- gp + geom_bar(
-    aes(y = 5 * activation.count /
-            sensors.activation.count.tot),
-    stat = "identity",
-    alpha = .2
+touches <- fread("log_cont_sensors")
+touches.number = dim(touches)[2] - 2
+names(touches) = c("timesteps",
+                   1:touches.number,
+                   "goal")
+
+touches <- melt(
+    touches,
+    id.vars = c("timesteps", "goal"),
+    variable.name = "sensor",
+    value.name = "touch"
 )
 
-gp <- gp + xlab("Sensors")
-gp <- gp + ylab("Means of sensor activation")
-gp <- gp + scale_y_continuous(
-    sec.axis = sec_axis(trans = ~ . / 5,
-                        name = "Proportion of touches"))
-
-gp <- gp + theme_bw()
-gp <- gp + theme(
-    text = element_text(size = 11, family = "Verdana"),
-    axis.text.x = element_text(
-        size = 8,
-        angle = 90,
-        hjust = 1
-    ),
-    axis.text.y = element_text(size = 10),
-    panel.border = element_blank(),
-    legend.title = element_blank(),
-    legend.background = element_blank(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-)
-
-gp_sensors <- gp
+touches <- touches[, .(touch = sum(touch > 0.1)),
+                   by = .(sensor)]
+touches$touch.prop <- touches$touch / max(touches$touch)
+# PLOTS ------------------------------------------------------------------------
 
 basename <- "sensors"
-pdf(
-    paste(basename, ".pdf", sep = ""),
-    width = 7,
-    height = 3,
-    family = "Verdana"
-)
-print(gp_sensors)
-dev.off()
-bitmap(
-    type = "png256",
-    paste(basename, ".png", sep = ""),
-    width = 7,
-    height = 3,
-    family = "Verdana"
-)
-print(gp_sensors)
-dev.off()
-print(gp_sensors)
+sensor.means.max = max(sensors$activation)
 
+plot_sensors <- function(timesteps.start, timesteps.stop,
+                         xaxis = TRUE,
+                         yaxis = TRUE,
+                         sd = TRUE)
+{
 
-gp <- ggplot(
-    subset(sensors.goal.means),
-    aes(x = sensor, y = activation.mean)
-)
-gp <- gp + geom_bar(aes(y = activation.count), stat = "identity")
-gp <- gp + facet_grid(goal.current.ordered ~ .)
-gp <- gp + scale_y_continuous(
-    limits = c(0, 90),
-    breaks = c(0, 60),
-    sec.axis = sec_axis(
-        trans = ~ .,
-        breaks = c(),
-        name = "Goals"
-    )
-)
-gp <- gp + xlab("Sensors")
-gp <- gp + ylab("Number of touches")
-gp <- gp + theme_bw()
-gp <- gp + theme(
-    text = element_text(size = 11, family = "Verdana"),
-    panel.border = element_blank(),
-    axis.text.x = element_text(
-        size = 8,
-        angle = 90,
-        hjust = 1
+    # subset of sensors
+    sensors.current <-
+        subset(sensors,
+               timesteps >= timesteps.start &
+                   timesteps <= timesteps.stop)
+
+    # current means
+    sensors.means.current <- sensors.current[, .(
+        activation.mean = mean(activation),
+        activation.count =
+            sum(activation > sensors.activation.th),
+        activation.sd = sd(activation)
     ),
-    axis.text.y = element_text(size = 8),
-    strip.text.y = element_text(size = 8,
-                                angle = 0,
-                                face = "bold"),
-    strip.background = element_rect(colour = "#FFFFFF", fill =
-                                        "#FFFFFF"),
-    legend.title = element_blank(),
-    legend.background = element_blank(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-)
+    by = sensor]
+
+    sensor.means.current.max = max(sensors.means.current$activation.mean)
 
 
-gp_sensors <- gp
+    # main ggplot
+    gp <- ggplot(sensors.means.current)
 
-pdf(
-    "sensors_per_goal.pdf",
-    width = 7,
-    height = 7,
-    family = "Verdana"
-)
-print(gp_sensors)
-dev.off()
-bitmap(
-    type = "png256",
-    paste(basename, ".png", sep = ""),
-    width = 7,
-    height = 7,
-    family = "Verdana"
-)
-print(gp_sensors)
-dev.off()
-print(gp_sensors)
+    # variance
+    if (sd == TRUE) {
+        gp <- gp + geom_ribbon(
+            aes(
+                x = as.numeric(sensor),
+                ymin = 0,
+                ymax = activation.mean + activation.sd
+            ),
+            colour = "#666666",
+            fill = "#dddddd",
+            inherit.aes = FALSE
+        )
+    }
 
+    gp <- gp + geom_line(
+        aes(x = as.numeric(sensor),
+            y = activation.mean),
+        size = 1, colour = "#000000",
+        inherit.aes = FALSE)
+
+    gp <- gp + geom_bar(
+        aes(x = as.numeric(sensor),
+            y = activation.count/max(activation.count) * sensor.means.current.max),
+        stat = "identity",
+        alpha = .2,
+        inherit.aes = FALSE
+    )
+
+    gp <- gp + geom_line(
+        data = touches,
+        aes(x = as.numeric(sensor),
+            y = touch.prop/2),
+        size = 1.5, colour = "#000000",
+        inherit.aes = FALSE)
+
+    gp <- gp + geom_line(
+        data = touches,
+        aes(x = as.numeric(sensor),
+            y = touch.prop/2),
+        size = 1.0, colour = "#ffffff",
+        inherit.aes = FALSE)
+
+    gp <- gp + xlab("Sensors")
+    gp <- gp + ylab("Means of sensor activation")
+
+    gp <-
+        gp + scale_y_continuous( breaks = c(0,0.5,1)/sensor.means.max,
+                                 labels = c(0,0.5,1),
+                                 sec.axis = sec_axis(
+                                     trans = ~ .,
+                                     breaks = c(0,0.5,1),
+                                     name = "Proportion of touches"))
+
+    gp <- gp + theme_bw()
+
+    if(xaxis == TRUE) {
+        axis.text.x = element_text(
+            size = 8,
+            angle = 90,
+            hjust = 1
+        )
+        axis.ticks.x = element_line()
+        axis.title.x = element_text()
+    } else {
+        axis.text.x = element_blank()
+        axis.ticks.x = element_blank()
+        axis.title.x = element_blank()
+    }
+
+    if(yaxis == TRUE) {
+        axis.text.y = element_text(
+            size = 10,
+        )
+        axis.ticks.y = element_line()
+        axis.title.y = element_text()
+    } else {
+        axis.text.y = element_blank()
+        axis.ticks.y = element_blank()
+        axis.title.y = element_blank()
+    }
+
+    gp <- gp + theme(
+        text = element_text(size = 11, family = "Verdana"),
+        axis.text.x = axis.text.x,
+        axis.text.y = axis.text.y,
+        axis.ticks.x = axis.ticks.x,
+        axis.ticks.y = axis.ticks.y,
+        axis.title.x = axis.title.x,
+        axis.title.y = axis.title.y,
+        panel.border = element_blank(),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+    )
+
+    gp
+}
+
+gp <- ggdraw()
+timesteps.stop = 20000
+timesteps.gap = 2000
+bin.limits <- seq(00, timesteps.stop, timesteps.gap)
+
+for (bin in 2:length(bin.limits)) {
+    bin.limits[bin-1]
+    bin.limits[bin]
+
+    gp_el <- plot_sensors(
+        timesteps.start = bin.limits[bin-1],
+        timesteps.stop =  bin.limits[bin],
+        xaxis = FALSE,
+        yaxis = FALSE,
+        sd = FALSE
+    )
+    gp <- gp + draw_plot(gp_el,
+                         x = 0.1,
+                         y = bin.limits[bin-1]/(timesteps.stop),
+                         width = .9,
+                         height = timesteps.gap/timesteps.stop)
+}
+
+print(gp)
+
+# gp <- plot_sensors(
+#     timesteps.start = 0000,
+#     timesteps.stop =  60000
+# )
+#
+# gp_sensors = gp
+#
+# if (plot.offline == TRUE) {
+#     pdf(
+#         paste(basename, ".pdf", sep = ""),
+#         width = 7,
+#         height = 3,
+#         family = "Verdana"
+#     )
+#     print(gp_sensors)
+#     dev.off()
+# } else {
+#     print(gp_sensors)
+# }

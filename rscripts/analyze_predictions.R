@@ -1,3 +1,5 @@
+rm(list = ls())
+
 # INTRO ------------------------------------------------------------------------
 
 # __ list of required packages ====
@@ -21,6 +23,10 @@ if (!("Verdana" %in% fonts())) {
     font_import()
     loadfonts()
 }
+
+plot.offline = FALSE
+if (file.exists("OFFLINE")) { plot.offline = TRUE }
+
 
 # UTILS ------------------------------------------------------------------------
 
@@ -63,9 +69,6 @@ if(!is.null(timesteps.last))  {
 timesteps.max <- max(weights$timesteps)
 timesteps.number <- length(weights$timesteps)
 timesteps.all <- timesteps.max
-
-plot.offline = FALSE
-if (file.exists("OFFLINE")) { plot.offline = TRUE }
 
 # PREDICTIONS ------------------------------------------------------------------
 

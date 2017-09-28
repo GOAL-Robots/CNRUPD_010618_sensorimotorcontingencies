@@ -480,11 +480,13 @@ class Simulation(object) :
             self.gs.goal_window_counter += 1
 
             # End of trial
-
-            self.match_value = match(
-                    self.gm.goalrep_layer,
-                    self.gs.goal_selection_vec
-                    )
+            if simulation_learning == True:
+                self.match_value = match(
+                        self.gm.goalrep_layer,
+                        self.gs.goal_selection_vec
+                        )
+            else:
+                self.match_value = 0
 
             if (self.match_value == 1 or
                 self.gs.goal_window_counter >= self.gs.GOAL_WINDOW) :

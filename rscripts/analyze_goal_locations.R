@@ -113,23 +113,7 @@ predictions <- subset(predictions, goal == goal.current)
 predictions <- predictions[, .(timesteps,
                                goal.current,
                                prediction)]
-# SENSORS ----------------------------------------------------------------------
 
-touches <- fread("log_cont_sensors")
-touches.number = dim(touches)[2] - 2
-names(touches) = c("timesteps",
-                   1:touches.number,
-                   "goal")
-
-touches <- melt(
-    touches,
-    id.vars = c("timesteps", "goal"),
-    variable.name = "sensor",
-    value.name = "touch"
-)
-
-touches <- touches[, .(touch = sum(touch > 0.1)),
-                   by = .(sensor)]
 
 # SENSORS ----------------------------------------------------------------------
 
