@@ -24,7 +24,8 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-offline.plot <- TRUE
+plot.offline = FALSE
+if (file.exists("OFFLINE")) { plot.offline = TRUE }
 
 # TRIALS -----------------------------------------------------------------------
 
@@ -49,7 +50,7 @@ trials$trial.duration <- c(timesteps[1], diff(timesteps))
 detach(trials)
 
 # __ throw off trials where no match was encounterd ====
-trials <- trials[trials$trial.duration < 110]
+trials <- trials[goal != -1]
 
 # PREDICTIONS -----------------------------------------------------------------
 
@@ -99,8 +100,16 @@ prediction.trials.mean <-
                           preds.dev = sd(prediction)),
                       by = .(trial.seq.num)]
 
+# __ means of trial durations ====
+# means of trial durations between goals for each trial.seq.num
+prediction.trials.mean.all <-
+    prediction.trials[, .(trials.mean = mean(trial.duration),
+                          trials.dev = sd(trial.duration),
+                          preds.mean = mean(prediction),
+                          preds.dev = sd(prediction)),
+                      by = .(trial.seq.num)]
 # __ smooted trial durations ====
-window = 10
+window = 50
 prediction.trials.smoothed <- trials[predictions, nomatch = 0]
 
 prediction.trials.smoothed <-
@@ -139,7 +148,7 @@ gp <- gp + ylab("Trial duration")
 gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
                                        title = "Goal"))
 
-if(offline.plot == TRUE) {
+if(plot.offline == TRUE) {
     pdf("trial_duration_sequence_per_goal.pdf", width = 5, height = 3)
     print(gp)
     dev.off()
@@ -159,7 +168,7 @@ gp <- gp + ylab("Trial duration")
 gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
                                         title = "Goal"))
 
-if(offline.plot == TRUE) {
+if(plot.offline == TRUE) {
     pdf("trial_duration_sequence_per_goal_smoothed.pdf",
         width = 5, height = 3)
     print(gp)
@@ -169,7 +178,6 @@ if(offline.plot == TRUE) {
 }
 
 # __ plot of trial mean  ====
-
 gp <- ggplot(prediction.trials.mean,
              aes(y = trials.mean,
                  x = trial.seq.num))
@@ -180,7 +188,7 @@ gp <- gp + geom_line()
 gp <- gp + xlab("Trial sequence number")
 gp <- gp + ylab("Mean trial duration")
 
-if(offline.plot == TRUE) {
+if(plot.offline == TRUE) {
     pdf("trial_duration_mean.pdf", width = 5, height = 3)
     print(gp)
     dev.off()
@@ -189,7 +197,6 @@ if(offline.plot == TRUE) {
 }
 
 # __ plot of trial mean - smoothed ====
-
 gp <- ggplot(prediction.trials.smoothed.mean,
             aes(y = trials.mean,
                 x = trial.seq.num))
@@ -200,7 +207,7 @@ gp <- gp + geom_line()
 gp <- gp + xlab("Trial sequence number")
 gp <- gp + ylab("Mean trial duration")
 
-if(offline.plot == TRUE) {
+if(plot.offline == TRUE) {
     pdf("trial_duration_mean_smoothed.pdf", width = 5, height = 3)
     print(gp)
     dev.off()
@@ -208,23 +215,49 @@ if(offline.plot == TRUE) {
     print(gp)
 }
 
+
+# __ plot trial duration over predictions  ====
+gp <- ggplot(subset(prediction.trials,
+                    trial.seq.num >= 0 &
+                        trial.seq.num <= 1000 ),
+             aes(x = prediction,
+                 y = trial.duration,
+                 color = trial.seq.num))
+gp <- gp + geom_point(size = 1.3, alpha = 0.1)
+gp <- gp + scale_color_gradientn(colours = c("#ff0000",
+                                             "#00ff00",
+                                             "#0000ff"))
+gp <- gp + geom_density2d()
+gp <- gp + xlab("Mean of Predictions")
+gp <- gp + ylab("Mean of trial durations")
+gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
+                                        title = "Trial\nsequence\nnumber"))
+
+if(plot.offline == TRUE) {
+    pdf("trial_duration_vs_prediction.pdf", width = 5, height = 3)
+    print(gp)
+    dev.off()
+} else {
+    print(gp)
+}
+
+
 # __ plot trial means over prediction means ====
 gp <- ggplot(subset(prediction.trials.mean),
             aes(x = preds.mean,
                 y = trials.mean,
                 color = trial.seq.num))
 gp <- gp + geom_point(size = 1.3)
-gp <- gp + scale_color_gradientn(colours = c("#000000",
-                                            "#ff0000",
-                                            "#ff4400",
-                                            "#ffff00"))
+gp <- gp + scale_color_gradientn(colours = c("#ff0000",
+                                             "#00ff00",
+                                             "#0000ff"))
 gp <- gp + xlab("Mean of Predictions")
 gp <- gp + ylab("Mean of trial durations")
 gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
                                        title = "Trial\nsequence\nnumber"))
 
-if(offline.plot == TRUE) {
-    pdf("trial_duration_vs_prediction.pdf", width = 5, height = 3)
+if(plot.offline == TRUE) {
+    pdf("trial_duration_vs_prediction_mean.pdf", width = 5, height = 3)
     print(gp)
     dev.off()
 } else {

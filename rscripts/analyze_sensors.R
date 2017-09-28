@@ -118,7 +118,7 @@ sensors <- subset(sensors, prediction >= prediction.th)
 
 # TOUCHES ----------------------------------------------------------------------
 
-touches <- fread("log_cont_sensors")
+touches <- fread("~/tmp/sensorimotor/local/count/1/data/log_cont_sensors")
 touches.number = dim(touches)[2] - 2
 names(touches) = c("timesteps",
                    1:touches.number,
@@ -266,8 +266,8 @@ plot_sensors <- function(timesteps.start, timesteps.stop,
 }
 
 gp <- ggdraw()
-timesteps.stop = 20000
-timesteps.gap = 2000
+timesteps.stop = 180000
+timesteps.gap = 30000
 bin.limits <- seq(00, timesteps.stop, timesteps.gap)
 
 for (bin in 2:length(bin.limits)) {
@@ -275,7 +275,7 @@ for (bin in 2:length(bin.limits)) {
     bin.limits[bin]
 
     gp_el <- plot_sensors(
-        timesteps.start = bin.limits[bin-1],
+        timesteps.start = 0, #bin.limits[bin-1],
         timesteps.stop =  bin.limits[bin],
         xaxis = FALSE,
         yaxis = FALSE,

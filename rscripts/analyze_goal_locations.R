@@ -183,7 +183,7 @@ sensors.max  <- sensors.max[, .(seq = order(seq),
                             by = .(goal.current)]
 
 
-window = 30
+window = 2
 sensors.smoothed <- sensors.max[,.(
     goal.current = goal.current,
     seq = seq,
