@@ -3,6 +3,7 @@
 set -e
 set -o pipefail
 IFS=$'\n'
+current_host="$(hostname | sed -e"s/\..*//; s/\<f\(.*\)/\1/")"
 
 source ${HOME}/g5kutils/setwalltime.sh
 ${HOME}/g5kutils/clear.sh
@@ -51,7 +52,7 @@ body_simulator_substep_min_angle = 0.5
 body_simulator_substeps = 10
 body_simulator_touch_epsilon = 0.05
 body_simulator_touch_grow = False
-body_simulator_touch_sigma = 0.02
+body_simulator_touch_sigma = 0.04
 body_simulator_touch_th = 0.1
 gm_goalrep_lr = 0.05
 gm_single_kohonen = True
@@ -111,7 +112,7 @@ run_cmd()
     CMD="
     [ -z \"\$(mount | grep working )\" ] && \
         (sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
-        rennes:\${HOME}/working \${HOME}/working)
+        $current_host:\${HOME}/working \${HOME}/working)
 
     screen -dmS $(basename $wdir)
     screen -S $(basename $wdir) -X exec bash -c \"\${HOME}/working/$wdir/run; bash\"

@@ -3,6 +3,7 @@
 set -e
 set -o pipefail
 IFS=$'\n'
+current_host="$(hostname | sed -e"s/\..*//; s/\<f\(.*\)/\1/")"
 
 source ${HOME}/g5kutils/setwalltime.sh
 ${HOME}/g5kutils/clear.sh
@@ -67,7 +68,7 @@ run_cmd()
 
     [[ -z \"\$(mount | grep working )\" ]] && \
         (sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 \
-        rennes:\${HOME}/working \${HOME}/working)
+        $current_host:\${HOME}/working \${HOME}/working)
 
     screen -dmS $(basename $wdir)
     screen -S $(basename $wdir) -X exec bash -c \"\${HOME}/working/$wdir/run; bash\"
