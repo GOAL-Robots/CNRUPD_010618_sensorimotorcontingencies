@@ -133,7 +133,7 @@ start_elab()
         <table style=\"width:100%\">
         <tr>
         <td><img src=\"means_all.png\"  width=\"100%\"></td>
-        <td><img src=\"g_means.png\"  width=\"100%\"></td>
+        <td><img src=\"means_per_goal.png\"  width=\"100%\"></td>
         </tr>
         <tr>
         <td><img src=\"sensors_per_goal.png\"   width=\"100%\"></td>
@@ -223,15 +223,18 @@ run()
     
     if [[  $GRAPHS == true ]]; then
 
-        	
+    
+        touch OFFLINE    
+
         echo "run R scripts..."
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
-        R CMD BATCH ${BASE}/rscripts/analyze_predictions_final.R
         R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
         R CMD BATCH ${BASE}/rscripts/analyze_weights.R 
         R CMD BATCH ${BASE}/rscripts/analyze_pred_history.R 
         
+        rm OFFLINE
+
         echo "convert images to png..."
         for f in *.pdf; do
             echo "converting $f ..."

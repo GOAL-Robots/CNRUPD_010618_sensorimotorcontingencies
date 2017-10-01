@@ -4,14 +4,16 @@
 LABEL=sensorimotor
 
 RUN_DIR=$(echo $0 | sed -e"s/\/$(basename $0)$//")
+RUN_DIR=$(realpath $RUN_DIR)
 
 $RUN_DIR/clear_simulations.sh $LABEL
 [ $? -ne 0 ] && echo "no further simulation started." && exit 0
 
+
 SCREEN=/usr/bin/screen
 
 LOG_DIR=${HOME}/.${LABEL}
-[ ! -d $LOG_DIR ] && mkdir $LOG_DIR
+mkdir -p $LOG_DIR
 
 # control for the existence of a correct session
 screen_session="$(${SCREEN} -ls | grep "\<sm\>"| awk '{print $1}')"
