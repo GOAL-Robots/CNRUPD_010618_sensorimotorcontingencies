@@ -397,8 +397,9 @@ if (plot.offline == TRUE) {
     print(gp_comp)
 }
 
-gp_per_goal = plot_preds_per_goal(timesteps.start = 40000,
-                    timesteps.stop = 90000, goal_focus = 10)
+gp_per_goal = plot_preds_per_goal(timesteps.start = 0,
+                                  timesteps.stop = timesteps.max,
+                                  goal_focus = -1)
 
 if (plot.offline == TRUE) {
     pdf("means_per_goal.pdf", width = 7, height = 3)

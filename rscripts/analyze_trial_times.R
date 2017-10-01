@@ -51,6 +51,8 @@ detach(trials)
 
 # __ throw off trials where no match was encounterd ====
 trials <- trials[goal != -1]
+# __ throw off trials where trial_duration is zero ====
+trials <- trials[trial.duration > 0]
 
 # PREDICTIONS -----------------------------------------------------------------
 
@@ -88,8 +90,12 @@ prediction.trials <-
     prediction.trials[, .(timesteps,
                           prediction,
                           trial.duration,
-                          trial.seq.num = 1:length(timesteps)),
+                          trial.seq.num = (0:(length(timesteps)-1)/length(timesteps))),
                       by = .(goal)]
+
+prediction.trials$trial.seq.num =
+    floor(prediction.trials$trial.seq.num * 1000) / 1000
+
 
 # __ means of trial durations ====
 # means of trial durations between goals for each trial.seq.num
@@ -108,8 +114,9 @@ prediction.trials.mean.all <-
                           preds.mean = mean(prediction),
                           preds.dev = sd(prediction)),
                       by = .(trial.seq.num)]
+
 # __ smooted trial durations ====
-window = 50
+window = 5
 prediction.trials.smoothed <- trials[predictions, nomatch = 0]
 
 prediction.trials.smoothed <-
@@ -117,8 +124,12 @@ prediction.trials.smoothed <-
                           prediction,
                           trial.duration = filter(trial.duration,
                                                   rep(1, window)/window),
-                          trial.seq.num = 1:length(timesteps)),
+                          trial.seq.num = (0:(length(timesteps)-1)/length(timesteps))),
                       by = .(goal)]
+
+prediction.trials.smoothed$trial.seq.num =
+    floor(prediction.trials.smoothed$trial.seq.num * 1000) / 1000
+
 
 # __ smoothed trial duration means ====
 prediction.trials.smoothed.mean <-
@@ -131,7 +142,6 @@ prediction.trials.smoothed.mean <-
                                preds.dev = filter(preds.dev,
                                                   rep(1, window)/window),
                           trial.seq.num)]
-
 
 
 # PLOTS -----------------------------------------------------------------------
