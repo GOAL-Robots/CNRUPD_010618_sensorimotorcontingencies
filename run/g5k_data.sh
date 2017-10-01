@@ -9,6 +9,7 @@ source ${HOME}/g5kutils/setwalltime.sh
 ${HOME}/g5kutils/clear.sh
 [ ! -d ${HOME}/.sensorimotor_data ] && mkdir ${HOME}/.sensorimotor_data
 
+
 LABEL=sensorimotor_data
 GRID_INFO=${HOME}/.grid_deploy/info
 N_MACHINES=1
