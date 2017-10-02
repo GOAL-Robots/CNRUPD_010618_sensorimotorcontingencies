@@ -176,7 +176,7 @@ timesteps.all <- timesteps.max
 
 # PLOTS ------------------------------------------------------------------------
 
-plot_preds_per_goal <- function(timesteps.start, timesteps.stop, goal_focus) {
+plot_preds_per_goal <- function(timesteps.start, timesteps.stop, goal_focus, raster_height = 0.4) {
 
     #data
     weights.current <- subset(weights,
@@ -208,7 +208,7 @@ plot_preds_per_goal <- function(timesteps.start, timesteps.stop, goal_focus) {
         data = predictions.current,
         aes(
             x = timesteps,
-            y = 1.2 + 0.4 * as.numeric(goal.current) / max(goals.number),
+            y = 1.2 + raster_height * as.numeric(goal.current) / max(goals.number),
             group = goal.current),
         size = 0.3,
         stroke = 0,
@@ -221,7 +221,7 @@ plot_preds_per_goal <- function(timesteps.start, timesteps.stop, goal_focus) {
         data = predictions.current[as.numeric(goal.current) == goal_focus],
         aes(
             x = timesteps,
-            y = 1.2 + 0.4 * as.numeric(goal.current) / max(goals.number),
+            y = 1.2 + raster_height * as.numeric(goal.current) / max(goals.number),
             group = goal.current),
         size = 1,
         stroke = 0,
@@ -281,7 +281,7 @@ plot_preds_per_goal <- function(timesteps.start, timesteps.stop, goal_focus) {
     gp
 }
 
-plot_means <- function(timesteps.start, timesteps.stop) {
+plot_means <- function(timesteps.start, timesteps.stop, raster_height = 0.4) {
 
     #data
     weights.current <- subset(weights,
@@ -316,7 +316,7 @@ plot_means <- function(timesteps.start, timesteps.stop) {
         data = predictions.current,
         aes(
             x = timesteps,
-            y = 1.2 + 0.4 * as.numeric(goal.current) / max(goals.number)
+            y = 1.2 + raster_height * as.numeric(goal.current) / max(goals.number)
         ),
         size = 0.3,
         stroke = 0,
@@ -396,7 +396,7 @@ plot_means <- function(timesteps.start, timesteps.stop) {
 }
 
 gp_all = plot_means(timesteps.start = 0,
-                    timesteps.stop = timesteps.max)
+                    timesteps.stop = timesteps.max, raster_height = 0.25)
 
 if (plot.offline == TRUE) {
     pdf("means_all.pdf", width = 7, height = 3)
@@ -407,7 +407,8 @@ if (plot.offline == TRUE) {
 }
 
 gp_first = plot_means(timesteps.start = 0,
-                      timesteps.stop = timesteps.gap)
+                      timesteps.stop = timesteps.gap,
+                      raster_height = 0.25)
 if (plot.offline == TRUE) {
     pdf("means_first.pdf", width = 7, height = 3)
     print(gp_first)
@@ -417,7 +418,7 @@ if (plot.offline == TRUE) {
 }
 
 gp_last = plot_means(timesteps.start = timesteps.max - timesteps.gap,
-                     timesteps.stop = timesteps.max)
+                     timesteps.stop = timesteps.max, raster_height = 0.25)
 if (plot.offline == TRUE) {
     pdf("means_last.pdf", width = 7, height = 3)
     print(gp_last)

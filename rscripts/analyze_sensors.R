@@ -36,27 +36,51 @@ std.error <- function(x) {
     sd(x) / sqrt(length(x))
 }
 
+# If the timeseries ends converging
+# to a maximum thids function returns the
+# index of the plateau start and the value
+# at the plateau
+find_plateau <- function(time.series) {
+
+    time.series.max <- max(time.series)
+    time.series.length <- length(time.series)
+    time.series.maxes <- 1*(time.series == time.series.max)
+    time.series.maxes.diffs <- c(0, diff(time.series.maxes))
+    res <- list()
+    for(idx in which(time.series.maxes.diffs == 1)) {
+        time.series.maxes.diffs.after <- time.series.maxes.diffs[idx:time.series.length]
+        test <- any(time.series.maxes.diffs.after < 0)
+        if(test == FALSE) {
+            res$idx <- idx
+            res$val <- time.series.max
+            break
+        }
+    }
+
+    res # returns (idx, val)
+}
+
 # CONSTS -----------------------------------------------------------------------
 
 prediction.th <- 0.9
-sensors.activation.th <- 0.1
+sensors.activation.th <- 0.0
 
-# PREDICTIONS ------------------------------------------------------------------
+# global.predictions ------------------------------------------------------------------
 
 # __ load prediction dataset ====
-predictions <- fread("all_predictions")
+global.predictions <- fread("all_predictions")
 goals.number <-
-    dim(predictions)[2] - 4 # first 4 columns are not goals
+    dim(global.predictions)[2] - 4 # first 4 columns are not goals
 goals.labels <- paste("goal.", 1:goals.number, sep = "")
-names(predictions) <- c("learning.type",
+names(global.predictions) <- c("learning.type",
                         "index",
                         "timesteps",
                         goals.labels,
                         "goal.current")
 
 # __ melt by goal columns making a goal factor ====
-predictions <- melt(
-    predictions,
+global.predictions <- melt(
+    global.predictions,
     id.vars <- c("learning.type",
                  "index",
                  "timesteps",
@@ -66,89 +90,128 @@ predictions <- melt(
     value.name <- "prediction"
 )
 
+# find the correct final timestep
+timesteps.gap <- 50e+3
+
+plateau.indices <- c()
+plateau.timesteps <- c()
+for(goal.el in levels(global.predictions$goal)) {
+    global.predictions.goal <- global.predictions[goal == goal.el]
+    plateau.index <- find_plateau(global.predictions.goal$prediction)$idx
+    plateau.indices <- c(plateau.indices,  plateau.index)
+    plateau.timesteps <- c(plateau.timesteps,
+                           global.predictions.goal$timesteps[plateau.index])
+}
+plateau.all.index = max(plateau.indices)
+global.predictions <-
+    subset(global.predictions,
+           timesteps <=
+               plateau.timesteps[plateau.indices ==
+                                     plateau.all.index] +timesteps.gap/2)
+
+timesteps.all.learnt <- plateau.timesteps[plateau.indices ==
+                                              plateau.all.index]
+
 # __ convert goal.current into a factor ====
-predictions$goal.current <-
+global.predictions$goal.current <-
     factor(
-        goals.labels[predictions$goal.current + 1],
-        levels = levels(predictions$goal),
-        labels = levels(predictions$goal)
+        goals.labels[global.predictions$goal.current + 1],
+        levels = levels(global.predictions$goal),
+        labels = levels(global.predictions$goal)
     )
 
-predictions <- subset(predictions, goal == goal.current)
-predictions$goal.current <- as.numeric(predictions$goal.current) - 1
+global.predictions <- subset(global.predictions, goal == goal.current)
+global.predictions$goal.current <- as.numeric(global.predictions$goal.current) - 1
 
 # __ maintain only needed variables ====
-predictions <- predictions[, .(timesteps,
+global.predictions <- global.predictions[, .(timesteps,
                                goal.current,
                                prediction)]
 
 # SENSORS ----------------------------------------------------------------------
 
+global.sensors <- fread('all_sensors')
+global.sensors.number <-
+    dim(global.sensors)[2] - 4  # first 4 columns are not goals
+global.sensors.labels <- paste("S", 1:global.sensors.number, sep = "")
+names(global.sensors) <- c("learning.type",
+                    "index",
+                    "timesteps",
+                    global.sensors.labels,
+                    "goal.current")
+
+# __ melt by goal columns making a sensor factor ====
+global.sensors <- melt(
+    global.sensors,
+    id.vars = c("learning.type",
+                "index",
+                "timesteps",
+                "goal.current"),
+    measure.vars = global.sensors.labels,
+    variable.name = "sensor",
+    value.name = "activation"
+)
+
+# __ Maintain only needed variables and add prediction ====
+global.sensors <- global.sensors[, .(timesteps,
+                       goal.current,
+                       sensor,
+                       activation,
+                       prediction = global.predictions[
+                           global.predictions$goal.current ==
+                               goal.current]$prediction),
+                   by = .(goal.current)]
+
+# TOUCHES ----------------------------------------------------------------------
+
+global.touches <-
+    fread("~/tmp/sensorimotor/local/count/1/data/log_cont_sensors")
+global.touches.number = dim(global.touches)[2] - 2
+names(global.touches) = c("timesteps",
+                   1:global.touches.number,
+                   "goal")
+
+global.touches <- melt(
+    global.touches,
+    id.vars = c("timesteps", "goal"),
+    variable.name = "sensor",
+    value.name = "touch"
+)
+
+global.touches <- global.touches[, .(touch = sum(touch > 0.2)),
+                   by = .(sensor)]
+global.touches$touch.prop <- global.touches$touch / max(global.touches$touch)
+
+# sensors data -----------------------------------------------------------------
+
 sensors_data = function(timesteps.start, timesteps.stop)
 {
     res = list()
 
-    sensors <- fread('all_sensors')
-    sensors.number <-
-        dim(sensors)[2] - 4  # first 4 columns are not goals
-    sensors.labels <- paste("S", 1:sensors.number, sep = "")
-    names(sensors) <- c("learning.type",
-                        "index",
-                        "timesteps",
-                        sensors.labels,
-                        "goal.current")
-
-    # __ melt by goal columns making a sensor factor ====
-    sensors <- melt(
-        sensors,
-        id.vars = c("learning.type",
-                    "index",
-                    "timesteps",
-                    "goal.current"),
-        measure.vars = sensors.labels,
-        variable.name = "sensor",
-        value.name = "activation"
-    )
-
-    # __ Maintain only needed variables and add prediction ====
-    sensors <- sensors[, .(timesteps,
-                           goal.current,
-                           sensor,
-                           activation,
-                           prediction = predictions[predictions$goal.current == goal.current]$prediction),
-                       by = .(goal.current)]
-
-
+    res$predictions = global.predictions
 
     # __ Define sensors subset ====
-    sensors <- subset(
-        sensors,
-        prediction >= prediction.th &
+    res$sensors <- subset(
+        global.sensors,
             timesteps >= timesteps.start &
             timesteps <= timesteps.stop
     )
 
     # current means
-    sensors.means <- sensors[, .(
+    res$sensors.means <- res$sensors[, .(
         activation.mean = mean(activation),
-        activation.count =
-            sum(activation > sensors.activation.th),
+        activation.count =  sum(activation > sensors.activation.th),
         activation.sd = sd(activation)
     ),
     by = sensor]
 
-    sensors.means.max <- max(sensors.means$activation.mean)
-
-
-    res$sensors <- sensors
-    res$sensors.means <- sensors.means
-    res$sensors.means.max <- sensors.means.max
+    res$sensors.means.max <- max(res$sensors.means$activation.mean)
 
 
     # SENSORSxGOAL-----------------------------------------------------------------
 
     # __  sensors means per goal ====
-    sensors.goal.means <- sensors[, .(
+    res$sensors.goal.means <- res$sensors[, .(
         activation.mean = mean(activation),
         activation.count = sum(activation > sensors.activation.th),
         activation.sd = sd(activation),
@@ -157,54 +220,33 @@ sensors_data = function(timesteps.start, timesteps.stop)
     by = .(sensor, goal.current)]
 
     # Order goals per maximum
-    sensors.goal.means.max <-
-        sensors.goal.means[, .(activation.max = max(activation.mean)),
+    res$sensors.goal.means.max <-
+        res$sensors.goal.means[, .(activation.max = max(activation.mean)),
                            by = .(goal.current)]
 
     activation.max.indices <- c()
-    for (activation.max in sensors.goal.means.max$activation.max) {
+    for (activation.max in res$sensors.goal.means.max$activation.max) {
         activation.max.indices <-
             c(
                 activation.max.indices,
-                which(sensors.goal.means$activation.mean ==
+                which(res$sensors.goal.means$activation.mean ==
                           activation.max)[1]
             )
     }
 
-    sensors.goal.means.max$sensor <-
-        sensors.goal.means[activation.max.indices]$sensor
-    sensors.goal.means.max <-
-        sensors.goal.means.max[order(sensors.goal.means.max$sensor)]
+    res$sensors.goal.means.max$sensor <-
+        res$sensors.goal.means[activation.max.indices]$sensor
+    res$sensors.goal.means.max <-
+        res$sensors.goal.means.max[order(res$sensors.goal.means.max$sensor)]
 
-    sensors.goal.means$goal.current.ordered <-
-        factor(sensors.goal.means$goal.current,
-               levels = sensors.goal.means.max$goal.current)
+    res$sensors.goal.means$goal.current.ordered <-
+        factor(res$sensors.goal.means$goal.current,
+               levels = res$sensors.goal.means.max$goal.current)
 
-
-    res$sensors.goal.means <- sensors.goal.means
-    res$sensors.goal.means.max <- sensors.goal.means.max
 
     # TOUCHES ----------------------------------------------------------------------
 
-    touches <-
-        fread("~/tmp/sensorimotor/local/count/1/data/log_cont_sensors")
-    touches.number = dim(touches)[2] - 2
-    names(touches) = c("timesteps",
-                       1:touches.number,
-                       "goal")
-
-    touches <- melt(
-        touches,
-        id.vars = c("timesteps", "goal"),
-        variable.name = "sensor",
-        value.name = "touch"
-    )
-
-    touches <- touches[, .(touch = sum(touch > 0.2)),
-                       by = .(sensor)]
-    touches$touch.prop <- touches$touch / max(touches$touch)
-
-    res$touches <- touches
+    res$touches <- global.touches
 
     # return ----
 
@@ -222,27 +264,6 @@ plot_sensors <- function(sensors_df,
 
     # main ggplot
     gp <- ggplot(sensors.means)
-
-    # Touch map 1
-    gp <- gp + geom_line(
-        data = touches,
-        aes(x = as.numeric(sensor),
-            y = touch.prop * sensors.means.max),
-        size = 1.5,
-        colour = "#000000",
-        inherit.aes = FALSE
-    )
-
-    # Touch map 2
-    gp <- gp + geom_line(
-        data = touches,
-        aes(x = as.numeric(sensor),
-            y = touch.prop * sensors.means.max),
-        size = 1.0,
-        colour = "#ffffff",
-        inherit.aes = FALSE
-    )
-
 
     # variance
     if (sd == TRUE) {
@@ -271,15 +292,32 @@ plot_sensors <- function(sensors_df,
     gp <- gp + geom_bar(
         aes(
             x = as.numeric(sensor),
-            y = activation.count / max(activation.count) *
-                sensors.means.max
+            y = activation.count / max(activation.count) * sensors.means.max
         ),
         stat = "identity",
         alpha = .2,
         inherit.aes = FALSE
     )
 
+    # Touch map 1
+    gp <- gp + geom_line(
+        data = touches,
+        aes(x = as.numeric(sensor),
+            y = touch.prop * sensors.means.max),
+        size = 1.5,
+        colour = "#000000",
+        inherit.aes = FALSE
+    )
 
+    # Touch map 2
+    gp <- gp + geom_line(
+        data = touches,
+        aes(x = as.numeric(sensor),
+            y = touch.prop * sensors.means.max),
+        size = 1.0,
+        colour = "#ffffff",
+        inherit.aes = FALSE
+    )
 
     gp <- gp + xlab("Sensors")
     gp <- gp + ylab("Means of sensor activation")
@@ -347,13 +385,15 @@ plot_sensors_per_goals <- function(sensors_df)
 {
     attach(sensors_df)
 
+    count.max = max(sensors.goal.means$activation.count)
+
     gp <- ggplot(sensors.goal.means,
                  aes(x = sensor, y = activation.mean))
     gp <-
         gp + geom_bar(aes(y = activation.count), stat = "identity")
     gp <- gp + facet_grid(goal.current.ordered ~ .)
     gp <- gp + scale_y_continuous(
-        limits = c(0, 70),
+        limits = c(0, count.max*4/3),
         breaks = c(0, 60),
         sec.axis = sec_axis(
             trans = ~ .,
@@ -394,7 +434,8 @@ plot_sensors_per_goals <- function(sensors_df)
 
 # MAIN -------------------------------------------------------------------------
 
-sdf <- sensors_data(timesteps.start = 200000, 250000)
+sdf <- sensors_data(timesteps.start = timesteps.all.learnt,
+                    timesteps.stop = timesteps.all.learnt + timesteps.gap)
 
 gp <- plot_sensors(sdf)
 
@@ -420,7 +461,7 @@ detach(sdf)
 gp <- plot_sensors_per_goals(sdf)
 
 gp_sensors_per_goal = gp
-
+attach(sdf)
 if (plot.offline == TRUE) {
     pdf(
         paste("sensors_per_goal", ".pdf", sep = ""),
@@ -433,3 +474,37 @@ if (plot.offline == TRUE) {
 } else {
     print(gp_sensors_per_goal)
 }
+detach(sdf)
+
+
+gps = list()
+interval.gap = 10000
+interval.number = 5
+interval.timesteps = seq(interval.gap,
+                         (interval.number) * interval.gap,
+                         by = interval.gap)
+for (timestep in 1:interval.number) {
+    sdf <-
+        sensors_data(timesteps.start =
+                         interval.timesteps[timestep] -
+                         interval.gap,
+                     timesteps.stop =
+                         interval.timesteps[timestep])
+        gp <- plot_sensors(sdf, xaxis = FALSE,
+                           yaxis = FALSE,
+                           sd = FALSE)
+
+    gps[[timestep]] = gp
+}
+
+attach(sdf)
+gp_all <- ggdraw()
+for (timestep in 1:interval.number) {
+    gp_all <- gp_all + draw_plot(gps[[timestep]] ,
+                         0,
+                         (1/interval.number)*(timestep-1),
+                         1,
+                         (1/interval.number))
+}
+print(gp_all)
+detach(sdf)
