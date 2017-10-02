@@ -24,7 +24,7 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-plot.offline = TRUE
+plot.offline = FALSE
 if (file.exists("OFFLINE")) { plot.offline = TRUE }
 
 
