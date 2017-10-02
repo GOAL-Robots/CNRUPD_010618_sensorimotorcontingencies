@@ -74,23 +74,7 @@ find_plateau <- function(time.series) {
 
 # CONSTS -----------------------------------------------------------------------
 
-timesteps.last <- 240e+3
 timesteps.gap <- 50e+3
-
-weights <- fread("all_weights")
-names(weights) <- c("learning.type",
-                    "index",
-                    "timesteps",
-                    "kohonen",
-                    "echo")
-
-if(!is.null(timesteps.last))  {
-    weights <- subset(weights, timesteps <= timesteps.last)
-}
-
-timesteps.max <- max(weights$timesteps)
-timesteps.number <- length(weights$timesteps)
-timesteps.all <- timesteps.max
 
 # PREDICTIONS ------------------------------------------------------------------
 
@@ -125,18 +109,20 @@ predictions <- melt(
 plateau.indices <- c()
 plateau.timesteps <- c()
 for(goal.el in levels(predictions$goal)) {
-    message(goal.el)
     predictions.goal <- predictions[goal == goal.el]
     plateau.index <- find_plateau(predictions.goal$prediction)$idx
-    message(plateau.index)
     plateau.indices <- c(plateau.indices,  plateau.index)
-    message(plateau.indices)
-    plateau.timesteps <- c(plateau.timesteps, predictions.goal$timesteps[plateau.index])
+    plateau.timesteps <- c(plateau.timesteps,
+                           predictions.goal$timesteps[plateau.index])
 }
 plateau.all.index = max(plateau.indices)
 predictions <-
     subset(predictions,
-           timesteps <= plateau.timesteps[plateau.indices == plateau.all.index] + timesteps.gap/2)
+           timesteps <=
+               plateau.timesteps[plateau.indices ==
+                                     plateau.all.index] +timesteps.gap/2)
+
+timesteps.max <- max(predictions$timesteps)
 
 
 # __ convert goal into a factor ====
@@ -171,6 +157,22 @@ predictions.means <- predictions[,
                                  ),
                                  by = .(timesteps = timesteps_bins)]
 predictions.means$th = 1
+
+
+# WEIGHTS ----------------------------------------------------------------------
+#
+weights <- fread("all_weights")
+names(weights) <- c("learning.type",
+                    "index",
+                    "timesteps",
+                    "kohonen",
+                    "echo")
+
+    weights <- subset(weights, timesteps <= timesteps.max)
+
+timesteps.number <- length(weights$timesteps)
+timesteps.all <- timesteps.max
+
 
 # PLOTS ------------------------------------------------------------------------
 
@@ -443,7 +445,7 @@ gp_per_goal = plot_preds_per_goal(timesteps.start = 0,
                                   goal_focus = -1)
 
 if (plot.offline == TRUE) {
-    pdf("means_per_goal.pdf", width = 7, height = 3)
+    pdf("predictions_per_goal.pdf", width = 7, height = 3)
     print(gp_per_goal)
     dev.off()
 } else {

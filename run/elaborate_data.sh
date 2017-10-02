@@ -133,7 +133,7 @@ start_elab()
         <table style=\"width:100%\">
         <tr>
         <td><img src=\"means_all.png\"  width=\"100%\"></td>
-        <td><img src=\"means_per_goal.png\"  width=\"100%\"></td>
+        <td><img src=\"predictions_per_goal.png\"  width=\"100%\"></td>
         </tr>
         <tr>
         <td><img src=\"sensors_per_goal.png\"   width=\"100%\"></td>
