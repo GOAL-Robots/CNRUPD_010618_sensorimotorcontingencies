@@ -24,7 +24,7 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-plot.offline = FALSE
+plot.offline = TRUE
 if (file.exists("OFFLINE")) { plot.offline = TRUE }
 
 
@@ -48,7 +48,29 @@ find.decimal.scale <- function(x)
     scales[which(test.scales == TRUE)]
 }
 
+# If the timeseries ends converging
+# to a maximum thids function returns the
+# index of the plateau start and the value
+# at the plateau
+find_plateau <- function(time.series) {
 
+    time.series.max <- max(time.series)
+    time.series.length <- length(time.series)
+    time.series.maxes <- 1*(time.series == time.series.max)
+    time.series.maxes.diffs <- c(0, diff(time.series.maxes))
+    res <- list()
+    for(idx in which(time.series.maxes.diffs == 1)) {
+        time.series.maxes.diffs.after <- time.series.maxes.diffs[idx:time.series.length]
+        test <- any(time.series.maxes.diffs.after < 0)
+        if(test == FALSE) {
+            res$idx <- idx
+            res$val <- time.series.max
+            break
+        }
+    }
+
+    res # returns (idx, val)
+}
 
 # CONSTS -----------------------------------------------------------------------
 
@@ -82,9 +104,9 @@ names(predictions) <- c("learning.type",
                         "timesteps",
                         goals.labels,
                         "goal.current")
-if(!is.null(timesteps.last))  {
-    predictions <- subset(predictions, timesteps <= timesteps.last)
-}
+
+
+
 
 # __ melt by goal columns making a goal factor ====
 predictions <- melt(
@@ -97,6 +119,25 @@ predictions <- melt(
     variable.name = "goal",
     value.name = "prediction"
 )
+
+
+# find the correct final timestep
+plateau.indices <- c()
+plateau.timesteps <- c()
+for(goal.el in levels(predictions$goal)) {
+    message(goal.el)
+    predictions.goal <- predictions[goal == goal.el]
+    plateau.index <- find_plateau(predictions.goal$prediction)$idx
+    message(plateau.index)
+    plateau.indices <- c(plateau.indices,  plateau.index)
+    message(plateau.indices)
+    plateau.timesteps <- c(plateau.timesteps, predictions.goal$timesteps[plateau.index])
+}
+plateau.all.index = max(plateau.indices)
+predictions <-
+    subset(predictions,
+           timesteps <= plateau.timesteps[plateau.indices == plateau.all.index] + timesteps.gap/2)
+
 
 # __ convert goal into a factor ====
 predictions$goal = factor(predictions$goal)
@@ -116,7 +157,7 @@ predictions <- predictions[, .(timesteps,
                                prediction)]
 
 # __ timestep bins ====
-predictions$timesteps <-
+predictions$timesteps_bins <-
     floor(predictions$timesteps / 1000) * 1000
 
 # __ means ====
@@ -128,7 +169,7 @@ predictions.means <- predictions[,
                                      pred.min = min(prediction),
                                      pred.max = max(prediction)
                                  ),
-                                 by = .(timesteps)]
+                                 by = .(timesteps = timesteps_bins)]
 predictions.means$th = 1
 
 # PLOTS ------------------------------------------------------------------------
@@ -390,7 +431,7 @@ gp <- gp + draw_plot(gp_last, 0.5, 0, 0.48, 0.5)
 gp_comp <- gp
 
 if (plot.offline == TRUE) {
-    pdf("means_comp.pdf", width = 7, height = 3)
+    pdf("prediction_history.pdf", width = 7, height = 3)
     print(gp_comp)
     dev.off()
 } else {
@@ -403,6 +444,19 @@ gp_per_goal = plot_preds_per_goal(timesteps.start = 0,
 
 if (plot.offline == TRUE) {
     pdf("means_per_goal.pdf", width = 7, height = 3)
+    print(gp_per_goal)
+    dev.off()
+} else {
+    print(gp_per_goal)
+}
+
+
+gp_per_goal = plot_preds_per_goal(timesteps.start = 0,
+                                  timesteps.stop = 30000,
+                                  goal_focus = 13)
+
+if (plot.offline == TRUE) {
+    pdf("means_per_goal_example.pdf", width = 7, height = 3)
     print(gp_per_goal)
     dev.off()
 } else {
