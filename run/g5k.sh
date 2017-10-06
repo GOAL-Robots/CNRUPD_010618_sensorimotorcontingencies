@@ -16,7 +16,13 @@ MIN_CORES=4
 MIN_RAM=40
 WALLTIME=$(max_walltime)
 
-declare -a dirs=(sm_singleecho_25g_p1 sm_singleecho_25g_p2)
+
+# exit if no resources 
+[[ ! -z $(cat $GRID_INFO | grep " $LABEL ") ]] && \
+    echo "other simulatino in deployment, stoppping" && exit 1 
+
+
+declare -a dirs=(sm_singleecho_25g_p3 sm_singleecho_25g_p4)
 declare -a params
 params[0]="
 GOAL_NUMBER = 25
@@ -27,13 +33,13 @@ body_simulator_touch_epsilon = 0.05
 body_simulator_touch_grow = False
 body_simulator_touch_sigma = 0.06
 body_simulator_touch_th = 0.1
-gm_goalrep_lr = 0.05
+gm_goalrep_lr = 0.25
 gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
 gp_eta = 0.35
 gs_eta = 4.0
-gs_eta_decay = False
+gs_eta_decay = True
 gs_goal_learn_start = 10
 gs_goal_window = 100
 gs_match_decay = 0.9
@@ -54,7 +60,7 @@ body_simulator_touch_epsilon = 0.05
 body_simulator_touch_grow = False
 body_simulator_touch_sigma = 0.06
 body_simulator_touch_th = 0.1
-gm_goalrep_lr = 0.05
+gm_goalrep_lr = 0.25
 gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
