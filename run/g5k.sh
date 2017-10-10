@@ -13,7 +13,7 @@ LABEL=sensorimotor
 GRID_INFO=${HOME}/.grid_deploy/info
 N_MACHINES=4
 MIN_CORES=4
-MIN_RAM=40
+MIN_RAM=20
 WALLTIME=$(max_walltime)
 
 
@@ -21,8 +21,7 @@ WALLTIME=$(max_walltime)
 [[ ! -z $(cat $GRID_INFO | grep " $LABEL ") ]] && \
     echo "other simulatino in deployment, stoppping" && exit 1 
 
-
-declare -a dirs=(sm_singleecho_25g_p3 sm_singleecho_25g_p4)
+declare -a dirs=(sm_singleecho_25g_p1 sm_singleecho_25g_p2)
 declare -a params
 params[0]="
 GOAL_NUMBER = 25
@@ -37,7 +36,7 @@ gm_goalrep_lr = 0.25
 gm_single_kohonen = True
 gm_single_kohonen_neigh_bl = 0.01
 gm_single_kohonen_neigh_scale = 0.99
-gp_eta = 0.35
+gp_eta = 0.25
 gs_eta = 4.0
 gs_eta_decay = True
 gs_goal_learn_start = 10
@@ -50,33 +49,7 @@ gs_sm_temp = 0.01
 simulation_im_decay = 0.2
 HERE_PARAMS
 "
-
-params[1]="
-GOAL_NUMBER = 25
-body_simulator_num_touch_sensors = 30
-body_simulator_substep_min_angle = 0.5 
-body_simulator_substeps = 10
-body_simulator_touch_epsilon = 0.05
-body_simulator_touch_grow = False
-body_simulator_touch_sigma = 0.06
-body_simulator_touch_th = 0.1
-gm_goalrep_lr = 0.25
-gm_single_kohonen = True
-gm_single_kohonen_neigh_bl = 0.01
-gm_single_kohonen_neigh_scale = 0.99
-gp_eta = 0.35
-gs_eta = 4.0
-gs_eta_decay = True
-gs_goal_learn_start = 10
-gs_goal_window = 100
-gs_match_decay = 0.9
-gs_multiple_echo = False
-gs_n_echo_units = 200
-gs_reset_window = 10
-gs_sm_temp = 0.01
-simulation_im_decay = 0.2
-HERE_PARAMS
-"
+params[1]="${params[0]}"
 
 # FIND RESOURCES 
 rm -fr log_resources
