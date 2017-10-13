@@ -144,8 +144,10 @@ run()
         elif [[ "$DUMPED" == true ]]; then
             # we want to continue from previous dumping and accumulate
             DUMPED_FILE="$(find ${sim_dir}/store/|grep dumped_ |sort| tail -n 1)"   
-            DUMP_OPT="-s $(realpath $DUMPED_FILE)"
-            echo "starting from $DUMPED_FILE"
+            if [[ -f "$DUMPED_FILE" ]]; then
+                DUMP_OPT="-s $(realpath "$DUMPED_FILE")"
+                echo "starting from $DUMPED_FILE"
+            fi
         fi
     elif [[ ! -d "$sim_dir" ]]; then
         # there are no previous data, create from template
