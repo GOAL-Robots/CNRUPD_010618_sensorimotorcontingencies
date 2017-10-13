@@ -1,6 +1,6 @@
-# INTRO ------------------------------------------------------------------------
-
 rm(list = ls())
+
+# INTRO ------------------------------------------------------------------------
 
 # __ list of required packages ====
 toInstall <- c("extrafont",
@@ -24,7 +24,11 @@ if (!("Verdana" %in% fonts())) {
     loadfonts()
 }
 
-offline.plot <- TRUE
+plot.offline = FALSE
+if (file.exists("OFFLINE")) {
+    plot.offline = TRUE
+}
+
 
 # UTILS ------------------------------------------------------------------------
 
@@ -71,6 +75,10 @@ first.occurr <- function(x, a)
     res
 }
 
+# CONSTS -----------------------------------------------------------------------
+
+simulation.index <- 1
+
 # PREDICTIONS ------------------------------------------------------------------
 
 # __ load prediction dataset ====
@@ -83,6 +91,7 @@ names(predictions) <- c("learning.type",
                         "timesteps",
                         goals.labels,
                         "goal.current")
+predictions <- subset(predictions, index == simulation.index)
 
 # __ melt by goal columns making a goal factor ====
 predictions <- melt(
@@ -129,6 +138,7 @@ names(sensors) <- c("learning.type",
                     "timesteps",
                     sensors.labels,
                     "goal.current")
+sensors <- subset(sensors, index == simulation.index)
 
 # __ melt by sensor columns making a sensor factor ====
 sensors$prediction =  predictions$prediction

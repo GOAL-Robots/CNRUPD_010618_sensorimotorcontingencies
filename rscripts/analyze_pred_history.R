@@ -25,8 +25,9 @@ if (!("Verdana" %in% fonts())) {
 }
 
 plot.offline = FALSE
-if (file.exists("OFFLINE")) { plot.offline = TRUE }
-
+if (file.exists("OFFLINE")) {
+    plot.offline = TRUE
+}
 
 # UTILS ------------------------------------------------------------------------
 
@@ -49,20 +50,34 @@ find.decimal.scale <- function(x)
 }
 
 
+# If the timeseries ends converging
+# to a maximum thids function returns the
+# index of the plateau start and the value
+# at the plateau
+find_plateau <- function(time.series) {
+
+    time.series.max <- max(time.series)
+    time.series.length <- length(time.series)
+    time.series.maxes <- 1*(time.series == time.series.max)
+    time.series.maxes.diffs <- c(0, diff(time.series.maxes))
+    res <- list()
+    for(idx in which(time.series.maxes.diffs == 1)) {
+        time.series.maxes.diffs.after <- time.series.maxes.diffs[idx:time.series.length]
+        test <- any(time.series.maxes.diffs.after < 0)
+        if(test == FALSE) {
+            res$idx <- idx
+            res$val <- time.series.max
+            break
+        }
+    }
+
+    res # returns (idx, val)
+}
 
 # CONSTS -----------------------------------------------------------------------
 
-
-weights <- fread("all_weights")
-names(weights) <- c("learning.type",
-                    "index",
-                    "timesteps",
-                    "kohonen",
-                    "echo")
-
-timesteps.max <- max(weights$timesteps)
-timesteps.number <- length(weights$timesteps)
-timesteps.all <- timesteps.max
+timesteps.gap <- 50e+3
+simulation.index <- 1
 
 # PREDICTIONS ------------------------------------------------------------------
 
@@ -76,6 +91,7 @@ names(predictions) <- c("learning.type",
                         "timesteps",
                         goals.labels,
                         "goal.current")
+predictions <- subset(predictions, index == simulation.index)
 
 # __ melt by goal columns making a goal factor ====
 predictions <- melt(
@@ -88,6 +104,25 @@ predictions <- melt(
     variable.name = "goal",
     value.name = "prediction"
 )
+
+# find the correct final timestep
+plateau.indices <- c()
+plateau.timesteps <- c()
+for(goal.el in levels(predictions$goal)) {
+    predictions.goal <- predictions[goal == goal.el]
+    plateau.index <- find_plateau(predictions.goal$prediction)$idx
+    plateau.indices <- c(plateau.indices,  plateau.index)
+    plateau.timesteps <- c(plateau.timesteps,
+                           predictions.goal$timesteps[plateau.index])
+}
+plateau.all.index = max(plateau.indices)
+predictions <-
+    subset(predictions,
+           timesteps <=
+               plateau.timesteps[plateau.indices ==
+                                     plateau.all.index] +timesteps.gap/2)
+
+timesteps.max <- max(predictions$timesteps)
 
 # __ convert goal into a factor ====
 predictions$goal = factor(predictions$goal)
@@ -106,23 +141,40 @@ predictions <- predictions[, .(timesteps,
                                goal,
                                prediction)]
 
+# WEIGHTS ----------------------------------------------------------------------
+
+weights <- fread("all_weights")
+names(weights) <- c("learning.type",
+                    "index",
+                    "timesteps",
+                    "kohonen",
+                    "echo")
+weights <- subset(weights, index == simulation.index)
+
+#timesteps.max <- max(weights$timesteps)
+#timesteps.number <- length(weights$timesteps)
+timesteps.number <- length(weights[timesteps <= timesteps.max]$timesteps)
+timesteps.all <- timesteps.max
+
 # PLOTS ------------------------------------------------------------------------
 
-plot_hystory <- function(timesteps.start, timesteps.stop)
+plot_hystory <- function(timesteps.start, timesteps.stop, blocks = 5)
 {
-    presictions.current <-
+    predictions.current <-
         subset(predictions, timesteps >= timesteps.start &
                    timesteps <= timesteps.stop)
 
 
-    timesteps <- presictions.current$timesteps
+    timesteps <- predictions.current$timesteps
     timesteps.length = as.integer(length(timesteps))
-    blocks.number <- 5
+    blocks.number <- blocks
     timesteps.slices.breaks <-
         timesteps[seq(1, timesteps.length,
                       length.out = blocks.number)]
     predictions.slices <-
-        subset(presictions.current, timesteps %in% timesteps.slices.breaks)
+        subset(predictions.current, timesteps %in% timesteps.slices.breaks)
+
+    predictions.slices <- predictions.slices[order(timesteps)]
 
     goal.width <- sqrt(max(as.numeric(predictions.slices$goal)))
 
@@ -192,7 +244,7 @@ plot_hystory <- function(timesteps.start, timesteps.stop)
 
 }
 
-gp = plot_hystory(0, 240000)
+gp = plot_hystory(0, timesteps.max/5, blocks = 5)
 
 if (plot.offline == TRUE) {
     pdf("pred_hist.pdf", width = 6, height = 1.2)

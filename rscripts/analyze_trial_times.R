@@ -27,6 +27,40 @@ if (!("Verdana" %in% fonts())) {
 plot.offline = FALSE
 if (file.exists("OFFLINE")) { plot.offline = TRUE }
 
+
+# UTILS ------------------------------------------------------------------------
+
+
+# If the timeseries ends converging
+# to a maximum thids function returns the
+# index of the plateau start and the value
+# at the plateau
+find_plateau <- function(time.series) {
+
+    time.series.max <- max(time.series)
+    time.series.length <- length(time.series)
+    time.series.maxes <- 1*(time.series == time.series.max)
+    time.series.maxes.diffs <- c(0, diff(time.series.maxes))
+    res <- list()
+    for(idx in which(time.series.maxes.diffs == 1)) {
+        time.series.maxes.diffs.after <- time.series.maxes.diffs[idx:time.series.length]
+        test <- any(time.series.maxes.diffs.after < 0)
+        if(test == FALSE) {
+            res$idx <- idx
+            res$val <- time.series.max
+            break
+        }
+    }
+
+    res # returns (idx, val)
+}
+
+
+# CONSTS -----------------------------------------------------------------------
+
+timesteps.gap <- 50e+3
+simulation.index <- 1
+
 # TRIALS -----------------------------------------------------------------------
 
 # __ load trials dataset ====
@@ -35,6 +69,7 @@ names(trials) <- c("learning.type",
                    "index",
                    "timesteps",
                    "goal")
+trials <- subset(trials, index == simulation.index)
 
 # __ read variables ====
 timesteps.max <- max(trials$timesteps)
@@ -64,6 +99,8 @@ names(predictions) <- c("learning.type",
                         format(1:goal.number),
                         "current.goal")
 
+predictions <- subset(predictions, index == simulation.index)
+
 # __ melt by goal columns making a goal factor ====
 predictions <- melt(
     predictions,
@@ -74,6 +111,21 @@ predictions <- melt(
 
 # we need goal labels to be 0..(goal.max - 1)
 predictions$goal <-  as.numeric(predictions$goal) - 1
+
+
+
+# find the correct final timestep
+plateau.indices <- c()
+plateau.timesteps <- c()
+for(goal.el in unique(sort(predictions$goal))) {
+    predictions.goal <- predictions[goal == goal.el]
+    plateau.index <- find_plateau(predictions.goal$prediction)$idx
+    plateau.indices <- c(plateau.indices,  plateau.index)
+    plateau.timesteps <- c(plateau.timesteps,
+                           predictions.goal$timesteps[plateau.index])
+}
+plateau.all.index = max(plateau.indices)
+
 
 # INNER JOIN ------------------------------------------------------------------
 
@@ -90,11 +142,20 @@ prediction.trials <-
     prediction.trials[, .(timesteps,
                           prediction,
                           trial.duration,
-                          trial.seq.num = (0:(length(timesteps)-1)/length(timesteps))),
+                          trial.seq.num = (0:(length(timesteps)-1))),
                       by = .(goal)]
 
+prediction.trials <-
+    subset(prediction.trials,
+           timesteps >=0  & timesteps <=
+               plateau.timesteps[plateau.indices ==
+                                     plateau.all.index] +timesteps.gap)
+
+
+# add trial.seq.num defining the sequential order of trials for each goal
 prediction.trials$trial.seq.num =
     floor(prediction.trials$trial.seq.num * 1000) / 1000
+
 
 
 # __ means of trial durations ====
@@ -116,16 +177,16 @@ prediction.trials.mean.all <-
                       by = .(trial.seq.num)]
 
 # __ smooted trial durations ====
-window = 5
+window = 3
 prediction.trials.smoothed <- trials[predictions, nomatch = 0]
 
 prediction.trials.smoothed <-
     prediction.trials[, .(timesteps,
                           prediction,
                           trial.duration = filter(trial.duration,
-                                                  rep(1, window)/window),
-                          trial.seq.num = (0:(length(timesteps)-1)/length(timesteps))),
+                                                  rep(1, window)/window)),
                       by = .(goal)]
+
 
 prediction.trials.smoothed$trial.seq.num =
     floor(prediction.trials.smoothed$trial.seq.num * 1000) / 1000
@@ -233,15 +294,22 @@ gp <- ggplot(subset(prediction.trials,
              aes(x = prediction,
                  y = trial.duration,
                  color = trial.seq.num))
-gp <- gp + geom_point(size = 1.3, alpha = 0.1)
+
+gp <- gp + geom_density_2d(aes(alpha=..level.., color=..level..),
+                           geom="polygon",
+                           h = c(0.5, 100),
+                           show.legend = FALSE)
+
+gp <- gp + geom_point(size = .1, alpha = .5)
+
 gp <- gp + scale_color_gradientn(colours = c("#ff0000",
                                              "#00ff00",
                                              "#0000ff"))
-gp <- gp + geom_density2d()
 gp <- gp + xlab("Mean of Predictions")
 gp <- gp + ylab("Mean of trial durations")
-gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
-                                        title = "Trial\nsequence\nnumber"))
+gp <- gp + guides(colour = guide_legend( override.aes = list(size = 4),
+                                         title = "Trial\nsequence\nnumber"))
+
 
 if(plot.offline == TRUE) {
     pdf("trial_duration_vs_prediction.pdf", width = 5, height = 3)
@@ -251,20 +319,21 @@ if(plot.offline == TRUE) {
     print(gp)
 }
 
-
+cat(prediction.trials.mean$trial.seq.num)
+cat("\n")
 # __ plot trial means over prediction means ====
 gp <- ggplot(subset(prediction.trials.mean),
             aes(x = preds.mean,
                 y = trials.mean,
                 color = trial.seq.num))
 gp <- gp + geom_point(size = 1.3)
-gp <- gp + scale_color_gradientn(colours = c("#ff0000",
+gp <- gp + scale_color_gradientn( colours = c("#ff0000",
                                              "#00ff00",
                                              "#0000ff"))
 gp <- gp + xlab("Mean of Predictions")
 gp <- gp + ylab("Mean of trial durations")
-gp <- gp + guides(colour = guide_legend(override.aes = list(size = 4),
-                                       title = "Trial\nsequence\nnumber"))
+gp <- gp + guides(colour = guide_legend( override.aes = list(size = 4),
+                                        title = "Trial\nsequence\nnumber"))
 
 if(plot.offline == TRUE) {
     pdf("trial_duration_vs_prediction_mean.pdf", width = 5, height = 3)

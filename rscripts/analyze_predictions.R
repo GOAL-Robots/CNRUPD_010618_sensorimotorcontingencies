@@ -75,6 +75,7 @@ find_plateau <- function(time.series) {
 # CONSTS -----------------------------------------------------------------------
 
 timesteps.gap <- 50e+3
+simulation.index <- 1
 
 # PREDICTIONS ------------------------------------------------------------------
 
@@ -89,6 +90,7 @@ names(predictions) <- c("learning.type",
                         goals.labels,
                         "goal.current")
 
+predictions <- subset(predictions, index == simulation.index)
 
 
 
@@ -168,7 +170,8 @@ names(weights) <- c("learning.type",
                     "kohonen",
                     "echo")
 
-    weights <- subset(weights, timesteps <= timesteps.max)
+weights <- subset(weights, index == simulation.index)
+weights <- subset(weights, timesteps <= timesteps.max)
 
 timesteps.number <- length(weights$timesteps)
 timesteps.all <- timesteps.max
