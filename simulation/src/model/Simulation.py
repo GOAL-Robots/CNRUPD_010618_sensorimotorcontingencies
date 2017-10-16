@@ -369,7 +369,12 @@ class Simulation(object) :
         self.gm_input = np.zeros([3, self.body_simulator.pixels[0] * 
                                   self.body_simulator.pixels[1] ])
 
+        ########################################################################
+        ########################################################################
+
         if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
+            
+            self.gs.oscillator.active = True
 
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask,
@@ -382,7 +387,6 @@ class Simulation(object) :
                             self.competence_improvement_vec,
                     incompetence_vec=(self.INCOMPETENCE_PROP * 
                                          (1.0 - self.gp.w)))
-
             # Prediction
             if self.gs.goal_window_counter == 0:
                 self.gp.step(self.gs.goal_selection_vec)
@@ -393,63 +397,6 @@ class Simulation(object) :
             self.gm_input[1] = self.body_simulator.prop_delta.ravel() * 0
             # add touch
             self.gm_input[2] = 5000.0 * self.body_simulator.touch_delta.ravel()
-
-            self.static_inp *= 0
-            for inp in self.gm_input :
-                self.static_inp += (0.0001 * np.array(inp) / 
-                                    float(len(self.gm_input)))
-        else:
-            if self.gs.reset_window_counter == 0:
-                self.static_inp = np.random.rand(*self.static_inp.shape)
-
-        # movement body_simulator step
-
-        self.gs.step(self.static_inp)
-
-        # convert the vector of readout units from the selector into two
-        # vectors (left arm , right arm)
-        larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS / 2)]
-        rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS / 2):]
-        larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS / 2)]
-        rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS / 2):]
-        larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS / 2)]
-        rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS / 2):]
-
-        ########################################################################
-        ########################################################################
-
-        if body_simulator_touch_grow == True:
-            self.body_simulator.perc.touch_sigma = (
-                            body_simulator_touch_sigma * 0.99 * 
-                            (1 - self.gp.w.mean()) + 
-                            body_simulator_touch_sigma * 0.001)
-
-        # Simulation step
-        collision = self.body_simulator.step(
-                larm_angles_unscaled=larm_angles,
-                rarm_angles_unscaled=rarm_angles,
-                larm_angles_theoric_unscaled=larm_angles_theoric,
-                rarm_angles_theoric_unscaled=rarm_angles_theoric,
-                larm_angles_target_unscaled=larm_angles_target,
-                rarm_angles_target_unscaled=rarm_angles_target,
-                active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
-                )
-
-        if collision == True:
-            self.save_cont_logs()
-            angles = np.hstack(
-                self.body_simulator.actuator.unscale_angles(
-                    self.body_simulator.larm_angles,
-                    self.body_simulator.rarm_angles))
-            self.gs.reset_oscillator(angles, t=self.rng.randint(0,100))
-   
-            self.current_target = angles.copy()
-                
-
-        ########################################################################
-        ########################################################################
-
-        if self.gs.reset_window_counter >= self.gs.RESET_WINDOW:
 
             # Train goal maker
             self.gm.step(self.gm_input,
@@ -516,7 +463,6 @@ class Simulation(object) :
                     self.intrinsic_motivation_value,
                     self.gs.goal_selection_vec)
 
-
                 self.gs.is_goal_selected = False
                 self.gs.reset(match=self.match_value)
                 self.body_simulator.reset()
@@ -527,3 +473,47 @@ class Simulation(object) :
             self.gm.step(self.gm_input)
 
             self.gs.reset_window_counter += 1
+ 
+        ########################################################################
+        ########################################################################
+            
+        # movement body_simulator step
+
+        self.gs.step(self.static_inp)
+
+        # convert the vector of readout units from the selector into two
+        # vectors (left arm , right arm)
+        larm_angles = self.gs.out[:(self.gs.N_ROUT_UNITS / 2)]
+        rarm_angles = self.gs.out[(self.gs.N_ROUT_UNITS / 2):]
+        larm_angles_theoric = self.gs.tout[:(self.gs.N_ROUT_UNITS / 2)]
+        rarm_angles_theoric = self.gs.tout[(self.gs.N_ROUT_UNITS / 2):]
+        larm_angles_target = self.gs.gout[:(self.gs.N_ROUT_UNITS / 2)]
+        rarm_angles_target = self.gs.gout[(self.gs.N_ROUT_UNITS / 2):]
+
+        if body_simulator_touch_grow == True:
+            self.body_simulator.perc.touch_sigma = (
+                            body_simulator_touch_sigma * 0.99 * 
+                            (1 - self.gp.w.mean()) + 
+                            body_simulator_touch_sigma * 0.001)
+
+        # Simulation step
+        collision = self.body_simulator.step(
+                larm_angles_unscaled=larm_angles,
+                rarm_angles_unscaled=rarm_angles,
+                larm_angles_theoric_unscaled=larm_angles_theoric,
+                rarm_angles_theoric_unscaled=rarm_angles_theoric,
+                larm_angles_target_unscaled=larm_angles_target,
+                rarm_angles_target_unscaled=rarm_angles_target,
+                active=(self.gs.reset_window_counter >= self.gs.RESET_WINDOW)
+                )
+
+        if collision == True:
+            self.save_cont_logs()
+            angles = np.hstack(
+                self.body_simulator.actuator.unscale_angles(
+                    self.body_simulator.larm_angles,
+                    self.body_simulator.rarm_angles))
+            self.gs.reset_oscillator(angles, t=self.rng.randint(0,100))
+   
+            self.current_target = angles.copy()
+                

@@ -43,25 +43,27 @@ class Oscillator(object):
         self.t = 0 if t is None else t
 
         self.res = 0 if res is None else res
-
+        
+        self.active = False
+        
     def __call__(self):
         """ Calls an oscillator's step
 
         :return: the current angles after one step
         :rtype: numpy.array(trajectories_num, dtype=float)
         """
-        
-        self.res += self.dt*(
-            -self.res 
-            -(1.0/(self.dt*20.0))*np.sin(2.0 * np.pi * self.freqs * self.t / 
-                                  self.scale + np.pi)) 
-        self.res = np.tanh(self.res)
-        self.t += 1
+        if self.active == True:
+            self.res += self.dt*(
+                -self.res 
+                -(1.0/(self.dt*20.0))*np.sin(2.0 * np.pi * self.freqs * self.t / 
+                                    self.scale + np.pi)) 
+            self.res = np.tanh(self.res)
+            self.t += 1
 
         return self.res
 
     def reset(self):
-
+        self.res = 0.0
         self.t = 0
 
 
@@ -322,6 +324,7 @@ class GoalSelector(object):
 
         self.curr_echonet.reset()
         self.curr_echonet.reset_data()
+        self.reset_oscillator()
 
         self.goal_selection_vec *= 0
         self.goal_window_counter = 0

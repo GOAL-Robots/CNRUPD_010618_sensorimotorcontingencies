@@ -14,7 +14,7 @@ body_simulator_num_touch_sensors = 30
 body_simulator_touch_sigma = 0.1
 body_simulator_actuator_NUMBER_OF_JOINTS = 3
 body_simulator_substeps =  20
-body_simulator_substep_min_angle = np.pi/4.0
+body_simulator_substep_min_angle = 0.1
 body_simulator_touch_grow = False
 
 pm_proprioceptive_retina_sigma = 0.1
@@ -45,7 +45,7 @@ assert(len(ka_right_lims) == body_simulator_actuator_NUMBER_OF_JOINTS )
 GOAL_NUMBER = 25
 
 gs_dt = 0.001
-gs_tau = 0.04
+gs_tau = 0.1
 gs_alpha = 0.04
 gs_epsilon = 1.0e-10
 gs_eta = 4.0
