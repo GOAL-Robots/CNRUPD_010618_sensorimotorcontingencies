@@ -467,6 +467,8 @@ class Simulation(object) :
                 self.gs.reset(match=self.match_value)
                 self.body_simulator.reset()
 
+                return
+
         else:
 
             # Train goal maker (empty input)
@@ -476,7 +478,7 @@ class Simulation(object) :
  
         ########################################################################
         ########################################################################
-            
+    
         # movement body_simulator step
 
         self.gs.step(self.static_inp)

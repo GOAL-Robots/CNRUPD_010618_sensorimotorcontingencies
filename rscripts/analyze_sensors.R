@@ -294,7 +294,16 @@ plot.sensors.per.goal <- function(means.per.goal) {
 
     gp = gp + geom_bar(stat = "identity")
 
-    gp = gp + facet_grid(goal.current.ordered ~ .)
+    # goal labels for the ordered goals
+    to_label = means.per.goal[, .(ordered = first(goal.current.ordered)),
+                              by = goal.current]
+    labelled = as.array(as.character(to_label$goal.current))
+    names(labelled) = to_label$ordered
+
+    gp = gp + facet_grid(goal.current.ordered ~ .,
+                         labeller =
+                             labeller(goal.current.ordered =
+                                          labelled))
 
     gp <- gp + scale_y_continuous(
         limits = c(0, 2),
