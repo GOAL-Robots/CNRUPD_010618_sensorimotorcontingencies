@@ -54,16 +54,16 @@ find.decimal.scale <- function(x)
 # index of the plateau start and the value
 # at the plateau
 find_plateau <- function(time.series) {
-
     time.series.max <- max(time.series)
     time.series.length <- length(time.series)
-    time.series.maxes <- 1*(time.series == time.series.max)
+    time.series.maxes <- 1 * (time.series == time.series.max)
     time.series.maxes.diffs <- c(0, diff(time.series.maxes))
     res <- list()
-    for(idx in which(time.series.maxes.diffs == 1)) {
-        time.series.maxes.diffs.after <- time.series.maxes.diffs[idx:time.series.length]
+    for (idx in which(time.series.maxes.diffs == 1)) {
+        time.series.maxes.diffs.after <-
+            time.series.maxes.diffs[idx:time.series.length]
         test <- any(time.series.maxes.diffs.after < 0)
-        if(test == FALSE) {
+        if (test == FALSE) {
             res$idx <- idx
             res$val <- time.series.max
             break
@@ -111,7 +111,7 @@ predictions <- melt(
 # find the correct final timestep
 plateau.indices <- c()
 plateau.timesteps <- c()
-for(goal.el in levels(predictions$goal)) {
+for (goal.el in levels(predictions$goal)) {
     predictions.goal <- predictions[goal == goal.el]
     plateau.index <- find_plateau(predictions.goal$prediction)$idx
     plateau.indices <- c(plateau.indices,  plateau.index)
@@ -121,18 +121,20 @@ for(goal.el in levels(predictions$goal)) {
 plateau.all.index = max(plateau.indices)
 timesteps.max <-
     plateau.timesteps[plateau.indices ==
-                          plateau.all.index] +timesteps.gap*4
+                          plateau.all.index] + timesteps.gap * 4
 # WEIGHTS ----------------------------------------------------------------------
 
 weights <- fread("all_weights")
 names(weights) <- c("learning.type", "index", "timesteps",
                     "kohonen", "echo")
 weights <- subset(weights, index == simulation.index)
-weights <- subset(weights, timesteps <= timesteps.max )
+weights <- subset(weights, timesteps <= timesteps.max)
+
+# PLOTS ------------------------------------------------------------------------
 
 gp <- ggplot(weights, aes(x = timesteps))
 gp <- gp + geom_line(aes(y = kohonen))
-gp <- gp + xlab("timesteps")
+gp <- gp + xlab("Timesteps")
 gp <- gp + ylab("")
 gp <- gp + theme_bw()
 
@@ -148,7 +150,7 @@ gp_kohonen <- gp
 
 gp <- ggplot(weights, aes(x = timesteps))
 gp <- gp + geom_line(aes(y = echo))
-gp <- gp + xlab("timesteps")
+gp <- gp + xlab("Timesteps")
 gp <- gp + ylab("")
 gp <- gp + theme_bw()
 
@@ -159,26 +161,156 @@ gp <- gp + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
 )
+
 gp_echo <- gp
 
-
-aligned_plots <- align_plots(gp_kohonen, gp_echo, align="hv")
+aligned_plots <- align_plots(gp_kohonen, gp_echo, align = "hv")
 
 gp_all <- ggdraw()
 
 gp_all <- gp_all + draw_plot(aligned_plots[[1]],
-                    x = 0.0, y = 0.0,
-                    width = 1, height = 0.5)
+                             x = 0.0, y = 0.0,
+                             width = 1, height = 0.5)
 
 gp_all <- gp_all + draw_plot(aligned_plots[[2]],
                              x = 0.0, y = 0.5,
                              width = 1, height = 0.5)
 
-
-if(plot.offline == TRUE) {
+if (plot.offline == TRUE) {
     pdf("weights.pdf", width = 6, height = 3)
     print(gp_all)
     dev.off()
 } else {
     print(gp_all)
+}
+
+# WEIGHT GRID ------------------------------------------------------------------
+
+weights.final <- fread("weights")
+rows <- dim(weights.final)[1]
+goal.side.length <- sqrt(rows)
+cols <- dim(weights.final)[2]
+retina.side.length <- sqrt(cols)
+
+weights.final$goal <- 1:rows
+weights.final <- melt(weights.final,
+                      variable.name = "cell",
+                      measure.vars = 1:cols)
+
+weights.final$cell <- as.numeric(sub("V", "", weights.final$cell)) - 1
+weights.final$r_row <- weights.final$cell %/% retina.side.length + 1
+weights.final$r_col <- weights.final$cell %% retina.side.length + 1
+
+# PLOTS ------------------------------------------------------------------------
+
+grbs = list()
+
+for (row in 1:rows)
+{
+    w <- subset(weights.final, goal == row)
+    gp <- ggplot(w, aes(x = r_col, y = r_row, fill = value))
+    gp <- gp + geom_raster(show.legend = FALSE)
+    gp <- gp + xlab("")
+    gp <- gp + ylab("")
+    gp <- gp + theme_bw()
+    gp <-
+        gp + scale_fill_gradient(low = "#ffffff", high = "#000000")
+    gp <- gp + theme(
+        text = element_text(size = 11, family = "Verdana"),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        #panel.border = element_blank(),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        panel.grid.major = element_blank(),
+        plot.margin = unit(c(.1, .1, .0, .0), "in"),
+        panel.grid.minor = element_blank()
+    )
+    grbs[[row]] <- ggplotGrob(gp)
+
+}
+
+aligned_plots <- align_plots(plotlist = grbs, align = "hv")
+
+gp_weight_grid <- ggdraw()
+for(row in 1:goal.side.length) {
+    for(col in 1:goal.side.length) {
+        gp_weight_grid <- gp_weight_grid + draw_plot(
+            grbs[[(row - 1)*goal.side.length + col]],
+            x = (col - 1)/goal.side.length,
+            y = (row - 1)/goal.side.length,
+            width = 1/goal.side.length,
+            height = 1/goal.side.length
+        )
+    }
+}
+
+if(plot.offline == TRUE) {
+    pdf("weights_grid.pdf", width = 6, height = 6 * 0.55)
+    print(gp_weight_grid)
+    dev.off()
+} else {
+    print(gp_weight_grid)
+}
+
+# POSITION GRID ----------------------------------------------------------------
+
+positions <- fread("positions")
+names(positions) <- c("goal", "x", "y")
+positions$joint <- rep(1:8, rows)
+grbs = list()
+for (row in 1:rows)
+{
+    w = subset(positions, goal == row-1)
+
+    gp <- ggplot(w, aes(x = as.numeric(x), y = as.numeric(y), order = joint))
+    gp <- gp + geom_path(size = 1.5, color="#555555")
+    gp <- gp + geom_point()
+    gp <- gp + xlab("")
+    gp <- gp + ylab("")
+    gp <- gp + theme_bw()
+    gp <- gp + scale_x_continuous(limits = c(-3.5,3.5))
+    gp <- gp + scale_y_continuous(limits = c(-0.1,3))
+    gp <- gp + coord_fixed()
+    gp <- gp + theme(
+        text = element_text(size = 11, family = "Verdana"),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        #panel.border = element_blank(),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        panel.grid.major = element_blank(),
+        plot.margin = unit(c(.0, .0, .0, .0), "in"),
+        panel.grid.minor = element_blank()
+    )
+    grbs[[row]] = ggplotGrob(gp)
+}
+
+aligned_plots <- align_plots(plotlist = grbs, align = "hv")
+
+gp_position_grid <- ggdraw()
+for(row in 1:goal.side.length) {
+    for(col in 1:goal.side.length) {
+        gp_position_grid <- gp_position_grid + draw_plot(
+            grbs[[(row - 1)*goal.side.length + col]],
+            x = (col - 1)/goal.side.length,
+            y = (row - 1)/goal.side.length,
+            width = 1/goal.side.length,
+            height = 1/goal.side.length
+        )
+    }
+}
+
+if(plot.offline == TRUE) {
+    pdf("positions_grid.pdf", width = 6, height = 6 * 0.55)
+    print(gp_position_grid)
+    dev.off()
+} else {
+    print(gp_position_grid)
 }

@@ -379,15 +379,17 @@ class Simulation(object) :
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask,
                                            (self.gm.goalrep_layer > 0))
-
-            # Selection
+.
+            # Selection - only one time per trial at the beginning.
+            # It autodetects if selection has already been done.
             self.gs.goal_selection(self.goal_mask,
                     competence_improvement_vec=
                             self.COMPETENCE_IMPROVEMENT_PROP * 
                             self.competence_improvement_vec,
                     incompetence_vec=(self.INCOMPETENCE_PROP * 
                                          (1.0 - self.gp.w)))
-            # Prediction
+            
+            # Prediction - only one time per trial at the beginning.
             if self.gs.goal_window_counter == 0:
                 self.gp.step(self.gs.goal_selection_vec)
 
@@ -438,10 +440,13 @@ class Simulation(object) :
             if (self.match_value == 1 or
                 self.gs.goal_window_counter >= self.gs.GOAL_WINDOW) :
 
+                # log weight metrics
+                self.save_weight_logs()
+                self.save_trial_logs()
                 # log matches
                 if self.match_value == 1:
                     self.save_match_logs()
-
+                    
                 # learn
                 self.gp.learn(self.match_value)
 
@@ -452,10 +457,6 @@ class Simulation(object) :
                             self.body_simulator.larm_angles,
                             self.body_simulator.rarm_angles))
                     self.gs.update_target(angles)
-
-                # log weight metrics
-                self.save_weight_logs()
-                self.save_trial_logs()
 
                 # update variables
                 self.intrinsic_motivation_value = self.gp.prediction_error
