@@ -379,7 +379,7 @@ class Simulation(object) :
             # update the subset of goals to be selected
             self.goal_mask = np.logical_or(self.goal_mask,
                                            (self.gm.goalrep_layer > 0))
-.
+
             # Selection - only one time per trial at the beginning.
             # It autodetects if selection has already been done.
             self.gs.goal_selection(self.goal_mask,
