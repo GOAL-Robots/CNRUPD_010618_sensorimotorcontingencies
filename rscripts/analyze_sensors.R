@@ -36,6 +36,11 @@ std.error <- function(x) {
     sd(x) / sqrt(length(x))
 }
 
+mid.prop.idx = function(x, scale=1) {
+    x = as.vector(t(x%o%rep(1,scale)))
+    last(which(cumsum(x)/sum(x) < 3/4))/scale
+}
+
 # If the timeseries ends converging
 # to a maximum thids function returns the
 # index of the plateau start and the value
@@ -179,7 +184,7 @@ timesteps.max <- max(global.predictions$timesteps)
 # TOUCHES ----------------------------------------------------------------------
 
 global.touches <-
-    fread("~/Projects/sensorimotor-dev/data/5x5_new/normal/log_cont_sensors")
+    fread("log_cont_sensors")
 global.touches.number = dim(global.touches)[2] - 2
 names(global.touches) = c("timesteps",
                           1:global.touches.number,
@@ -253,12 +258,10 @@ global.sensors <- subset(
 
 get_sensors_window <- function(timesteps.start, timesteps.end) {
 
-
     global.sensors.current <-
         subset(global.sensors,
                timesteps >= timesteps.start &
                timesteps <= timesteps.end )
-
 
     global.sensors.means <-
         global.sensors.current[, .(activation = mean(activation)),
@@ -267,9 +270,7 @@ get_sensors_window <- function(timesteps.start, timesteps.end) {
         global.sensors.means[, .(activation,
                                  sensor,
                                  goal.current.ordered =
-                                     which(sensor ==
-                                               sensor[activation ==
-                                                          max(activation)])),
+                                     mid.prop.idx(activation, scale=30)),
                              by = .(goal.current)]
 
     sensor_indices = as.numeric(global.sensors.means$sensor)
@@ -304,6 +305,7 @@ plot.sensors.per.goal <- function(means.per.goal) {
                          labeller =
                              labeller(goal.current.ordered =
                                           labelled))
+
 
     gp <- gp + scale_y_continuous(
         limits = c(0, 2),
@@ -369,7 +371,7 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE) {
                         inherit.aes = TRUE)
     gp <-
         gp + scale_y_continuous(
-            limits = c(0, 0.6),
+            limits = c(0, 1),
             breaks = c(0, 0.25, 0.5),
             labels = c(0, 0.25, 0.5),
             sec.axis = sec_axis(
@@ -467,8 +469,8 @@ if (plot.offline == TRUE) {
 }
 
 
-gap = 10000
-intervals = 5
+gap = 2000
+intervals = 10
 gps = list()
 gp_ints <- ggdraw()
 

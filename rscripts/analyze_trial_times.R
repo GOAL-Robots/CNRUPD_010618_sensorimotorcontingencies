@@ -177,7 +177,7 @@ prediction.trials.mean.all <-
                       by = .(trial.seq.num)]
 
 # __ smooted trial durations ====
-window = 3
+window = 10
 prediction.trials.smoothed <- trials[predictions, nomatch = 0]
 
 prediction.trials.smoothed <-
@@ -208,7 +208,7 @@ prediction.trials.smoothed.mean <-
 # PLOTS -----------------------------------------------------------------------
 
 # __ plot of the sequence of trial durations for each goal ====
-gp <- ggplot(prediction.trials,
+gp <- ggplot(prediction.trials.smoothed,
             aes(y = trial.duration,
                 x = trial.seq.num,
                 group = goal,
