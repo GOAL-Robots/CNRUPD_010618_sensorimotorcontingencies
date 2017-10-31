@@ -70,7 +70,7 @@ find_plateau <- function(time.series) {
 prediction.th <- 0.9
 sensors.activation.th <- 0.0
 simulation.index <- 1
-timesteps.gap <- 50e+3
+timesteps.gap <- 300e+3
 
 
 sensors_labels_uniform <- seq(0, 1, length.out = 30)
@@ -184,7 +184,7 @@ timesteps.max <- max(global.predictions$timesteps)
 # TOUCHES ----------------------------------------------------------------------
 
 global.touches <-
-    fread("log_cont_sensors")
+    fread("~/tmp/sensorimotor/local/count/1/data/log_cont_sensors")
 global.touches.number = dim(global.touches)[2] - 2
 names(global.touches) = c("timesteps",
                           1:global.touches.number,
@@ -264,10 +264,14 @@ get_sensors_window <- function(timesteps.start, timesteps.end) {
                timesteps <= timesteps.end )
 
     global.sensors.means <-
-        global.sensors.current[, .(activation = mean(activation)),
-                       by = .(sensor, goal.current)]
+        global.sensors.current[, .(
+            activation = mean(activation),
+            activation.sd = sd(activation)
+            ),
+            by = .(sensor, goal.current)]
     global.sensors.means <-
         global.sensors.means[, .(activation,
+                                 activation.sd,
                                  sensor,
                                  goal.current.ordered =
                                      mid.prop.idx(activation, scale=30)),
@@ -277,8 +281,11 @@ get_sensors_window <- function(timesteps.start, timesteps.end) {
     global.sensors.means$sensor.num = sensors_labels[sensor_indices]
 
     global.sensors.means.global <-
-        global.sensors.means[, .(activation = mean(activation)),
-                             by = sensor.num]
+        global.sensors.means[, .(
+            activation = mean(activation),
+            activation.sd = sd(activation)
+        ),
+            by = sensor.num]
 
     res <- list(
         means.goal = global.sensors.means,
@@ -321,11 +328,11 @@ plot.sensors.per.goal <- function(means.per.goal) {
     gp <- gp + scale_x_continuous(
         limits = c(0, 1),
         breaks = sensors_labels,
-        labels = round(sensors_labels, 2)
+        labels = format(round(sensors_labels, 2))
     )
 
     gp <- gp + xlab("Sensors")
-    gp <- gp + ylab("Number of touches")
+    gp <- gp + ylab("Mean activation of sensors")
     gp <- gp + theme_bw()
     gp <- gp + theme(
         text = element_text(size = 11, family = "Verdana"),
@@ -352,7 +359,7 @@ plot.sensors.per.goal <- function(means.per.goal) {
     gp
 }
 
-plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE) {
+plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, ylim=1.2) {
 
     # __ sensors ====
 
@@ -360,18 +367,29 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE) {
                 aes(x = sensor.num,
                     y = activation))
 
-    gp = gp + geom_ribbon(aes(ymin = 0,
-                              ymax = activation),
+    gp = gp + geom_ribbon(aes(ymin = pmax(activation - activation.sd, 0),
+                              ymax = activation+ activation.sd),
                           color = "black",
                           fill = "grey")
+
+    gp = gp + geom_line()
+
 
     gp = gp + geom_line(data = global.touches,
                         aes(x = sensor.num,
                             y = touch),
+                        color = "#000000",
+                        size=1,
+                        inherit.aes = TRUE)
+    gp = gp + geom_line(data = global.touches,
+                        aes(x = sensor.num,
+                            y = touch),
+                        color = "#ffffff",
+                        size=.5,
                         inherit.aes = TRUE)
     gp <-
         gp + scale_y_continuous(
-            limits = c(0, 1),
+            limits = c(0, ylim),
             breaks = c(0, 0.25, 0.5),
             labels = c(0, 0.25, 0.5),
             sec.axis = sec_axis(
@@ -385,7 +403,7 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE) {
         gp + scale_x_continuous(
             limits = c(0, 1),
             breaks = sensors_labels,
-            labels = round(sensors_labels, 2)
+            labels = format(round(sensors_labels, 2))
         )
 
     gp <- gp + theme_bw()
@@ -434,7 +452,7 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE) {
 # PLOT -------------------------------------------------------------------------
 
 sens <- get_sensors_window(
-    timesteps.start = timesteps.all.learnt,
+    timesteps.start = timesteps.all.learnt - timesteps.gap*0.5,
     timesteps.end = timesteps.all.learnt + timesteps.gap)
 
 
@@ -469,8 +487,8 @@ if (plot.offline == TRUE) {
 }
 
 
-gap = 2000
-intervals = 10
+gap = 5000
+intervals = 14
 gps = list()
 gp_ints <- ggdraw()
 
@@ -500,3 +518,5 @@ if (plot.offline == TRUE) {
 } else {
     print(gp_ints)
 }
+
+cat(length(unique(sort(sens$means.goal$goal.current))))

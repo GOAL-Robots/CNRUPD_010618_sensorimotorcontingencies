@@ -152,10 +152,6 @@ prediction.trials <-
                                      plateau.all.index] +timesteps.gap)
 
 
-# add trial.seq.num defining the sequential order of trials for each goal
-prediction.trials$trial.seq.num =
-    floor(prediction.trials$trial.seq.num * 1000) / 1000
-
 
 
 # __ means of trial durations ====
@@ -288,9 +284,7 @@ if(plot.offline == TRUE) {
 
 
 # __ plot trial duration over predictions  ====
-gp <- ggplot(subset(prediction.trials,
-                    trial.seq.num >= 0 &
-                        trial.seq.num <= 1000 ),
+gp <- ggplot(prediction.trials,
              aes(x = prediction,
                  y = trial.duration,
                  color = trial.seq.num))
