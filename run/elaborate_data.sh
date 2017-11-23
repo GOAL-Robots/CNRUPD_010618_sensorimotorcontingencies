@@ -141,15 +141,15 @@ start_elab()
         </tr>
         <tr>
         <td><img src=\"sensors.png\"   width=\"100%\"></td>
-        <td></td>
+        <td><img src=\"trial_duration_vs_prediction_mean.png\"   width=\"100%\"></td>
         </tr>
         <tr>
         <td><img src=\"weights.png\"   width=\"100%\"></td>
-        <td></td>
+        <td><img src=\"trial_duration_mean_smoothed.png\"   width=\"100%\"></td>
         </tr>
         <tr>
         <td><img src=\"weights_grid.png\"   width=\"100%\"></td>
-        <td><img src=\"positions_grid.png\"   width=\"100%\"></td>
+    <td><img src=\"positions_grid.png\"   width=\"100%\"></td>
         </tr>
         </table>
 
@@ -230,6 +230,7 @@ run()
         R CMD BATCH ${BASE}/rscripts/analyze_touches.R
         R CMD BATCH ${BASE}/rscripts/analyze_predictions.R
         R CMD BATCH ${BASE}/rscripts/analyze_sensors.R 
+        R CMD BATCH ${BASE}/rscripts/analyze_trial_times.R 
         R CMD BATCH ${BASE}/rscripts/analyze_weights.R 
         R CMD BATCH ${BASE}/rscripts/analyze_pred_history.R 
         

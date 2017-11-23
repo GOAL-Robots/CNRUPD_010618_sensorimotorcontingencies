@@ -4,7 +4,7 @@ rm(list = ls())
 
 # __ list of required packages ====
 toInstall <- c("extrafont",
-               "ggplot2",
+               "ggplot2",54
                "data.table",
                "cowplot",
                "grid",

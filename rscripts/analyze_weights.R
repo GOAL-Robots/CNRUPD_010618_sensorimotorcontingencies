@@ -122,6 +122,7 @@ plateau.all.index = max(plateau.indices)
 timesteps.max <-
     plateau.timesteps[plateau.indices ==
                           plateau.all.index] + timesteps.gap * 4
+
 # WEIGHTS ----------------------------------------------------------------------
 
 weights <- fread("all_weights")
@@ -186,7 +187,8 @@ if (plot.offline == TRUE) {
 
 # WEIGHT GRID ------------------------------------------------------------------
 
-weights.final <- fread("weights")
+weights.final <-
+    fread(paste("../", simulation.index, "/data/", "weights", sep = ""))
 rows <- dim(weights.final)[1]
 goal.side.length <- sqrt(rows)
 cols <- dim(weights.final)[2]
@@ -258,7 +260,9 @@ if(plot.offline == TRUE) {
 
 # POSITION GRID ----------------------------------------------------------------
 
-positions <- fread("positions")
+positions <-
+    fread(paste("../", simulation.index, "/data/", "positions", sep = ""))
+
 names(positions) <- c("goal", "x", "y")
 positions$joint <- rep(1:8, rows)
 grbs = list()

@@ -232,25 +232,39 @@ plot_hystory <- function(timesteps.start, timesteps.stop, blocks = 5)
     }
 
     gp = ggdraw()
-    for(x in 1:blocks.number) {
+    for(x in 1:(blocks.number)) {
         gp = gp + draw_plot(gps[[x]],
-                            x = (x - 1)/blocks.number,
+                            x = (x-1)/(blocks.number),
                             y = 0,
-                            width = 1/blocks.number,
-                            height = 1 )
+                            width = 1/(blocks.number),
+                            height = 1)
     }
 
     gp
 
 }
 
-gp = plot_hystory(0, timesteps.max/5, blocks = 5)
+gp1 = plot_hystory(0, timesteps.max*(5/10), blocks = 5)
+gp2 = plot_hystory(timesteps.max*(6/10), timesteps.max, blocks = 5)
 
+gp_all = ggdraw()
+
+gp_all = gp_all + draw_plot(gp1,
+                            x = 0,
+                            y = 0.5,
+                            width=1,
+                            height=0.5)
+
+gp_all = gp_all + draw_plot(gp2,
+                            x = 0,
+                            y = 0.0,
+                            width=1,
+                            height=0.5)
 if (plot.offline == TRUE) {
-    pdf("pred_hist.pdf", width = 6, height = 1.2)
-    print(gp)
+    pdf("pred_hist.pdf", width = 6, height = 2.4)
+    print(gp_all)
     dev.off()
 } else {
-    print(gp)
+    print(gp_all)
 }
 

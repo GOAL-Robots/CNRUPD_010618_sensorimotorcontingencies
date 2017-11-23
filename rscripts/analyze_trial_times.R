@@ -59,7 +59,7 @@ find_plateau <- function(time.series) {
 # CONSTS -----------------------------------------------------------------------
 
 timesteps.gap <- 50e+3
-simulation.index <- 1
+simulation.index <- 4
 
 # TRIALS -----------------------------------------------------------------------
 

@@ -69,7 +69,7 @@ find_plateau <- function(time.series) {
 
 prediction.th <- 0.9
 sensors.activation.th <- 0.0
-simulation.index <- 1
+simulation.index <- 4
 timesteps.gap <- 300e+3
 
 
@@ -213,6 +213,7 @@ global.touches <-
 global.touches <-
     global.touches[, .(touch = mean(touch)),
                    by = sensor.num]
+
 # SENSORS ----------------------------------------------------------------------
 
 
@@ -300,7 +301,8 @@ plot.sensors.per.goal <- function(means.per.goal) {
     # __ sensors per goal ====
     gp = ggplot(means.per.goal, aes(x = sensor.num, y = activation))
 
-    gp = gp + geom_bar(stat = "identity")
+    #gp = gp + geom_bar(stat = "identity")
+    gp = gp + geom_ribbon(aes(ymin=0, ymax=activation))
 
     # goal labels for the ordered goals
     to_label = means.per.goal[, .(ordered = first(goal.current.ordered)),
@@ -359,7 +361,7 @@ plot.sensors.per.goal <- function(means.per.goal) {
     gp
 }
 
-plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, ylim=1.2) {
+plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, only_tics=FALSE, second_axis=TRUE,  ylim=1.2) {
 
     # __ sensors ====
 
@@ -377,27 +379,37 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, ylim=1.2) {
 
     gp = gp + geom_line(data = global.touches,
                         aes(x = sensor.num,
-                            y = touch),
+                            y = touch*1.7),
                         color = "#000000",
                         size=1,
                         inherit.aes = TRUE)
     gp = gp + geom_line(data = global.touches,
                         aes(x = sensor.num,
-                            y = touch),
+                            y = touch*1.7),
                         color = "#ffffff",
                         size=.5,
                         inherit.aes = TRUE)
-    gp <-
-        gp + scale_y_continuous(
-            limits = c(0, ylim),
-            breaks = c(0, 0.25, 0.5),
-            labels = c(0, 0.25, 0.5),
-            sec.axis = sec_axis(
-                trans = ~ .,
-                breaks = c(0, 0.5, 1),
-                name = "Proportion of touches"
+
+    if (second_axis == TRUE) {
+        gp <-
+            gp + scale_y_continuous(
+                limits = c(0, ylim),
+                breaks = c(0, 0.25, 0.5),
+                labels = c(0, 0.25, 0.5),
+                sec.axis = sec_axis(
+                    trans = ~ .,
+                    breaks = c(0, 0.5, 1),
+                    name = "Proportion of touches"
+                )
             )
-        )
+    } else {
+        gp <-
+            gp + scale_y_continuous(
+                limits = c(0, ylim),
+                breaks = c(0, 0.25, 0.5),
+                labels = c(0, 0.25, 0.5)
+            )
+    }
 
     gp <-
         gp + scale_x_continuous(
@@ -409,22 +421,36 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, ylim=1.2) {
     gp <- gp + theme_bw()
 
     if (xaxis == TRUE) {
-        axis.text.x = element_text(size = 8,
-                                   angle = 90,
-                                   hjust = 1)
         axis.ticks.x = element_line()
-        axis.title.x = element_text()
+        axis.line = element_line()
+        if (only_tics == FALSE) {
+            axis.text.x = element_text(size = 4,
+                                       angle = 90,
+                                       hjust = 1)
+            axis.title.x = element_text()
+        } else {
+            axis.text.x = element_blank()
+            axis.title.x = element_blank()
+        }
     } else {
+        axis.line = element_blank()
         axis.text.x = element_blank()
         axis.ticks.x = element_blank()
         axis.title.x = element_blank()
     }
 
     if (yaxis == TRUE) {
-        axis.text.y = element_text(size = 10,)
         axis.ticks.y = element_line()
-        axis.title.y = element_text()
+        axis.line = element_line()
+        if (only_tics == FALSE) {
+            axis.text.y = element_text(size = 10,)
+            axis.title.y = element_text()
+        } else  {
+            axis.text.y = element_blank()
+           axis.title.y = element_blank()
+        }
     } else {
+        axis.line = element_blank()
         axis.text.y = element_blank()
         axis.ticks.y = element_blank()
         axis.title.y = element_blank()
@@ -439,7 +465,9 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, ylim=1.2) {
         axis.title.x = axis.title.x,
         axis.title.y = axis.title.y,
         panel.border = element_blank(),
+        axis.line = axis.line,
         legend.title = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "cm"),
         legend.background = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()
@@ -462,7 +490,7 @@ if (plot.offline == TRUE) {
     pdf(
         paste("sensors_per_goal", ".pdf", sep = ""),
         width = 7,
-        height = 3,
+        height = 4,
         family = "Verdana"
     )
     print(gp_sensors_per_goal)
@@ -487,18 +515,52 @@ if (plot.offline == TRUE) {
 }
 
 
-gap = 5000
-intervals = 14
+gap = 10000
+intervals = 10
 gps = list()
+for(int in 1:intervals) {
+
+    ts.start = (int - 1) * gap
+    ts.end = int * gap
+
+    sens.int <- get_sensors_window(timesteps.start = ts.start,
+                                   timesteps.end = ts.end)
+    xaxis = FALSE
+    yaxis = FALSE
+    only_tics = FALSE
+    if(int == 1)  {
+        xaxis = TRUE
+        yaxis = TRUE
+        only_tics = TRUE
+    }
+    gp <-
+        plot.sensors(sens.int$means,
+                     xaxis = xaxis,
+                     yaxis = yaxis,
+                     only_tics = only_tics,
+                     second_axis = FALSE,
+                     ylim = 1.4)
+    gp <- gp + geom_text(
+        data = data.frame( x = 0.1,
+                           y = 1.,
+                           label =
+                               paste(format(ts.start, scientific = FALSE),
+                                     "to",
+                                     format(ts.end, scientific = FALSE))
+                           ),
+        aes(x = x, y = y, label = label),
+        size = 2)
+
+    gps[[int]] = gp
+}
+aligned_plots <- align_plots(plotlist = gps, align = "hv")
+
 gp_ints <- ggdraw()
 
 for(int in 1:intervals) {
-    sens.int <- get_sensors_window(timesteps.start = (int - 1) * gap,
-                                   timesteps.end = int * gap)
 
-    gp <- plot.sensors(sens.int$means, xaxis = F, yaxis = F)
     gp_ints <- gp_ints + draw_plot(
-        gp,
+        aligned_plots[[int]],
         x = 0,
         y = (int - 1) / intervals,
         width = 1,
@@ -509,8 +571,8 @@ for(int in 1:intervals) {
 if (plot.offline == TRUE) {
     pdf(
         paste("sensors_density_history", ".pdf", sep = ""),
-        width = 3,
-        height = 7,
+        width = 4,
+        height = 3,
         family = "Verdana"
     )
     print(gp_ints)
