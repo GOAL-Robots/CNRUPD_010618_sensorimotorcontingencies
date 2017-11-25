@@ -161,11 +161,3 @@ class BackProp(object):
         return np.mean(self.error**2)
 
 
-if __name__ == "__main__":
-
-    # import matplotlib.pyplot as plt
-    #
-    # plt.plot(xor_test())
-    # plt.show()
-
-    mnist_test()

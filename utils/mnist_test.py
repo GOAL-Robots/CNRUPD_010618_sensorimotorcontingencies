@@ -121,7 +121,7 @@ class Plotter(object):
         # number of epochs
         self.n_epochs = 300
      
-        self.fig1 = plt.figure(figsize=(8, 12))
+        self.fig1 = plt.figure(figsize=(6, 12))
         # init plots for target mnist digits
         (self.ax1, self.img1,
          self.ax2, self.img2, 
@@ -164,6 +164,7 @@ class Plotter(object):
         self.ax3.set_ylim([0, 0.08])
         
         self.k = 0
+        plt.tight_layout()
     
     def step(self, errsums, test_inps, test_outs, train_inps, train_outs):
         
