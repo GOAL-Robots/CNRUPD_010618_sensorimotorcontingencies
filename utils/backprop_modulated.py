@@ -8,13 +8,22 @@ np.set_printoptions(suppress=True,
 
 
 class Predictor(object):
-    pass
+
+    def __init__(self, hidden_units, eta=0.1):
+        self.n = len(np.hstack(hidden_units))
+        self.w = np.zeros(self.n)
+        self.eta = eta
+
+    def step(hidden_units, errors):
+        units = np.hstack(hidden_units)
+        
+        w += self.eta*
 
 class BackPropMod(BackProp):
     
     def __init__(self, *args, **kargs):
         super(BackPropMod, self).__init__(*args, **kargs)
-
+        self.predictor = Predictor(1)
         
     def learn(self, target):
         """
