@@ -8,23 +8,32 @@ np.set_printoptions(suppress=True,
 
 #------------------------------------------------------------------------------ 
 
+def mse(x, y):
+    return np.mean(np.power(x - y, 2))
+
+#------------------------------------------------------------------------------ 
+
 class Predictor(object):
 
-    def __init__(self, hidden_units, eta=0.1):
+    def __init__(self, hidden_units, eta=0.1, alpha=0.05):
         self.n = len(np.hstack(hidden_units))
         self.w = np.zeros(self.n)
         self.eta = eta
+        self.alpha = alpha
+        
 
     def step(hidden_units, errors):
         units = np.hstack(hidden_units)
-        
-        w += self.eta*
+        self.prediction = np.dot(units, self.w)
+        self.match = 1.0 - np.tanh(mse(errors)*self.alpha)
+        self.w += self.eta*(self.prediction - match)*units
+        return self.predict, self.match
 
 class BackPropMod(BackProp):
     
     def __init__(self, *args, **kargs):
         super(BackPropMod, self).__init__(*args, **kargs)
-        self.predictor = Predictor(1)
+        self.predictor = Predictor(self.units[:-1])
         
     def learn(self, target):
         """
@@ -33,6 +42,7 @@ class BackPropMod(BackProp):
 
         self.error_backprop(target)
         self.update_weights()
+        self.predictor.step(self.units[:-1], self.error)
         
 #------------------------------------------------------------------------------ 
 
