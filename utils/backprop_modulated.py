@@ -12,7 +12,11 @@ class Predictor(object):
 
 class BackPropMod(BackProp):
     
-    def __init__(self, *args, **kargs):
+    def __init__(self, pred, *args, **kargs):
+        """
+        :param pred: Predictor object, predicts the level 
+            of correctness and modulates learning.
+        """
         super(BackPropMod, self).__init__(*args, **kargs)
 
         
@@ -21,6 +25,7 @@ class BackPropMod(BackProp):
         :param  target  the desired output for the current input
         """
 
+
         self.error_backprop(target)
         self.update_weights()
         
@@ -28,9 +33,10 @@ class BackPropMod(BackProp):
     
 n_mnist_pixels = 28*28
 
+pred = Predictor()
 # init backprop object
 bp = BackPropMod(
-    outfun=sigmfun, derfun=sigmder,
+    pred=pred, outfun=sigmfun, derfun=sigmder,
     n_units_per_layer=[n_mnist_pixels,
                        100, 10, 100,
                        n_mnist_pixels],
