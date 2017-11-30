@@ -9,21 +9,28 @@ np.set_printoptions(suppress=True,
 #------------------------------------------------------------------------------ 
 
 class Predictor(object):
-    pass
+
+    def __init__(self, hidden_units, eta=0.1):
+        self.n = len(np.hstack(hidden_units))
+        self.w = np.zeros(self.n)
+        self.eta = eta
+
+    def step(hidden_units, errors):
+        units = np.hstack(hidden_units)
+        
+        w += self.eta*
 
 class BackPropMod(BackProp):
     
-    def __init__(self, pred, *args, **kargs):
-        """
-        :param pred: Predictor object, predicts the level 
-            of correctness and modulates learning.
-        """
+    def __init__(self, *args, **kargs):
         super(BackPropMod, self).__init__(*args, **kargs)
+        self.predictor = Predictor(1)
         
     def learn(self, target):
         """
         :param  target  the desired output for the current input
         """
+
         self.error_backprop(target)
         self.update_weights()
         
@@ -33,12 +40,13 @@ if __name__ == "__main__":
 
     n_mnist_pixels = 28*28
     
-    pred = Predictor()
-    # init backprop object
-    bp = BackPropMod(
-        pred=pred, outfun=sigmfun, derfun=sigmder,
-        n_units_per_layer=[n_mnist_pixels,
-                           100, 10, 100,
-                           n_mnist_pixels],
-        eta=0.01)
-    print "Done"
+n_mnist_pixels = 28*28
+
+# init backprop object
+bp = BackPropMod(
+    outfun=sigmfun, derfun=sigmder,
+    n_units_per_layer=[n_mnist_pixels,
+                       100, 10, 100,
+                       n_mnist_pixels],
+    eta=0.01)
+print "Done"
