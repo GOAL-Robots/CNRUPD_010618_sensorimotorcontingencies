@@ -134,7 +134,7 @@ class BackProp(object):
 
         self.deltas[-1] = self.error * self.derfun(self.units[-1])
         # iterate layers backward
-        for layer in xrange(self.n_layers - 1, 0, -1):
+        for layer in xrange(self.n_layers - 1, 1, -1):
             # for each layer evaluate the back-propagation error
             w_T = (self.weights[layer - 1][:, 1:]).T
             self.deltas[layer - 1] = \
