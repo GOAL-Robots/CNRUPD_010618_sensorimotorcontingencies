@@ -1,4 +1,0 @@
-version=0.6.0
-typesetter=pdflatex
-steps=texpdf
-root=/home/francescomannella/Dropbox/Projects/sensorimotor-dev/docs/latex/neurorobotics2017/frontiers.tex
