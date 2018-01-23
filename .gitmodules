@@ -4,3 +4,6 @@
 [submodule "docs/latex/neurorobotics"]
 	path = docs/latex/neurorobotics
 	url = https://git.overleaf.com/10046018phxbfwnkqgsp
+[submodule "docs/latex/neurorobotics2017"]
+	path = docs/latex/neurorobotics2017
+	url = https://git.overleaf.com/10046018phxbfwnkqgsp
