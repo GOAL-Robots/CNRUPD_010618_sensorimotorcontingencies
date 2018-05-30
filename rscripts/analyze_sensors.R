@@ -184,7 +184,7 @@ timesteps.max <- max(global.predictions$timesteps)
 # TOUCHES ----------------------------------------------------------------------
 
 global.touches <-
-    fread("~/tmp/sensorimotor/local/count/1/data/log_cont_sensors")
+    fread("log_cont_sensors")
 global.touches.number = dim(global.touches)[2] - 2
 names(global.touches) = c("timesteps",
                           1:global.touches.number,

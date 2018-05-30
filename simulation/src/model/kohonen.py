@@ -29,7 +29,7 @@ class Kohonen(object) :
             weight_bl           = 0.00,
             average_decay       = 0.1,
             normalize           = lambda x : x,
-            rng                 = np.random.RandomState(int(time.time()))
+            rng                = np.random.RandomState(int(time.time()))
             ) :
         """
             :param stime: time of simulation

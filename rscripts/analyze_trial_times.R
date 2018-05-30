@@ -59,7 +59,7 @@ find_plateau <- function(time.series) {
 # CONSTS -----------------------------------------------------------------------
 
 timesteps.gap <- 50e+3
-simulation.index <- 4
+simulation.index <- 1
 
 # TRIALS -----------------------------------------------------------------------
 
@@ -93,11 +93,14 @@ trials <- trials[trial.duration > 0]
 
 # __ load prediction dataset ====
 predictions <- fread("all_predictions")
+goals.number <-
+    dim(predictions)[2] - 4 # first 4 columns are not goals
+goals.labels <- paste("goal.", 1:goals.number, sep = "")
 names(predictions) <- c("learning.type",
                         "index",
                         "timesteps",
-                        format(1:goal.number),
-                        "current.goal")
+                        goals.labels,
+                        "goal.current")
 
 predictions <- subset(predictions, index == simulation.index)
 

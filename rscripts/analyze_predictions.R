@@ -4,7 +4,7 @@ rm(list = ls())
 
 # __ list of required packages ====
 toInstall <- c("extrafont",
-               "ggplot2",54
+               "ggplot2",
                "data.table",
                "cowplot",
                "grid",
@@ -284,9 +284,11 @@ plot_preds_per_goal <- function(timesteps.start, timesteps.stop, goal_focus, ras
     gp
 }
 
-plot_means <- function(timesteps.start, timesteps.stop, raster_height = 0.4) {
+plot_means <- function(timesteps.start, timesteps.stop,  raster_height = 0.4, scale_units=1) {
 
     #data
+    weights.before <- subset(weights,
+                              timesteps < timesteps.start)
     weights.current <- subset(weights,
                               timesteps >= timesteps.start &
                                   timesteps <= timesteps.stop)
@@ -297,17 +299,28 @@ plot_means <- function(timesteps.start, timesteps.stop, raster_height = 0.4) {
                                         timesteps >= timesteps.start &
                                             timesteps <= timesteps.stop)
 
+
     # ticks
+    trials.number.before <-length(weights.before$timesteps)
     trials.number <- length(weights.current$timesteps)
+    trials.number.all <- length(weights$timesteps)
     scale <- find.decimal.scale(trials.number)
-    trials.seq <- 1:trials.number
+    trials.seq <- (1:trials.number.all)
     trials.breaks <- trials.seq[trials.seq %% (scale) == 0]
-    trials.breaks.timesteps = weights.current$timesteps[trials.breaks]
+    trials.breaks.timesteps <- weights$timesteps[trials.breaks]
+    trials.breaks <-trials.breaks[
+        trials.breaks.timesteps >= timesteps.start &
+            trials.breaks.timesteps <= timesteps.stop]
+    trials.breaks.timesteps <-trials.breaks.timesteps[
+        trials.breaks.timesteps >= timesteps.start &
+            trials.breaks.timesteps <= timesteps.stop]
+
+
     scale <-
         find.decimal.scale(timesteps.stop - timesteps.start)
     timesteps.seq <- timesteps.start:timesteps.stop
     timesteps.breaks <-
-        c(0, timesteps.seq[timesteps.seq %% (scale) == 0])
+         timesteps.seq[timesteps.seq %% (scale) == 0]
 
     # main ggplot
     gp <- ggplot(data = predictions.means.current,
@@ -368,6 +381,8 @@ plot_means <- function(timesteps.start, timesteps.stop, raster_height = 0.4) {
         labels = c("0.0", "0.5", "1.0")
     )
 
+    scaled = function(x, s) {x[seq(1, length(x),by = s)]}
+    timesteps.breaks = scaled(timesteps.breaks, scale_units)
     gp <- gp + scale_x_continuous(
         limits = c(timesteps.start, timesteps.stop),
         breaks = trials.breaks.timesteps,
@@ -376,7 +391,7 @@ plot_means <- function(timesteps.start, timesteps.stop, raster_height = 0.4) {
             ~ .,
             name = "Timesteps",
             breaks = timesteps.breaks,
-            labels = timesteps.breaks
+            labels = format(timesteps.breaks, scientific = FALSE)
         )
     )
 
@@ -402,7 +417,7 @@ gp_all = plot_means(timesteps.start = 0,
                     timesteps.stop = timesteps.max, raster_height = 0.25)
 
 if (plot.offline == TRUE) {
-    pdf("means_all.pdf", width = 7, height = 3)
+    pdf("means_all.pdf", width = 7, height = 6)
     print(gp_all)
     dev.off()
 } else {
@@ -411,7 +426,7 @@ if (plot.offline == TRUE) {
 
 gp_first = plot_means(timesteps.start = 0,
                       timesteps.stop = timesteps.gap,
-                      raster_height = 0.25)
+                      raster_height = 0.25, scale_units = 2)
 if (plot.offline == TRUE) {
     pdf("means_first.pdf", width = 7, height = 3)
     print(gp_first)
@@ -421,7 +436,8 @@ if (plot.offline == TRUE) {
 }
 
 gp_last = plot_means(timesteps.start = timesteps.max - timesteps.gap,
-                     timesteps.stop = timesteps.max, raster_height = 0.25)
+                     timesteps.stop = timesteps.max, raster_height = 0.25,
+                     scale_units = 2)
 if (plot.offline == TRUE) {
     pdf("means_last.pdf", width = 7, height = 3)
     print(gp_last)
@@ -437,7 +453,13 @@ gp <- gp + draw_plot(gp_last, 0.5, 0, 0.48, 0.5)
 gp_comp <- gp
 
 if (plot.offline == TRUE) {
-    pdf("prediction_history.pdf", width = 7, height = 3)
+    pdf("prediction_history.pdf", width = 6.5, height = 3)
+    print(gp_comp)
+    dev.off()
+    postscript("prediction_history.eps", horizontal = FALSE,
+               onefile = FALSE, paper = "special",
+               fonts = "Verdana",
+               width = 6.5, height = 3)
     print(gp_comp)
     dev.off()
 } else {

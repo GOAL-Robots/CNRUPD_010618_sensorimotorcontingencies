@@ -48,7 +48,7 @@ find.decimal.scale <- function(x)
 }
 
 
-analyze_predictions <- (offline = False) {
+analyze_predictions <- function(offline = False) {
     # CONSTS -----------------------------------------------------------------------
 
     timesteps.last <- 410e+3
