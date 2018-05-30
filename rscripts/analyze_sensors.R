@@ -69,7 +69,7 @@ find_plateau <- function(time.series) {
 
 prediction.th <- 0.9
 sensors.activation.th <- 0.0
-simulation.index <- 4
+simulation.index <- 1
 timesteps.gap <- 300e+3
 
 
@@ -108,7 +108,7 @@ sensors_labels <- c(
     1.00000000
 )
 
-sensors_labels <- sensors_labels_uniform
+#sensors_labels <- sensors_labels_uniform
 
 # PREDICTIONS ------------------------------------------------------------------
 
@@ -389,6 +389,8 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, only_tics=FALSE, sec
                         color = "#ffffff",
                         size=.5,
                         inherit.aes = TRUE)
+    gp <- gp + xlab("Sensors")
+
 
     if (second_axis == TRUE) {
         gp <-
@@ -424,7 +426,7 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, only_tics=FALSE, sec
         axis.ticks.x = element_line()
         axis.line = element_line()
         if (only_tics == FALSE) {
-            axis.text.x = element_text(size = 4,
+            axis.text.x = element_text(size = 8,
                                        angle = 90,
                                        hjust = 1)
             axis.title.x = element_text()
