@@ -27,7 +27,7 @@ for d in $dirs; do
      
     screen -S $name$d -p sim -X stuff "cd $curr/$d/sim\n"
     sleep .2
-    screen -S $name$d -p sim -X stuff "$main/run/g5k_batteries.sh -b -t 10000 -n 30 -d $main/simulation\n" 
+    screen -S $name$d -p sim -X stuff "$main/run/g5k_batteries.sh -P params -b -t 10000 -n 30 -d $main/simulation\n" 
     sleep 1
     
     screen -S $name$d -p data -X stuff "cd $curr/$d/data\n"

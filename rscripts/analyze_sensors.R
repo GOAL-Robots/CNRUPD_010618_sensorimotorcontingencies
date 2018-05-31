@@ -108,7 +108,7 @@ sensors_labels <- c(
     1.00000000
 )
 
-#sensors_labels <- sensors_labels_uniform
+sensors_labels <- sensors_labels_uniform
 
 # PREDICTIONS ------------------------------------------------------------------
 
@@ -184,7 +184,7 @@ timesteps.max <- max(global.predictions$timesteps)
 # TOUCHES ----------------------------------------------------------------------
 
 global.touches <-
-    fread("log_cont_sensors")
+    fread("log_cont_sensors_standard")
 global.touches.number = dim(global.touches)[2] - 2
 names(global.touches) = c("timesteps",
                           1:global.touches.number,
