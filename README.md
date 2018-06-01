@@ -1,1 +1,2 @@
-# CNRUPD_010618_sensorimotorcontingencies
+Source code for the paper: 
+# Know Your Body Through Intrinsic Goals
