@@ -378,13 +378,13 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, only_tics=FALSE, sec
 
 
     gp = gp + geom_line(data = global.touches,
-                        aes(x = sensor.num,
+                        aes(x = sensors_labels_uniform,
                             y = touch*1.7),
                         color = "#000000",
                         size=1,
                         inherit.aes = TRUE)
     gp = gp + geom_line(data = global.touches,
-                        aes(x = sensor.num,
+                        aes(x = sensors_labels_uniform,
                             y = touch*1.7),
                         color = "#ffffff",
                         size=.5,
@@ -482,8 +482,8 @@ plot.sensors <- function(means, xaxis = TRUE, yaxis = TRUE, only_tics=FALSE, sec
 # PLOT -------------------------------------------------------------------------
 
 sens <- get_sensors_window(
-    timesteps.start = timesteps.all.learnt - timesteps.gap*0.5,
-    timesteps.end = timesteps.all.learnt + timesteps.gap)
+    timesteps.start = timesteps.all.learnt - timesteps.gap*.5,
+    timesteps.end = timesteps.all.learnt + 0.01*timesteps.gap)
 
 
 gp_sensors_per_goal <- plot.sensors.per.goal(sens$means.goal)
@@ -512,6 +512,15 @@ if (plot.offline == TRUE) {
     )
     print(gp_sensors)
     dev.off()
+
+    postscript(paste("sensors", ".eps", sep = ""),
+               horizontal = FALSE,
+               onefile = FALSE, paper = "special",
+               fonts = "Verdana",
+               width = 7, height = 3)
+    print(gp_sensors)
+    dev.off()
+
 } else {
     print(gp_sensors)
 }
